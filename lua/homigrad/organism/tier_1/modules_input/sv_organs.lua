@@ -17,6 +17,7 @@ local function damageOrgan(org, dmg, dmgInfo, key)
 end
 
 local input_list = hg.organism.input_list
+
 input_list.heart = function(org, bone, dmg, dmgInfo)
 	local oldDmg = org.heart
 
@@ -160,10 +161,39 @@ local arteryMessages ={
 	"I'm bleeding out of my neck!"
 }
 
+local knifeClasses = {
+	["weapon_pocketknife"] = true,
+	["weapon_sogknife"] = true,
+	["weapon_buck200knife"] = true,
+	["weapon_hg_machete"] = true,
+}
+
+local function isKnife(dmgInfo)
+	local inf = dmgInfo:GetInflictor()
+
+	return IsValid(inf) and knifeClasses[inf:GetClass()] == true
+end
+
+local function isGunshot(dmgInfo)
+	local inf = dmgInfo:GetInflictor()
+
+	return IsValid(inf) and inf.bullet ~= nil and not dmgInfo:IsDamageType(DMG_CLUB + DMG_BURN)
+end
+
+local function isMeleeSlash(dmgInfo)
+	if !dmgInfo:IsDamageType(DMG_SLASH) then return false end
+
+	local inf = dmgInfo:GetInflictor()
+
+	return IsValid(inf) and inf.DamagePrimary ~= nil
+end
+
 local function hitArtery(artery, org, dmg, dmgInfo, boneindex, dir, hit)
-	if isCrush(dmgInfo) then return 1 end
+	local throatCut = artery == "arteria" and isKnife(dmgInfo)
+
+	if isCrush(dmgInfo) and not isGunshot(dmgInfo) and not throatCut then return 1 end
 	if dmgInfo:IsDamageType(DMG_BLAST) then return 1 end
-	if dmgInfo:IsDamageType(DMG_SLASH) and (math.random(5) != 1) and dmg < 2 then return end
+	if dmgInfo:IsDamageType(DMG_SLASH) and !throatCut and !isMeleeSlash(dmgInfo) and (math.random(5) != 1) and dmg < 2 then return end
 	org.painadd = org.painadd + dmg * 1
 	if org[artery] == 1 then return 0 end
 	if org[string.Replace(artery, "artery", "").."amputated"] then return end

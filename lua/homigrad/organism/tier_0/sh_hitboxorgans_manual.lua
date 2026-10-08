@@ -49,31 +49,13 @@ male["ValveBiped.Bip01_Head1"] = {
 	},
 }
 
-local spine = 0.25
 male["ValveBiped.Bip01_Neck1"] = {
 	{
-		"spine3", --spine3 neck
-		spine,
-		Vector(1, 1, 0),
-		Angle(0, 0, 0),
-		Vector(2, 0.5, 0.5),
-		Color(0, 125, 0)
-	},
-	{"trachea", nil, Vector(2, -2, 0), Angle(0, 0, 0), Vector(2, 0.5, 0.5), Color(0, 125, 255)},
-	{
-		"arteria", --right artery
+		"arteria",
 		nil,
-		Vector(3.5, -2, 2.3),
+		Vector(2.25, -2.3, 0),
 		Angle(0, 0, 0),
-		Vector(2.5, 0.25, 0.25),
-		Color(200, 0, 0)
-	},
-	{
-		"arteria", --left artery
-		nil,
-		Vector(3.5, -2, -2.3),
-		Angle(0, 0, 0),
-		Vector(2.5, 0.25, 0.25),
+		Vector(2, 2.70, 2.5),
 		Color(200, 0, 0)
 	},
 }
@@ -304,28 +286,11 @@ female["ValveBiped.Bip01_Head1"] = {
 
 female["ValveBiped.Bip01_Neck1"] = {
 	{
-		"spine3", --spine3 neck
-		spine,
-		Vector(1, 1, 0),
-		Angle(0, 0, 0),
-		Vector(2, 0.5, 0.5),
-		Color(0, 125, 0)
-	},
-	{"trachea", nil, Vector(2, -2, 0), Angle(0, 0, 0), Vector(2, 0.5, 0.5), Color(0, 125, 255)},
-	{
-		"arteria", --right artery
+		"arteria",
 		nil,
-		Vector(1.5, -2, 2.3),
+		Vector(1.5, -0.5, 0),
 		Angle(0, 0, 0),
-		Vector(2.5, 0.25, 0.25),
-		Color(200, 0, 0)
-	},
-	{
-		"arteria", --left artery
-		nil,
-		Vector(1.5, -2, -2.3),
-		Angle(0, 0, 0),
-		Vector(2.5, 0.25, 0.25),
+		Vector(1.75, 2, 2.5),
 		Color(200, 0, 0)
 	},
 }

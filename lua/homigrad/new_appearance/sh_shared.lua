@@ -436,7 +436,7 @@ hg.Appearance.SkeletonAppearanceTable = {
 -- GetRandomAppearance
 function hg.Appearance.GetRandomAppearance()
 	local randomAppearance = table.Copy(hg.Appearance.SkeletonAppearanceTable)
-	local iSex = math.random(1, 2)
+	local iSex = 1
 	local tMdl, str = table.Random(PlayerModels[iSex])
 	randomAppearance.AModel = str
 	_, str = table.Random(hg.Appearance.Clothes[iSex])
@@ -467,7 +467,7 @@ end
 hg.Appearance.ValidateFunctions = {
 	AModel = function(str)
 		if not isstring(str) then return false end
-		if not PlayerModels[1][str] and not PlayerModels[2][str] then return false end
+		if not PlayerModels[1][str] then return false end
 		return true
 	end,
 	AClothes = function(tbl)

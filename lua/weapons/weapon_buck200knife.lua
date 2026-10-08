@@ -25,7 +25,7 @@ SWEP.BleedMultiplier = 1.5
 SWEP.PainMultiplier = 1.8
 
 SWEP.DamagePrimary = 20
-SWEP.DamageSecondary = 10
+SWEP.DamageSecondary = 8
 
 SWEP.setlh = false
 SWEP.setrh = true
@@ -42,7 +42,7 @@ SWEP.AttackingPos = Vector(0,0,0)
 SWEP.weaponPos = Vector(-1,0,0)
 SWEP.weaponAng = Angle(90,-90,0)
 
-SWEP.HoldType = "knife"
+SWEP.HoldType = "melee"
 
 --SWEP.InstantPainMul = 0.25
 

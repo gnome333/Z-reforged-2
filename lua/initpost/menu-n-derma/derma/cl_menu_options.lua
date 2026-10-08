@@ -367,3 +367,270 @@ function hg.DrawSettings(ParentPanel)
     pppanel23:SetSize(0, 0)
     pppanel23:SetPos(0,yOffset+12)
 end
+
+local bindTrap
+local bindTrapping = false
+local bindState = {}
+
+local clr_bind_bg = Color(28, 28, 28, 190)
+local clr_bind_bg_hover = Color(28, 28, 28, 235)
+local clr_bind_border = Color(60, 60, 60, 150)
+local clr_bind_border_hover = Color(60, 60, 60, 255)
+local clr_hint = Color(160, 160, 160, 220)
+
+local mouseButtons = {[107] = true, [108] = true, [109] = true, [110] = true, [111] = true, [112] = true, [113] = true}
+
+hg.binds_capturing = false
+
+hg.binds = {
+    {cmd = "fake", title = "Fake (ragdolling)", id = "fake"},
+    {cmd = "+hmcd_holdbreath", title = "Hold breath", id = "holdbreath"},
+    {cmd = "+hg_zoom", title = "Zoom", id = "zoom"},
+    {cmd = "suicide", title = "Suicide", id = "suicide"},
+    {cmd = "+alt1", title = "Lean right", id = "leanright"},
+    {cmd = "+alt2", title = "Lean left", id = "leanleft"},
+}
+
+for _, data in ipairs(hg.binds) do
+    data.code = tonumber(cookie.GetString("hg_bind_" .. data.id, "0")) or 0
+end
+
+local function EngineBoundKey(cmd)
+    local key = input.LookupBinding(cmd)
+    if not key or key == "" then return nil end
+    return string.lower(key)
+end
+
+local function KeyName(code)
+    if not code or code <= 0 then return nil end
+    local name = input.GetKeyName(code)
+    if not name or name == "" then return nil end
+    return string.lower(name)
+end
+
+local function GetBoundKey(data)
+    return KeyName(data.code) or EngineBoundKey(data.cmd)
+end
+
+local function SetBindKey(data, code)
+    data.code = code or 0
+    cookie.Set("hg_bind_" .. data.id, tostring(data.code))
+end
+
+local function IsBindKeyDown(code)
+    if not code or code <= 0 then return false end
+    if mouseButtons[code] then return input.IsMouseDown(code) end
+    return input.IsKeyDown(code)
+end
+
+local function BindsBlocked()
+    return hg.binds_capturing
+        or gui.IsGameUIVisible()
+        or gui.IsConsoleVisible()
+        or IsValid(vgui.GetKeyboardFocus())
+        or vgui.CursorVisible()
+end
+
+local function RunBindCommand(cmd)
+    RunConsoleCommand(cmd)
+end
+
+hook.Add("Think", "ZCity.BindExecute", function()
+    local blocked = BindsBlocked()
+
+    for _, data in ipairs(hg.binds) do
+        local down = not blocked and IsBindKeyDown(data.code)
+
+        if down and KeyName(data.code) == EngineBoundKey(data.cmd) then
+            down = false
+        end
+
+        local prev = bindState[data.cmd] or false
+        if down == prev then continue end
+
+        bindState[data.cmd] = down
+
+        if down then
+            RunBindCommand(data.cmd)
+        elseif string.sub(data.cmd, 1, 1) == "+" then
+            RunBindCommand("-" .. string.sub(data.cmd, 2))
+        end
+    end
+end)
+
+hook.Add("Think", "ZCity.BindKeyTrap", function()
+    if not bindTrapping then return end
+
+    if not IsValid(bindTrap) then
+        bindTrap = nil
+        bindTrapping = false
+        hg.binds_capturing = false
+        if input.IsKeyTrapping() then input.CheckKeyTrapping() end
+        return
+    end
+
+    if not input.IsKeyTrapping() then return end
+
+    local code = input.CheckKeyTrapping()
+    if not code then return end
+
+    local btn = bindTrap
+    bindTrap = nil
+    bindTrapping = false
+    hg.binds_capturing = false
+
+    btn:FinishTrap(code)
+end)
+
+function hg.CreateBindRow(data, ParentPanel, yPos)
+    local row = vgui.Create("DPanel", ParentPanel)
+    row:SetSize(ParentPanel:GetWide() / 1.05, ParentPanel:GetTall() / 15)
+    row:SetPos(ParentPanel:GetWide() / 2 - row:GetWide() / 2, yPos)
+
+    surface.SetFont("ZCity_setiings_fine")
+    local _, titleTall = surface.GetTextSize(data.title)
+
+    row.Paint = function(self, w, h)
+        surface.SetDrawColor(43, 43, 43, 145)
+        surface.DrawRect(0, 0, w, h)
+        surface.SetDrawColor(47, 47, 47, 145)
+        surface.DrawRect(0, h - 3, w, 3)
+
+        draw.SimpleText(data.title, "ZCity_setiings_fine", 30, h / 2 - titleTall / 2.5, clr_1, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
+        draw.SimpleText(data.cmd, "ZCity_setiings_tiny", 30, h / 2 + titleTall / 2, clr_2, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
+    end
+
+    local margin = row:GetWide() / 30
+
+    local unbind = vgui.Create("DButton", row)
+    unbind:SetSize(row:GetWide() / 12, row:GetTall() / 2)
+    unbind:SetPos(row:GetWide() - unbind:GetWide() - margin, row:GetTall() / 2 - unbind:GetTall() / 2)
+    unbind:SetText("")
+    unbind.LabelText = "UNBIND"
+
+    local key = vgui.Create("DButton", row)
+    key:SetSize(row:GetWide() / 8, row:GetTall() / 2)
+    key:SetPos(unbind:GetX() - key:GetWide() - margin, row:GetTall() / 2 - key:GetTall() / 2)
+    key:SetText("")
+
+    function key:Refresh()
+        local cur = GetBoundKey(data)
+        self.LabelText = cur and string.upper(cur) or "NONE"
+    end
+
+    function key:FinishTrap(code)
+        self.Capturing = false
+
+        if not code or code <= 0 or code == KEY_ESCAPE or code == 107 then
+            self:Refresh()
+            return
+        end
+
+        local existing = input.LookupKeyBinding(code)
+
+        local function apply()
+            SetBindKey(data, code)
+            self:Refresh()
+            for i = 1, 3 do surface.PlaySound("shitty/tap_depress.wav") end
+        end
+
+        if existing and existing != "" and existing != data.cmd then
+            Derma_Query("This key is already used by \"" .. existing .. "\" in the engine, pressing it will trigger both.", "Binds",
+                "Use key", apply,
+                "Cancel", function() self:Refresh() end)
+            return
+        end
+
+        apply()
+    end
+
+    function key:DoClick()
+        bindTrap = self
+        bindTrapping = true
+        hg.binds_capturing = true
+        input.StartKeyTrapping()
+        self.Capturing = true
+    end
+
+    function unbind:DoClick()
+        if data.code > 0 then
+            SetBindKey(data, 0)
+            for i = 1, 3 do surface.PlaySound("shitty/tap_depress.wav") end
+        end
+
+        key:Refresh()
+
+        local eng = EngineBoundKey(data.cmd)
+        if eng then
+            Derma_Message("This command is still bound in the engine to \"" .. eng .. "\".\nThe addon can't change engine binds, remove it in console:\nunbind \"" .. eng .. "\"", "Binds", "OK")
+        end
+    end
+
+    local function PaintBind(btn, w, h)
+        local hovered = btn:IsHovered() or btn.Capturing
+
+        draw.RoundedBox(0, 0, 0, w, h, hovered and clr_bind_bg_hover or clr_bind_bg)
+        surface.SetDrawColor(hovered and clr_bind_border_hover or clr_bind_border)
+        surface.DrawOutlinedRect(0, 0, w, h, 1)
+
+        draw.SimpleText(btn.Capturing and "PRESS KEY" or (btn.LabelText or ""), "ZCity_setiings_fine", w / 2, h / 2, hovered and color_white or clr_1, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
+    end
+
+    key.Paint = PaintBind
+    unbind.Paint = PaintBind
+
+    key:Refresh()
+
+    return row
+end
+
+function hg.DrawBinds(ParentPanel)
+    ParentPanel:SetAlpha(0)
+    ParentPanel.Paint = function(self, w, h)
+        surface.SetDrawColor(28, 28, 28, 255)
+        surface.DrawRect(0, 0, w, h)
+
+        surface.SetDrawColor(107, 107, 107, 20)
+
+        for i = 1, (ybars + 1) do
+            surface.DrawRect((sw / ybars) * i - (CurTime() * 30 % (sw / ybars)), 0, ScreenScale(1), sh)
+        end
+
+        for i = 1, (xbars + 1) do
+            surface.DrawRect(0, (sh / xbars) * (i - 1) + (CurTime() * 30 % (sh / xbars)), sw, ScreenScale(1))
+        end
+
+        local border_size = ScreenScale(2)
+
+        surface.SetDrawColor(0, 0, 0)
+        surface.SetMaterial(gradient_l)
+        surface.DrawTexturedRect(0, 0, border_size, sh)
+        surface.SetMaterial(blur)
+        surface.SetDrawColor(28, 28, 28, 208)
+        surface.DrawRect(0, 0, w, h)
+    end
+    hg.DrawBlur(ParentPanel, 5)
+    ParentPanel:AlphaTo(255, 0.15, 0)
+
+    local scroll = vgui.Create("DScrollPanel", ParentPanel)
+    scroll:SetSize(ParentPanel:GetWide(), ParentPanel:GetTall())
+    scroll:SetPos(0, 0)
+    scroll.Paint = function() end
+
+    local yOffset = scroll:GetTall() / 100
+
+    local category = hg.CreateCategory("Binds", scroll, yOffset)
+    yOffset = yOffset + category:GetTall() + 12
+
+    for _, data in ipairs(hg.binds) do
+        local row = hg.CreateBindRow(data, scroll, yOffset)
+        yOffset = yOffset + row:GetTall() + 12
+    end
+
+    local hint = vgui.Create("DLabel", scroll)
+    hint:SetFont("ZCity_setiings_tiny")
+    hint:SetTextColor(clr_hint)
+    hint:SetPos(scroll:GetWide() / 2 - (scroll:GetWide() / 1.05) / 2 + 30, yOffset + ScreenScale(6))
+    hint:SetText("Click a key field, then press a key or mouse button. ESC / LMB cancels.\nUNBIND clears it. GMod blocks bind/unbind from Lua, so the addon fires the command itself.")
+    hint:SizeToContents()
+end

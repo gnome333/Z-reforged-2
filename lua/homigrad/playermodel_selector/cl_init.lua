@@ -504,6 +504,7 @@ function Menu()
 		filter = (filter or ""):lower()
 
 		for name, mdl in SortedPairs(allModels) do
+			if mdl:lower():find("female", 1, true) then continue end
 			if filter ~= "" and not name:lower():find(filter, 1, true) and not mdl:lower():find(filter, 1, true) then continue end
 
 			local icon = iconLayout:Add("SpawnIcon")

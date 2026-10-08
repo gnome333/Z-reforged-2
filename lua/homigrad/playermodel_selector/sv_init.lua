@@ -24,6 +24,7 @@ net.Receive("ZC_PMS_Apply", function(len, ply)
 
 	if not isstring(mdl) or not string.StartsWith(mdl, "models/") or not string.EndsWith(mdl, ".mdl") then return end
 	if IsUselessModel(mdl) then return end
+	if string.find(string.lower(mdl), "female", 1, true) then return end
 	util.PrecacheModel(mdl)
 
 	local Appearance = ply.CurAppearance or hg.Appearance.GetRandomAppearance()

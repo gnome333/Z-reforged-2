@@ -104,7 +104,7 @@ function SWEP:ThinkAdd()
 		self.PenetrationSizePrimary = 1
 		self.StaminaPrimary = 25
 	else
-		self.DamagePrimary = 15
+		self.DamagePrimary = 30
 		self.DamageType = DMG_SLASH
 		self.weaponPos = LerpFT(0.4, self.weaponPos, weppos2)
 		self.weaponAng = LerpFT(0.3, self.weaponAng, wepang2)
@@ -236,6 +236,16 @@ if SERVER then
 					return false
 				end
 			end
+		end
+	end)
+end
+
+if SERVER then
+	hook.Add("PreHomigradDamageBulletBleedAdd", "ZCityHammerNoBleed", function(ply, org, dmgInfo, hitgroup, harm, hitBoxs, inputHole, hook_info)
+		local inflictor = dmgInfo:GetInflictor()
+
+		if IsValid(inflictor) and inflictor:GetClass() == "weapon_hammer" and inflictor.GetNetVar and inflictor:GetNetVar("AttackMode", 1) == 2 then
+			hook_info.bleed = 0
 		end
 	end)
 end

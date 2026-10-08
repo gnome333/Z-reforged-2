@@ -232,6 +232,10 @@ local Angle, Vector, AngleRand, VectorRand, math, hook, util, game = Angle, Vect
 
 		mul = mul * (ply:GetNWBool("TauntStopMoving", false) and 0.01 or 1)
 
+		if (ply.CrouchSlowUntil or 0) > CurTime() then
+			mul = mul * 0.3
+		end
+
 		if(runnin and velLen >= 10)then
 			ply.CurrentSpeed = math.Approach(ply.CurrentSpeed, (ply.move or ply:GetRunSpeed()) * mul, delta_time * ply.SpeedGainMul)
 		else
@@ -367,7 +371,7 @@ local Angle, Vector, AngleRand, VectorRand, math, hook, util, game = Angle, Vect
 
 			local forward_move, side_move = calc_forward_side_moves(ply.MovementInertia, ply_angles)
 
-			if(CLIENT)then
+			if(CLIENT and hg_inertiaenabled:GetBool())then
 				ply.MovementInertiaAddView = ply.MovementInertiaAddView or Angle(0,0,0)
 				ply.MovementInertiaAddView.r = ply.MovementInertiaAddView.r + side_move * delta_time * inertia_len * 0.03
 				ply.MovementInertiaAddView.p = ply.MovementInertiaAddView.p + math.abs(side_move) * delta_time * inertia_len * 0.01
@@ -502,6 +506,20 @@ local Angle, Vector, AngleRand, VectorRand, math, hook, util, game = Angle, Vect
 		--print(speed.." "..(CLIENT and "c" or "s"))
 		--speed = SERVER and speed + 50 or speed
 
+		local airborne = not ply:OnGround() and ply:WaterLevel() < 2 and not IsValid(ply.FakeRagdoll)
+
+		if airborne then
+			ply.HgAirSpeed = math.max(ply.HgAirSpeed or 0, vel:Length2D())
+		elseif ply.HgWasAirborne then
+			if (ply.HgAirSpeed or 0) > 200 then
+				ply.HgLandSlowUntil = CurTime() + 0.5
+			end
+
+			ply.HgAirSpeed = 0
+		end
+
+		ply.HgWasAirborne = airborne
+
 		if ply:GetMoveType() == MOVETYPE_LADDER or ply:GetMoveType() == MOVETYPE_NONE then
 			inertia_len = 100
 		end
@@ -510,6 +528,10 @@ local Angle, Vector, AngleRand, VectorRand, math, hook, util, game = Angle, Vect
 			inertia_len = inertia_len + 200 * math.Round(org.noradrenaline, 1)
 		end
 		
+		if (ply.HgLandSlowUntil or 0) > CurTime() then
+			inertia_len = inertia_len * 0.6
+		end
+
 		mv:SetMaxSpeed(inertia_len)
 		mv:SetMaxClientSpeed(inertia_len)
 		ply:SetMaxSpeed(math.max(100, inertia_len))
@@ -528,6 +550,18 @@ local Angle, Vector, AngleRand, VectorRand, math, hook, util, game = Angle, Vect
 		if hg_inertiaenabled:GetBool() then
 			mv:SetForwardSpeed(forward_move * inertia_len)
 			mv:SetSideSpeed(side_move * inertia_len)
+		end
+
+		if not airborne then return end
+
+		local airfwd = mv:GetForwardSpeed()
+		local airside = mv:GetSideSpeed()
+		local airlen = math.sqrt(airfwd * airfwd + airside * airside)
+
+		if airlen > 15 then
+			local airscale = 15 / airlen
+			mv:SetForwardSpeed(airfwd * airscale)
+			mv:SetSideSpeed(airside * airscale)
 		end
 	end)
 --//
@@ -553,13 +587,51 @@ local Angle, Vector, AngleRand, VectorRand, math, hook, util, game = Angle, Vect
 
 --\\ Anti-gmod PVP system (anti crouch spam)
 	hook.Add("StartCommand", "HG_AntiGmodPVP", function(ply, cmd)
-		ply.NowCrouched = cmd:KeyDown(IN_DUCK)
-		ply.OldCrouched = ply.OldCrouched or cmd:KeyDown(IN_DUCK)
+		local now = cmd:KeyDown(IN_DUCK)
+		ply.NowCrouched = now
+		local was = ply.OldCrouched
 
-		if not ply:OnGround() and ply:WaterLevel() < 2 and ply:GetMoveType() == MOVETYPE_WALK and ply.OldCrouched != ply.NowCrouched then
-			cmd:AddKey(IN_DUCK)
+		if was == nil then
+			was = now
 		end
 
-		ply.OldCrouched = cmd:KeyDown(IN_DUCK)
+		local ct = CurTime()
+
+		if (ply.CrouchMinUntil or 0) > ct and not now then
+			cmd:AddKey(IN_DUCK)
+			now = true
+		end
+
+		local press = now and not was
+
+		if press and ply:OnGround() then
+			if (ply.CrouchRecrouch or 0) > ct then
+				cmd:RemoveKey(IN_DUCK)
+				now = false
+			else
+				ply.CrouchMinUntil = ct + 0.5
+				ply.CrouchSlowUntil = ct + 0.5
+
+				if SERVER then
+					ply:ViewPunch(Angle(1.5, math.random(1,2) == 1 and -0.6 or 0.6, math.random(1,2) == 1 and -0.6 or 0.6))
+
+					local org = ply.organism
+					if org and org.stamina then
+						org.stamina[1] = math.max((org.stamina[1] or 0) - 15, 0)
+					end
+				end
+			end
+		end
+
+		if was and not now then
+			ply.CrouchRecrouch = ct + 0.35
+		end
+
+		if not ply:OnGround() and ply:WaterLevel() < 2 and ply:GetMoveType() == MOVETYPE_WALK and was != now then
+			cmd:AddKey(IN_DUCK)
+			now = true
+		end
+
+		ply.OldCrouched = now
 	end)
 --//

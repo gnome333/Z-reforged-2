@@ -9,8 +9,16 @@ hg.organism.input_list = hg.organism.input_list or {}
 local vecZero, angZero = Vector(), Angle()
 local hook_Run = hook.Run
 local input_list = hg.organism.input_list
+
+hook.Add("HomigradDamage", "HeadshotRega", function(ply, dmgInfo, hitgroup, ent)
+	if hitgroup == HITGROUP_HEAD and not (ply.organism.superfighter == true) and dmgInfo:IsBulletDamage() or (dmgInfo:IsExplosionDamage()) then
+		ply.organism.brain = 1
+	end
+end)
+
 local function Trace_Bullet(box, hit, ricochet, org, organs, dmg, dmgInfo, dir)
 	dmg = dmgInfo:GetDamage() / 25
+
 	local organ = box[6] and organs[box[6]][box[7]]
 	if not organ then return 0 end
 	local name = organ[1]
@@ -30,7 +38,9 @@ local function Trace_Bullet(box, hit, ricochet, org, organs, dmg, dmgInfo, dir)
 	if func and !hook_info.restricted then
 		local oldBox = box[8]
 		local oldOrgan = (oldBox and oldBox[6] and organs[oldBox[6]][oldBox[7]])
-		return func(org, bone, dmg, dmgInfo, box[6], dir, hit, ricochet, organ, oldOrgan)
+		local result = func(org, bone, dmg, dmgInfo, box[6], dir, hit, ricochet, organ, oldOrgan)
+
+		return result
 	else
 		return 0
 	end
@@ -49,6 +59,7 @@ local function Trace_Blast(box, amt, org, organs, dmg, dmgInfo)
 	local amount = amt * dmg
 	
 	if func then return func(org, 1, amount, dmgInfo, box[6], vector_origin, true, false, organ) end
+	return 0
 end
 
 local dir = Vector(0, 0, 0)
@@ -964,27 +975,6 @@ hook.Add("EntityTakeDamage", "homigrad-damage", function(ent, dmgInfo)
 			if !org.dmgstack[hitgroup] then return end
 			if !org.dmgstack[hitgroup][1] then return end
 			local should = org.dmgstack[hitgroup][1] > hitgroup_max
-
-			local limbs = {
-				"lleg",
-				"rleg",
-				"larm",
-				"rarm",
-			}
-
-			if should and hitgrouptolimb[hitgroup] then
-				if blast then
-					for i, limb in ipairs(limbs) do
-						if !org[limb.."amputated"] and math.random(5) < 200 / lend then
-							hg.organism.AmputateLimb(org, limb)
-						end
-					end
-				else
-					if !org[hitgrouptolimb[hitgroup].."amputated"] then
-						hg.organism.AmputateLimb(org, hitgrouptolimb[hitgroup])
-					end
-				end
-			end
 
 			if !IsValid(rag) then
 				org.dmgstack[hitgroup][1] = nil

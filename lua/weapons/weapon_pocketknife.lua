@@ -50,8 +50,8 @@ SWEP.DeploySnd = "weapons/knife/knife_deploy1.wav"
 
 SWEP.AttackPos = Vector(0,0,0)
 SWEP.DamageType = DMG_SLASH
-SWEP.DamagePrimary = 8
-SWEP.DamageSecondary = 6
+SWEP.DamagePrimary = 10
+SWEP.DamageSecondary = 4
 
 SWEP.PenetrationPrimary = 5
 SWEP.PenetrationSecondary = 3

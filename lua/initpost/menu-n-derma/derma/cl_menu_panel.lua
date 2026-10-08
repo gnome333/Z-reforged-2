@@ -76,6 +76,9 @@ local Selects = {
     {Title = "Settings", Func = function(luaMenu,pp) 
         hg.DrawSettings(pp) 
     end},
+    {Title = "Binds", Func = function(luaMenu,pp) 
+        hg.DrawBinds(pp) 
+    end},
     {Title = "Appearance", Func = function(luaMenu,pp) hg.CreateApperanceMenu(pp) end},
     {Title = "Return", Func = function(luaMenu) luaMenu:Close() end},
 }

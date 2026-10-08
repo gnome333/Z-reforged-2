@@ -628,6 +628,15 @@ function hg.cam_things(ply, view, angles)
 	hg.clamp(angle_difference_localvec, 10)
 	hg.clamp(angle_difference, 10)
 	hg.clamp(angle_difference2, 10)
+
+	angle_difference_localvec:Zero()
+	angle_difference_localvec2:Zero()
+	angle_difference:Zero()
+	angle_difference2:Zero()
+	position_difference:Zero()
+	position_difference2:Zero()
+	position_difference23:Zero()
+	position_difference3:Zero()
 	
 	if not hg.KeyDown(ply, IN_SPEED) then
 		offsetView[1] = math_Clamp(offsetView[1] - angle_difference2[1] / 18, -2, 2)

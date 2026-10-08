@@ -23,7 +23,7 @@ SWEP.WorldModel = "models/weapons/combatknife/tactical_knife_iw7_wm.mdl"
 SWEP.WorldModelReal = "models/weapons/combatknife/tactical_knife_iw7_vm.mdl"
 SWEP.WorldModelExchange = false
 SWEP.ViewModel = ""
-SWEP.HoldType = "knife"
+SWEP.HoldType = "melee"
 SWEP.weight = 0.4
 
 function SWEP:CanPrimaryAttack()
@@ -57,8 +57,8 @@ SWEP.WaitTime2 = 0.4
 SWEP.AttackLen2 = 45
 
 SWEP.DamageType = DMG_SLASH
-SWEP.DamagePrimary = 15
-SWEP.DamageSecondary = 8
+SWEP.DamagePrimary = 25
+SWEP.DamageSecondary = 10
 
 SWEP.PenetrationPrimary = 8
 SWEP.PenetrationSecondary = 4
@@ -722,8 +722,15 @@ function SWEP:OnRemove()
     end
 end
 SWEP.Initialzed = false
+
+local NoDeploySound = {
+    ["weapon_melee"] = true,
+    ["weapon_sogknife"] = true,
+    ["weapon_buck200knife"] = true,
+}
+
 function SWEP:Deploy()
-    if SERVER and self.Initialzed and not self:GetOwner().noSound then self:GetOwner():EmitSound(self.DeploySnd,65) end
+    if SERVER and self.Initialzed and not self:GetOwner().noSound and not NoDeploySound[self:GetClass()] then self:GetOwner():EmitSound(self.DeploySnd,65) end
     self.Initialzed = true
     self:PlayAnim("deploy", 1, false, nil, false)
     self:SetHold(self.HoldType)
@@ -791,6 +798,14 @@ function SWEP:MultiplyDMG(owner, ent, vellen, mul)
     return mul
 end
 
+local preciseClasses = {
+    ["weapon_melee"] = true,
+    ["weapon_pocketknife"] = true,
+    ["weapon_sogknife"] = true,
+    ["weapon_buck200knife"] = true,
+    ["weapon_hg_machete"] = true,
+}
+
 function SWEP:Attack(owner, ent, vellen, attacktype, inattackLength)
     //if SERVER then owner:SetNetVar("slowDown", owner:GetNetVar("slowDown", 0) + (attacktype and self.DamageSecondary or self.DamagePrimary)) end
     
@@ -841,21 +856,25 @@ function SWEP:Attack(owner, ent, vellen, attacktype, inattackLength)
     
     local trace
 
+    local precise = preciseClasses[self:GetClass()]
+
     local amt = 6
 
     for i = 0, amt do
         local normal = eyetr.Normal:Angle()
 
-        normal:RotateAroundAxis(normal:Forward(), (attacktype and self.SwingAng2 or self.SwingAng) or -90)
-        normal:RotateAroundAxis(normal:Up(), ((0.5 - inattackLength) * ((attacktype and self.AttackRads2 or self.AttackRads) or 65)))
-        normal:RotateAroundAxis(normal:Up(), (i - amt * 0.5) * 1)
+        if !precise then
+            normal:RotateAroundAxis(normal:Forward(), (attacktype and self.SwingAng2 or self.SwingAng) or -90)
+            normal:RotateAroundAxis(normal:Up(), ((0.5 - inattackLength) * ((attacktype and self.AttackRads2 or self.AttackRads) or 65)))
+            normal:RotateAroundAxis(normal:Up(), (i - amt * 0.5) * 1)
+        end
         
         --debugoverlay.Line(eyetr.StartPos, eyetr.StartPos + normal:Forward() * (self:GetAttackLength() + vellen), 3, color_white)
 
         local tr = {}
 
         tr.start = eyetr.StartPos
-        tr.endpos = eyetr.StartPos + normal:Forward() * (attacktype and 1 or math.max(0.5, 1 - math.abs((0.5 - inattackLength) * 2))) * (self:GetAttackLength() + vellen)
+        tr.endpos = eyetr.StartPos + normal:Forward() * ((precise or attacktype) and 1 or math.max(0.5, 1 - math.abs((0.5 - inattackLength) * 2))) * (self:GetAttackLength() + vellen)
         tr.filter = self.MultiDmg1 and {owner, ent} or self.HitEnts
 
         local size = 0.15

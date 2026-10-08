@@ -3,6 +3,7 @@ local PLAYER = FindMetaTable("Player")
 
 local vpang = Angle(2, -1, 1)
 function PLAYER:LegAttack()
+    return
     if not self:Alive() or hg.GetCurrentCharacter(self):IsRagdoll() or self:GetNWFloat("InLegKick",0) > CurTime() or not self:IsOnGround() or self:IsSprinting() then return end
     if self.InLegKick and self.InLegKick > CurTime() then return end
     if self:GetNWBool("TauntStopMoving", false) then return end

@@ -1178,3 +1178,107 @@ end
 function SWEP:GetNPCRestTimes()
 	return 0.1, 0.1
 end
+
+if SERVER then
+	local refillClasses = {
+		["weapon_bandage_sh"] = true,
+		["weapon_medkit_sh"] = true,
+	}
+
+	local function isCarried(ent)
+		for _, p in ipairs(player.GetAll()) do
+			if p:GetWeapon(ent:GetClass()) == ent then return true end
+		end
+
+		return false
+	end
+
+	local function findRefillTarget(ply, cls)
+		local tr = hg.eyeTrace(ply, 85)
+		if tr and IsValid(tr.Entity) and tr.Entity:GetClass() == cls and tr.Entity.modeValues and not isCarried(tr.Entity) then
+			return tr.Entity
+		end
+
+		local pos = ply:GetPos()
+		local eye = ply:EyePos()
+		local best, bestdist
+
+		for _, ent in ipairs(ents.FindInSphere(pos, 85)) do
+			if ent:GetClass() ~= cls or not ent.modeValues then continue end
+			if isCarried(ent) then continue end
+
+			local dist = pos:DistToSqr(ent:GetPos())
+			if bestdist and dist >= bestdist then continue end
+
+			local trace = util.TraceLine({
+				start = eye,
+				endpos = ent:GetPos(),
+				filter = {ply, ent}
+			})
+			if trace.Hit and trace.HitPos:DistToSqr(ent:GetPos()) > 36 then continue end
+
+			best = ent
+			bestdist = dist
+		end
+
+		return best
+	end
+
+	hook.Add("KeyPress", "hg_refill_medical", function(ply, key)
+		if key ~= IN_USE then return end
+		if (ply.hgRefillCD or 0) > CurTime() then return end
+
+		local wep = ply:GetActiveWeapon()
+		if not IsValid(wep) or not wep.modeValues or not wep.modeValuesdef then return end
+
+		local cls = wep:GetClass()
+		if not refillClasses[cls] then return end
+
+		local target = findRefillTarget(ply, cls)
+		if not IsValid(target) or not target.modeValues then return end
+		if target == wep then return end
+
+		local ct = CurTime()
+		local heldVals = wep.modeValues
+		local defVals = wep.modeValuesdef
+		local tgtVals = target.modeValues
+		local changed = false
+
+		for i = 1, #defVals do
+			local def = defVals[i]
+			if not istable(def) or not isnumber(def[1]) or def[1] <= 0 then continue end
+
+			local maxv = def[1]
+			local held = heldVals[i] or 0
+			local tgt = tgtVals[i] or 0
+
+			if held >= maxv or tgt <= 0 then continue end
+
+			local give = math.min(maxv - held, tgt)
+			heldVals[i] = held + give
+			tgtVals[i] = tgt - give
+			changed = true
+		end
+
+		if not changed then return end
+
+		ply:EmitSound("snd_jack_hmcd_bandage.wav", 60, math.random(95, 105))
+		wep:SetNetVar("modeValues", heldVals)
+		target:SetNetVar("modeValues", tgtVals)
+
+		ply.hgRefillCD = ct + 0.4
+		ply.cooldown_grab = ct + 0.4
+
+		local empty = true
+		for i = 1, #tgtVals do
+			if (tgtVals[i] or 0) > 0 then
+				empty = false
+				break
+			end
+		end
+
+		if empty then
+			target:Remove()
+		end
+	end)
+end

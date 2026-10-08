@@ -448,10 +448,6 @@ function PANEL:PostInit()
         modelSelector:AddChoice(k)
     end
 
-    for k, v in SortedPairs(APmodule.PlayerModels[2]) do
-        modelSelector:AddChoice(k)
-    end
-
     -- Main bottom container
     local bottomContainer = vgui.Create("DPanel", viewer)
     bottomContainer:Dock(BOTTOM)
