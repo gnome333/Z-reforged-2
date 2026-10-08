@@ -5,6 +5,17 @@ concommand.Add("fake", function(ply)
 	if ply.fakecd and ply.fakecd > CurTime() then return end
 	if ply:IsFlagSet( FL_FROZEN ) then return end
 	--ply.fakecd = CurTime() + cooldown
+	if ply.GrabbedBy then
+		if (ply.GrabEscapeTime or 0) > CurTime() then return end
+
+		hg.ReleaseGrab(ply)
+
+		if IsValid(ply.FakeRagdoll) then
+			hg.FakeUp(ply)
+		end
+
+		return
+	end
 	if not IsValid(ply.FakeRagdoll) then
 		hg.Fake(ply)
 	else

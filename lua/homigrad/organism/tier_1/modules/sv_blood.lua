@@ -97,6 +97,7 @@ module[2] = function(owner, org, mulTime)
 	end
 
 	if org.arteria == 1 then
+		org.o2.regen = 0
 		org.o2[1] = math.max(org.o2[1] - mulTime * 5,0)
 	end
 
@@ -149,12 +150,13 @@ module[2] = function(owner, org, mulTime)
 	local next_arterypump = 1 / math.max(org.pulse, 10)
 	local ent = owner:IsPlayer() and IsValid(owner.FakeRagdoll) and owner.FakeRagdoll or owner
 	for i, wound in pairs(org.arterialwounds) do
-		bleedoutspeed2 = bleedoutspeed2 + wound[1] * mulTime * 0.2 * math.max(org.pulse, 20) / 80
+		local artmul = wound[7] == "arteria" and 2 or 1
+		bleedoutspeed2 = bleedoutspeed2 + wound[1] * mulTime * 0.2 * artmul * math.max(org.pulse, 20) / 80
 
-		if wound[5] + next_arterypump * 2 < time then
+		if wound[5] + next_arterypump * (wound[7] == "arteria" and 1 or 2) < time then
 			local pos, ang = ent:GetBonePosition(ent:LookupBone(wound[4]))
 			wound[5] = time
-			org.blood = max(org.blood - wound[1] * mulTime * 4.5 * math.max(org.pulse, 20) / 80, 1)
+			org.blood = max(org.blood - wound[1] * mulTime * 4.5 * artmul * math.max(org.pulse, 20) / 80, 1)
 			if (owner:IsPlayer() and owner:Alive()) or not owner:IsPlayer() then
 				local dir = wound[6]
 				local len = dir:Length()

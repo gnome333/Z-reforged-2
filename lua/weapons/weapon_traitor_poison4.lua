@@ -263,6 +263,7 @@ if SERVER then
 
 	hook.Add("Org Think", "poison4",function(owner, org, timeValue)
 		if not IsValid(owner) or not owner:IsPlayer() or not owner:Alive() then return end
+		if owner.SubRole == "traitor_chemist" then return end
 		if (not org.poison4) or (not org.alive) then return end
 		
 		if (not org.poison4notificate) and ((org.poison4 + 20) < CurTime()) then

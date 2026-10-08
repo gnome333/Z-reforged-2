@@ -264,6 +264,12 @@ function SWEP:Camera(eyePos, eyeAng, view, vellen, ply)
 	local k4 = ((organism.adrenaline or 0) * 0.01)
 	local angRand = AngleRand(-k4 * 2, k4 * 2) * 0.2
 	lerpedAdren:Add(angRand)
+
+	if (organism.arteria or 0) >= 0.9 then
+		local t = CurTime()
+		lerpedAdren = lerpedAdren + Angle(math.sin(t * 2.7) * 0.9 + math.sin(t * 6.1) * 0.3, math.cos(t * 2.2) * 1.2 + math.sin(t * 5.4) * 0.4, math.sin(t * 1.3) * 1.6 + math.cos(t * 4.7) * 0.5) * FrameTime() * 10
+	end
+
 	lerpedAdren = LerpFT(0.1, lerpedAdren, angle_zero)
 	--ViewPunch(angRand)
 	local ang = ply:EyeAngles()

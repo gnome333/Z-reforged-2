@@ -440,7 +440,7 @@ end
 			if not IsValid(ply) then return end
 
 			ply:SetWalkSpeed(hg_movement_walkspeed:GetInt())
-			ply:SetRunSpeed(hg_movement_runspeed:GetInt() * 0.9) -- 230
+			ply:SetRunSpeed(hg_movement_runspeed:GetInt() * 0.9 * ply:GetNWFloat("RunSpeedMul", 1)) -- 230
 
 			ply:SetJumpPower(DEFAULT_JUMP_POWER)
 

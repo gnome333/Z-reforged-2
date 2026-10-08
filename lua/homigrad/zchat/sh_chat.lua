@@ -226,6 +226,7 @@ else
 	end)
 
 	hook.Add("PlayerSay", "ZChat", function(ply, text)
+		if IsValid(ply) and (ply.GrabbedBy or (ply.organism and ply.organism.arteria == 1)) then return end
  		local txtTbl = {text}
 		hook.Run("HG_PlayerSay", ply, txtTbl, text) // our shit gets called later
 		text = isstring(txtTbl[1]) and txtTbl[1] or text // checks to see if shit hits the ceiling

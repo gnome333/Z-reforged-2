@@ -669,6 +669,7 @@ function MODE:Intermission()
 		ply.MainTraitor = false
 		ply.SubRole = nil
 		ply.Profession = nil
+		ply:SetNWFloat("RunSpeedMul", 1)
 
 		ply:SetupTeam(0)
 
@@ -1582,6 +1583,7 @@ function MODE.SpawnPlayers(spawn_with_subroles)
     for idx, current_ply in player.Iterator() do
         if(current_ply:Team() != TEAM_SPECTATOR)then
             current_ply.SubRole = nil
+            current_ply:SetNWFloat("RunSpeedMul", 1)
 
             ApplyAppearance(current_ply,nil,nil,nil,true)
             current_ply:Spawn()

@@ -210,6 +210,8 @@ net.Receive("tdm_buyitem",function(len,ply)
 		return
 	end
 
+	if item.TeamBased != nil and item.TeamBased != ply:Team() then ply:ChatPrint("This item is not available for your team.") return end
+
 	if ((ply:GetNWInt("TDM_Money",0) - item.Price) < 0) then ply:ChatPrint("Not enough money.") return end
 	local ent = ply:Give(item.ItemClass)
 	

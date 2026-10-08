@@ -47,7 +47,10 @@ You are equipped with various weapons, poisons and explosives, grenades and your
 			-- ply:Give("weapon_traitor_poison2")
 			-- ply:Give("weapon_traitor_poison3")
 			
+			ply:SetNWFloat("RunSpeedMul", 1.1)
+			ply.organism.stamina.range = 220
 			ply.organism.stamina.max = 220
+			ply.organism.stamina[1] = 220
 			local inv = ply:GetNetVar("Inventory", {})
 			inv["Weapons"]["hg_flashlight"] = true
 			
@@ -76,8 +79,11 @@ You are equipped with various weapons, poisons and explosives, grenades and your
 			ply:Give("weapon_traitor_poison2")
 			ply:Give("weapon_traitor_poison3")
 			
+			ply:SetNWFloat("RunSpeedMul", 1.1)
 			ply.organism.recoilmul = 1
+			ply.organism.stamina.range = 220
 			ply.organism.stamina.max = 220
+			ply.organism.stamina[1] = 220
 			local inv = ply:GetNetVar("Inventory", {})
 			inv["Weapons"]["hg_flashlight"] = true
 			
@@ -99,7 +105,9 @@ For people who like to play chess.]],
 			ply:Give("weapon_adrenaline")
 			ply:Give("weapon_hg_smokenade_tpik")
 			
-			ply.organism.stamina.max = 220
+			ply.organism.stamina.range = 250
+			ply.organism.stamina.max = 250
+			ply.organism.stamina[1] = 250
 			local inv = ply:GetNetVar("Inventory", {})
 			inv["Weapons"]["hg_flashlight"] = true
 			
@@ -124,7 +132,9 @@ For people who like to play chess.]],
 			ply:Give("weapon_hg_smokenade_tpik")
 			
 			ply.organism.recoilmul = 1
-			ply.organism.stamina.max = 220
+			ply.organism.stamina.range = 250
+			ply.organism.stamina.max = 250
+			ply.organism.stamina[1] = 250
 			local inv = ply:GetNetVar("Inventory", {})
 			inv["Weapons"]["hg_flashlight"] = true
 			
@@ -152,8 +162,11 @@ For people who like to play checkers.]],
 			-- ply:Give("weapon_hg_smokenade_tpik")
 			-- ply:Give("weapon_hg_shuriken")
 			
+			ply:SetNWFloat("RunSpeedMul", 1.35)
 			ply.organism.recoilmul = 0.8
+			ply.organism.stamina.range = 300
 			ply.organism.stamina.max = 300
+			ply.organism.stamina[1] = 300
 			--local inv = ply:GetNetVar("Inventory", {}) // WHY SOMEONE COMMENTED THIS
 			--inv["Weapons"]["hg_flashlight"] = true
 			
@@ -177,8 +190,11 @@ For people who like to play checkers.]],
 			-- ply:Give("weapon_hg_smokenade_tpik")
 			-- ply:Give("weapon_hg_shuriken")
 			
+			ply:SetNWFloat("RunSpeedMul", 1.35)
 			ply.organism.recoilmul = 0.4
+			ply.organism.stamina.range = 300
 			ply.organism.stamina.max = 300
+			ply.organism.stamina[1] = 300
 			--local inv = ply:GetNetVar("Inventory", {}) // WHY SOMEONE COMMENTED THIS
 			--inv["Weapons"]["hg_flashlight"] = true
 			
@@ -203,7 +219,6 @@ Can detect presence and potency of chemical agents in the air.]],
 			ply:Give("weapon_traitor_poison4")
 			ply:Give("weapon_traitor_poison_consumable")
 			
-			ply.organism.stamina.max = 220
 			local inv = ply:GetNetVar("Inventory", {})
 			inv["Weapons"]["hg_flashlight"] = true
 			

@@ -144,6 +144,14 @@ hook.Add("HG_PlayerCanHearPlayersVoice","BrainDamage", function(listener, speake
 	if speaker.organism.brain > 0.05 then return false, false end
 end)
 
+hook.Add("HG_PlayerCanHearPlayersVoice","GrabThroatMute", function(listener, speaker)
+	if not IsValid(speaker) then return false, false end
+	if speaker.GrabbedBy then return false, false end
+
+	local org = speaker.organism
+	if org and org.arteria == 1 then return false, false end
+end)
+
 local braindeadphrase_male = {
 	"vo/episode_1/npc/male01/cit_behindyousfx01.wav",
 	"vo/episode_1/npc/male01/cit_behindyousfx02.wav",

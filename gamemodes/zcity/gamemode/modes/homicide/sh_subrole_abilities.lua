@@ -259,6 +259,12 @@ function MODE.DisarmOther(ply, other_ply, aim_ent)
 		end
 
 		hg.LightStunPlayer(other_ply)
+
+		if SERVER then
+			other_ply.GrabbedBy = ply
+			other_ply.GrabEscapeTime = CurTime() + 5
+		end
+
 		timer.Simple(0,function()
 			local rag = hg.GetCurrentCharacter(other_ply)
 			if IsValid(rag) and rag ~= other_ply then

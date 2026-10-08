@@ -211,6 +211,7 @@ if(SERVER)then
 
 	hook.Add("Org Think", "Poison_KCN",function(owner, org, timeValue)
 		if not owner:IsPlayer() or not owner:Alive() then return end
+		if owner.SubRole == "traitor_chemist" then return end
 		if((not org.Poison_KCN) or (not org.alive))then return end
 		
 		local poison = org.Poison_KCN

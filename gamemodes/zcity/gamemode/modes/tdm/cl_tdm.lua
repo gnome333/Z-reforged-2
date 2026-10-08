@@ -354,8 +354,11 @@ local function OpenBuyMenu()
 		local CategoryPanel = vgui.Create( "DScrollPanel", sheet )
 		--CategoryPanel:Dock()
 		CategoryPanel.Paint = function() end
+		local itemcount = 0
 		for n,Item in pairs(category) do
 			if n == "Priority" then continue end
+			if Item.TeamBased != nil and Item.TeamBased != LocalPlayer():Team() then continue end
+			itemcount = itemcount + 1
 			local weapon = weapons.GetStored( Item.ItemClass )
 			local ent = scripted_ents.GetStored( Item.ItemClass )
 
@@ -476,12 +479,14 @@ local function OpenBuyMenu()
 				end
 			end
 		end
-		local tab = Sheet:AddSheet(k,CategoryPanel)
-		local rTab = tab["Tab"]
-		rTab.Paint = PaintPanel
-		rTab:SetFont("ZB_TDM_CATEGORY")
-		rTab.ApplySchemeSettings = rtabFunc
-		--rTab:SetTextInset(50)
+		if itemcount > 0 then
+			local tab = Sheet:AddSheet(k,CategoryPanel)
+			local rTab = tab["Tab"]
+			rTab.Paint = PaintPanel
+			rTab:SetFont("ZB_TDM_CATEGORY")
+			rTab.ApplySchemeSettings = rtabFunc
+			--rTab:SetTextInset(50)
+		end
 	end
 
 	local StartTime = zb.ROUND_START or CurTime()

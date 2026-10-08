@@ -24,6 +24,15 @@ util.AddNetworkString("HMCD_UpdateChemicalResistance")
 
 hook.Add("PlayerPostThink", "HMCD_SubRoles_Abilities", function(ply)
 	if(MODE.RoleChooseRoundTypes[MODE.Type])then
+		if ply.GrabbedBy then
+			local char = hg.GetCurrentCharacter(ply)
+			local distEnt = IsValid(char) and char or ply
+
+			if not IsValid(ply.GrabbedBy) or not ply.GrabbedBy:Alive() or not ply:Alive() or distEnt:GetPos():DistToSqr(ply.GrabbedBy:GetPos()) > 22500 then
+				hg.ReleaseGrab(ply)
+			end
+		end
+
 		if(ply:Alive() and ply.organism and not ply.organism.otrub)then
 			if(ply.SubRole == "traitor_infiltrator" or ply.SubRole == "traitor_infiltrator_soe")then
 				if(ply:KeyDown(IN_WALK))then
@@ -127,4 +136,41 @@ hook.Add("PlayerPostThink", "HMCD_SubRoles_Abilities", function(ply)
 			end
 		end
 	end
+end)
+
+function hg.ReleaseGrab(victim)
+	if not IsValid(victim) then return end
+
+	local attacker = victim.GrabbedBy
+	victim.GrabbedBy = nil
+	victim.GrabEscapeTime = nil
+
+	if IsValid(attacker) then
+		local carry = attacker:GetNetVar("carryent2")
+
+		if IsValid(carry) and (carry == victim or carry == victim.FakeRagdoll) then
+			hg.SetCarryEnt2(attacker)
+		end
+	end
+end
+
+hook.Add("CanControlFake", "HMCD_GrabbedVictim", function(ply)
+	if IsValid(ply.GrabbedBy) then return false end
+end)
+
+hook.Add("HomigradDamage", "HMCD_GrabStab", function(ent, dmgInfo, hitgroup, killer)
+	if not IsValid(ent) then return end
+
+	local victim = ent:IsPlayer() and ent or hg.RagdollOwner(ent)
+
+	if not IsValid(victim) or not IsValid(victim.GrabbedBy) then return end
+	if dmgInfo:GetAttacker() != victim.GrabbedBy then return end
+	if not dmgInfo:IsDamageType(DMG_SLASH) then return end
+
+	victim.GrabEscapeTime = (victim.GrabEscapeTime or CurTime()) + 1
+end)
+
+hook.Add("PlayerSpawn", "HMCD_GrabCleanup", function(ply)
+	ply.GrabbedBy = nil
+	ply.GrabEscapeTime = nil
 end)

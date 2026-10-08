@@ -161,14 +161,6 @@ hook.Add("HomigradDamage", "GuiltReg", function(ply, dmgInfo, hitgroup, ent, har
         lastattacked = CurTime(),
     }
 
-    if hg_developer:GetBool() then
-        Attacker:ChatPrint("This harm done is: "..math.Round(harm,3))
-        Attacker:ChatPrint("Overall amt done is: "..math.Round(amt,3))
-        Attacker:ChatPrint("Overall harm done is: "..math.Round(newharm,3))
-        Attacker:ChatPrint("Guilt done is: "..math.Round(amt * 60,3))
-        Attacker:ChatPrint(" ")
-    end
-
     hook.Run("HarmDone", Attacker, Victim, amt)
 
     if newharm >= maxharm and oldharmdone < newharm then
