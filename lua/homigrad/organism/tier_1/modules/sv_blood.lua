@@ -64,11 +64,9 @@ local about_to_puke = {
 
 local vecZero = Vector(0, 0, 0)
 
--- Множитель кровопотери из артерий (1 — как было раньше). Меньше = дольше живёшь при вскрытой артерии.
+
 local arterialBleedMul = 0.5
 
--- Мгновенная отправка дезориентации владельцу (по образцу hg.ExplosionDisorientation),
--- чтобы эффект не ждал до ~1 сек периодической синхронизации организма
 local function instant_disorientation(org)
 	if not org.isPly or not IsValid(org.owner) then return end
 
@@ -129,18 +127,18 @@ module[2] = function(owner, org, mulTime)
 		org.o2ArteriaSuppressed = true
 		org.o2[1] = math.max(org.o2[1] - mulTime * 2.5,0)
 
-		-- Дезориентация при вскрытой сонной: резко нарастает и держится, пока артерия кровоточит
+	
 		org.arteriaDisorient = math.min((org.arteriaDisorient or 0) + mulTime * 4, 10)
 		org.disorientation = math.max(org.disorientation or 0, org.arteriaDisorient)
 		instant_disorientation(org)
 	else
-		-- Сонная перестала кровоточить — возвращаем кислородную регенерацию (раньше она навсегда оставалась 0)
+		
 		if org.o2ArteriaSuppressed then
 			org.o2ArteriaSuppressed = nil
 			if org.o2 and org.o2.regen == 0 then org.o2.regen = 4 end
 		end
 
-		-- ...и быстро спадает дезориентация
+
 		if (org.arteriaDisorient or 0) > 0 then
 			org.arteriaDisorient = math.max(org.arteriaDisorient - mulTime * 2, 0)
 			org.disorientation = math.Approach(org.disorientation or 0, math.max((org.pain or 0) / 50, 0), mulTime * 2)
