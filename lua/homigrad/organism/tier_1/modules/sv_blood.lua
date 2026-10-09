@@ -64,7 +64,6 @@ local about_to_puke = {
 
 local vecZero = Vector(0, 0, 0)
 
-
 local arterialBleedMul = 0.5
 
 local function instant_disorientation(org)
@@ -82,7 +81,7 @@ local function instant_disorientation(org)
 	net.WriteBool(true)
 	net.WriteBool(false)
 	net.WriteBool(false)
-	net.WriteBool(true) // merge, не перезаписывать весь организм
+	net.WriteBool(true)
 	net.Send(org.owner)
 end
 
@@ -127,17 +126,14 @@ module[2] = function(owner, org, mulTime)
 		org.o2ArteriaSuppressed = true
 		org.o2[1] = math.max(org.o2[1] - mulTime * 2.5,0)
 
-	
 		org.arteriaDisorient = math.min((org.arteriaDisorient or 0) + mulTime * 4, 10)
 		org.disorientation = math.max(org.disorientation or 0, org.arteriaDisorient)
 		instant_disorientation(org)
 	else
-		
 		if org.o2ArteriaSuppressed then
 			org.o2ArteriaSuppressed = nil
 			if org.o2 and org.o2.regen == 0 then org.o2.regen = 4 end
 		end
-
 
 		if (org.arteriaDisorient or 0) > 0 then
 			org.arteriaDisorient = math.max(org.arteriaDisorient - mulTime * 2, 0)
