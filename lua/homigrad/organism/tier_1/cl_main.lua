@@ -711,19 +711,6 @@ hook.Add("Player-Ragdoll think", "organism-think-client-blood", function(ply, en
 		if torso then
 			if ent:GetPos():DistToSqr(lply:GetPos()) > 450 * 450 then return end
 			local sin = (math.sin(org.pulsethink) + 1) * 0.5
-			local amt = 0.05 * sin * math.max(org.pulse / 70, 0.5)
-			
-			local size = 1 + amt
-			vecTorso[1] = size
-			vecTorso[2] = size
-			vecTorso[3] = size
-			
-			ent:ManipulateBoneScale(torso, vecTorso)
-			//ent:ManipulateBoneAngles(torso, Angle(0, amt, 0))
-
-			vecTorso[1] = 0
-			vecTorso[2] = amt * 2
-			vecTorso[3] = 0
 			
 			if sin < 0.1 and org.analgesia <= 1.5 and not org.breathed then
 				org.lastbreathed = CurTime()

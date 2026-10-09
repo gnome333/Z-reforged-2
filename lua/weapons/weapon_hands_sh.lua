@@ -951,6 +951,12 @@ function SWEP:ApplyForce()
 							ply:ChatPrint(org.pulse < 20 and "Barely can feel the pulse." or (org.pulse <= 50 and "Low pulse.") or (org.pulse <= 90 and "Normal pulse.") or "High pulse.")
 						end
 
+						if org.heartstop or not org.alive or not org.lungsfunction or org.trachea >= 0.5 or org.holdingbreath then
+							ply:ChatPrint("Not breathing.")
+						else
+							ply:ChatPrint("Breathing.")
+						end
+
 						if (org.last_heartbeat + 60) > CurTime() then
 							ply:ChatPrint("The body is still warm.")
 						else

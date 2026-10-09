@@ -210,6 +210,71 @@ module[2] = function(owner, org, timeValue)
 
 	org.pneumothorax = pneumothorax and min(org.pneumothorax + timeValue / 180 * (org.lungsL[2] + org.lungsR[2]), (org.lungsL[2] + org.lungsR[2]) / 2) or max(org.pneumothorax - timeValue / 10, 0)
 	
+	if (owner.CheckCO or 0) < CurTime() then
+		owner.CheckCO = CurTime() + 0.5
+
+		local pos = owner:GetPos()
+		local rag = IsValid(owner.FakeRagdoll) and owner.FakeRagdoll or nil
+		local best = 0
+
+		local function considersrc(epos, blocker)
+			local dsqr = pos:DistToSqr(epos)
+			if dsqr > 200 * 200 then return end
+
+			if dsqr > 64 * 64 then
+				local filter = {owner}
+				if rag then filter[#filter + 1] = rag end
+				if blocker then filter[#filter + 1] = blocker end
+
+				local tr = util.TraceLine({
+					start = epos,
+					endpos = pos,
+					mask = MASK_SHOT,
+					filter = filter
+				})
+				if tr.Hit then return end
+			end
+
+			local s = 0.6 + 1.4 * (1 - math.sqrt(dsqr) / 200)
+			if s > best then best = s end
+		end
+
+		if owner:IsOnFire() or (rag and rag:IsOnFire()) then best = 2 end
+
+		for _, e in ipairs(ents.FindInSphere(pos, 200)) do
+			local cls = e:GetClass()
+			if (cls == "env_fire" and !e:GetNoDraw()) or (cls == "vfire" and e.GetFireState and (e:GetFireState() or 0) > 0) then
+				considersrc(e:GetPos(), e)
+			end
+		end
+
+		local gpos
+		local gd = 200 * 200
+		for _, tbl in ipairs(hg.gasolinePath) do
+			if tbl[2] and isnumber(tbl[2]) then
+				local d = pos:DistToSqr(tbl[1])
+				if d < gd then
+					gd = d
+					gpos = tbl[1]
+				end
+			end
+		end
+		if gpos then considersrc(gpos) end
+
+		if best > 0 and !owner:GetNetVar("zableval_masku", false) then
+			local sky = util.TraceLine({
+				start = pos,
+				endpos = pos + Vector(0, 0, 999999),
+				mask = MASK_SOLID_BRUSHONLY
+			}).HitSky
+
+			org.COConcentration = math.min(best * (sky and 0.7 or 1.5), 2.5)
+			org.lastCOBreathe = CurTime()
+		else
+			org.COConcentration = 0
+		end
+	end
+
 	if org.lastCOBreathe and org.lastCOBreathe + 1 > CurTime() then
 		org.COregen = math.Approach(org.COregen, 30, timeValue * 1)
 	else
@@ -222,7 +287,7 @@ module[2] = function(owner, org, timeValue)
 		local lerp = min(max(org.pulse - 20, 0) / 20, 1)
 		local regen = Lerp(lerp, 0, o2.regen * oxygenate * math.Rand(0.95, 1.05))
 
-		org.CO = min(org.CO + (org.COregen > 0 and timeValue * 1.5 or 0), 30)
+		org.CO = min(org.CO + (not org.holdingbreath and org.COregen > 0 and timeValue * 1.5 * (org.COConcentration or 0) or 0), 30)
 
 		org.consciousness = math.min(org.consciousness, (30 - org.CO) / 30)
 

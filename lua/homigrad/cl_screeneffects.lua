@@ -396,19 +396,6 @@ hook.Add("Post Post Processing", "ItHurts", function()
 
 	tempLerp = LerpFT(0.01, tempLerp, org.temperature)
 
-	if tempLerp > 38 then
-		local heat = tempLerp - 38
-
-		render.UpdateScreenEffectTexture()
-
-		heatMat:SetFloat("$c0_x", -CurTime() * 0.25)//math.sin(CurTime() * 0.1) * CurTime() * 0.01) //time
-		heatMat:SetFloat("$c0_y", 0.06 * heat)//(math.sin(CurTime()) + 1) * 2) //intensity (strict)
-		heatMat:SetFloat("$c2_x", (math.sin(CurTime()) - 2) * heat)
-
-		render.SetMaterial(heatMat)
-		render.DrawScreenQuad()
-	end
-
 	local pain = org.pain or 0
 	pain = math.max(pain - 15, 0)
 	local shock = (org.shock or 0) * 1 + (1 - org.consciousness) * 40
