@@ -1005,7 +1005,7 @@ function hg.DoTPIK(ply, ent)
     if lerp_rh != 0 then
         local segments = ply.segmentsr
 
-        if shouldrebuild then
+        if shouldrebuild or not segments[3] then
             local old = segments[2] and ((segments[2].Pos - segments[1].Pos):GetNormalized() * 2) or vector_origin
 
             local eyeang = -(-eyeang)
@@ -1143,7 +1143,7 @@ function hg.DoTPIK(ply, ent)
     if lerp_lh != 0 then
         local segments = ply.segmentsl
         
-        if shouldrebuild then
+        if shouldrebuild or not segments[3] then
             local old = segments[2] and ((segments[2].Pos - segments[1].Pos):GetNormalized() * 2) or vector_origin
             local eyeang = -(-eyeang)
             eyeang.p = math.NormalizeAngle(eyeang.p) * 0.5

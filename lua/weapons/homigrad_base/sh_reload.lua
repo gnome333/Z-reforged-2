@@ -72,7 +72,8 @@ if CLIENT then
 			ent:SetClip1(ammo)
 			ent.reload = nil
 			ent.countevent = nil
-			ent:ReloadEnd()
+			ent.ReloadNext = CurTime() + (ent.ReloadCooldown or 0.1)
+			ent:Draw()
 			ent.FakeSoundPlayed = nil
 			ent.FakeEventPlayed = nil
 		end

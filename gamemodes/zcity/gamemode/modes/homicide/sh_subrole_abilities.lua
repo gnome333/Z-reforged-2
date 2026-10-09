@@ -1,6 +1,6 @@
 local MODE = MODE
 MODE.NetSize_ChemicalResistanceBits = 8
-local chemical_degrade_speeds = {
+chemical_degrade_speeds = {
 	["HCN"] = 1,
 	["KCN"] = 0.5,
 }

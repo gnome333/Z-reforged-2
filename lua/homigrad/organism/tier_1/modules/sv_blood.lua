@@ -23,6 +23,9 @@ module[1] = function(org)
 	org.internalBleed = 0
 	org.internalBleedHeal = 0
 	org.arteria = 0
+	org.arteriaDisorient = 0
+	org.disorientationSent = nil
+	org.o2ArteriaSuppressed = nil
 	org.rarmartery = 0
 	org.larmartery = 0
 	org.rlegartery = 0
@@ -60,6 +63,31 @@ local about_to_puke = {
 }
 
 local vecZero = Vector(0, 0, 0)
+
+-- Множитель кровопотери из артерий (1 — как было раньше). Меньше = дольше живёшь при вскрытой артерии.
+local arterialBleedMul = 0.5
+
+-- Мгновенная отправка дезориентации владельцу (по образцу hg.ExplosionDisorientation),
+-- чтобы эффект не ждал до ~1 сек периодической синхронизации организма
+local function instant_disorientation(org)
+	if not org.isPly or not IsValid(org.owner) then return end
+
+	local level = math.floor(org.disorientation or 0)
+	if level == org.disorientationSent then return end
+	org.disorientationSent = level
+
+	net.Start("organism_send")
+	local tbl = {}
+	tbl.disorientation = org.disorientation
+	tbl.owner = org.owner
+	net.WriteTable(tbl)
+	net.WriteBool(true)
+	net.WriteBool(false)
+	net.WriteBool(false)
+	net.WriteBool(true) // merge, не перезаписывать весь организм
+	net.Send(org.owner)
+end
+
 module[2] = function(owner, org, mulTime)
 	local adrenaline = math.min(org.adrenaline, 2)
 
@@ -98,7 +126,26 @@ module[2] = function(owner, org, mulTime)
 
 	if org.arteria == 1 then
 		org.o2.regen = 0
-		org.o2[1] = math.max(org.o2[1] - mulTime * 5,0)
+		org.o2ArteriaSuppressed = true
+		org.o2[1] = math.max(org.o2[1] - mulTime * 2.5,0)
+
+		-- Дезориентация при вскрытой сонной: резко нарастает и держится, пока артерия кровоточит
+		org.arteriaDisorient = math.min((org.arteriaDisorient or 0) + mulTime * 4, 10)
+		org.disorientation = math.max(org.disorientation or 0, org.arteriaDisorient)
+		instant_disorientation(org)
+	else
+		-- Сонная перестала кровоточить — возвращаем кислородную регенерацию (раньше она навсегда оставалась 0)
+		if org.o2ArteriaSuppressed then
+			org.o2ArteriaSuppressed = nil
+			if org.o2 and org.o2.regen == 0 then org.o2.regen = 4 end
+		end
+
+		-- ...и быстро спадает дезориентация
+		if (org.arteriaDisorient or 0) > 0 then
+			org.arteriaDisorient = math.max(org.arteriaDisorient - mulTime * 2, 0)
+			org.disorientation = math.Approach(org.disorientation or 0, math.max((org.pain or 0) / 50, 0), mulTime * 2)
+			instant_disorientation(org)
+		end
 	end
 
 	org.consciousness = math.min(org.consciousness, math.min(org.blood / 3000, 1) * math.Clamp(((org.temperature < 30 and org.temperature - 30 or 0) * 0.25 + 1), 0.25, 1))
@@ -151,12 +198,12 @@ module[2] = function(owner, org, mulTime)
 	local ent = owner:IsPlayer() and IsValid(owner.FakeRagdoll) and owner.FakeRagdoll or owner
 	for i, wound in pairs(org.arterialwounds) do
 		local artmul = wound[7] == "arteria" and 2 or 1
-		bleedoutspeed2 = bleedoutspeed2 + wound[1] * mulTime * 0.2 * artmul * math.max(org.pulse, 20) / 80
+		bleedoutspeed2 = bleedoutspeed2 + wound[1] * mulTime * 0.2 * artmul * arterialBleedMul * math.max(org.pulse, 20) / 80
 
 		if wound[5] + next_arterypump * (wound[7] == "arteria" and 1 or 2) < time then
 			local pos, ang = ent:GetBonePosition(ent:LookupBone(wound[4]))
 			wound[5] = time
-			org.blood = max(org.blood - wound[1] * mulTime * 4.5 * artmul * math.max(org.pulse, 20) / 80, 1)
+			org.blood = max(org.blood - wound[1] * mulTime * 4.5 * artmul * arterialBleedMul * math.max(org.pulse, 20) / 80, 1)
 			if (owner:IsPlayer() and owner:Alive()) or not owner:IsPlayer() then
 				local dir = wound[6]
 				local len = dir:Length()

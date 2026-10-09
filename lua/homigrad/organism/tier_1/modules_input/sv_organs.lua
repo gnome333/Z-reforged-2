@@ -189,6 +189,13 @@ local function isMeleeSlash(dmgInfo)
 end
 
 local function hitArtery(artery, org, dmg, dmgInfo, boneindex, dir, hit)
+	local inflictor = dmgInfo:GetInflictor()
+
+	-- Нерф: удар гвоздем (вторичная атака молотка) не может перерезать артерию
+	if IsValid(inflictor) and inflictor.NailDamage then return 0 end
+
+	if IsValid(inflictor) and inflictor:GetClass() == "weapon_hammer" then return 1 end
+
 	local throatCut = artery == "arteria" and isKnife(dmgInfo)
 
 	if isCrush(dmgInfo) and not isGunshot(dmgInfo) and not throatCut then return 1 end

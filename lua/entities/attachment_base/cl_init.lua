@@ -7,8 +7,16 @@ function ENT:Draw()
 
 	local model = self.model
 
-	if not IsValid(self.model) then
-		self.model = ClientsideModel(self.Model, RENDERGROUP_OPAQUE)
+	if not IsValid(model) then
+		model = ClientsideModel(self.Model, RENDERGROUP_OPAQUE)
+
+		if not IsValid(model) then
+			self:DrawModel()
+			return
+		end
+
+		model:SetNoDraw(true)
+		self.model = model
 	end
 
 	local pos, ang = LocalToWorld(self.PhysPos, self.PhysAng, self:GetPos(), self:GetAngles())
@@ -21,6 +29,8 @@ function ENT:Think()
 end
 
 function ENT:Initialize()
+	if IsValid(self.model) then return end
+
 	self.model = ClientsideModel(self.Model, RENDERGROUP_OPAQUE)
 	if IsValid(self.model) then
 		self.model:SetNoDraw(true)

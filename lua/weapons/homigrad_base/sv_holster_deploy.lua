@@ -20,7 +20,16 @@ function SWEP:Holster(wep)--
 		self.deploy = nil
 	end
 
-	self.reload = nil
+	if self.reload then
+		local progress = (self.StaminaReloadTime and self.StaminaReloadTime > 0) and math.Clamp(1 - (self.reload - CurTime()) / self.StaminaReloadTime, 0, 1) or 1
+
+		self.reload = nil
+		self.StaminaReloadTime = nil
+
+		if progress >= 0.2 then
+			self:ReloadEnd()
+		end
+	end
 
 	do return true end --!!
 

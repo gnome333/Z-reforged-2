@@ -360,7 +360,9 @@ function SWEP:SecondaryAttack()
 							DmgInfo:SetInflictor(self)
 							DmgInfo:SetAttacker(Owner)
 							self.Penetration = 15
+							self.NailDamage = true
 							Tr.Entity:TakeDamageInfo(DmgInfo)
+							self.NailDamage = nil
 							self.Penetration = nil
 						end
 
@@ -373,7 +375,9 @@ function SWEP:SecondaryAttack()
 							DmgInfo:SetInflictor(self)
 							DmgInfo:SetAttacker(Owner)
 							self.Penetration = 15
+							self.NailDamage = true
 							NewEnt:TakeDamageInfo(DmgInfo)
+							self.NailDamage = nil
 							self.Penetration = nil
 						end
 
