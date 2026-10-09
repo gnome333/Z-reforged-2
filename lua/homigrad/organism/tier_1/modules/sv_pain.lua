@@ -14,6 +14,7 @@ module[1] = function(org)
 	org.analgesiaAdd = 0
 	org.naloxone = 0
 	org.naloxoneadd = 0
+	org.fent = 0
 	org.immobilization = 0
 	org.painlessen = 0
 	org.tranquilizer = 0
@@ -120,6 +121,7 @@ module[2] = function(owner, org, timeValue)
 
 	org.naloxone = Approach(org.naloxone, org.naloxoneadd > 0 and 4 or 0, org.naloxoneadd > 0 and timeValue / 30 or timeValue / 60)
 	org.naloxoneadd = Approach(org.naloxoneadd, 0, timeValue / 15)
+	org.fent = Approach(org.fent, 0, timeValue / 120)
 	
 	--if owner.suiciding and org.adrenaline < 1.5 then
 	--	org.adrenalineAdd = Approach(org.adrenalineAdd, 4, timeValue / 5)
