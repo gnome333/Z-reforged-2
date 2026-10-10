@@ -28,7 +28,7 @@ SWEP.IconOverride = "entities/weapon_insurgencymakarov.png"
 
 SWEP.CustomShell = "9x18"
 
-SWEP.weight = 0.8
+SWEP.weight = 1
 SWEP.punchmul = 1
 SWEP.punchspeed = 3
 SWEP.ScrappersSlot = "Secondary"
@@ -49,7 +49,7 @@ SWEP.Primary.Sound = {"zcitysnd/sound/weapons/makarov/makarov_fp.wav", 75, 90, 1
 SWEP.SupressedSound = {"zcitysnd/sound/weapons/makarov/makarov_suppressed_fp.wav", 65, 90, 100}
 SWEP.Primary.SoundEmpty = {"zcitysnd/sound/weapons/makarov/handling/makarov_empty.wav", 75, 100, 105, CHAN_WEAPON, 2}
 SWEP.Primary.Force = 5
-SWEP.ReloadTime = 4
+SWEP.ReloadTime = 2.8
 SWEP.FakeReloadSounds = {
 	[0.4] = "zcitysnd/sound/weapons/m9/handling/m9_magout.wav",
 	[0.8] = "zcitysnd/sound/weapons/m9/handling/m9_magin.wav",
@@ -84,7 +84,7 @@ SWEP.ZoomPos = Vector(-3, 0.3, 3.32)
 SWEP.RHandPos = Vector(-5, -1.5, 2)
 SWEP.LHandPos = false
 SWEP.SprayRand = {Angle(-0, -0.01, 0), Angle(-0.01, 0.01, 0)}
-SWEP.Ergonomics = 1
+SWEP.Ergonomics = 2
 SWEP.AnimShootMul = 2
 SWEP.AnimShootHandMul = 0.1
 SWEP.addSprayMul = 0.5

@@ -61,7 +61,7 @@ SWEP.SupressedSound = {"zcitysnd/sound/weapons/m9/m9_suppressed_fp.wav", 65, 90,
 SWEP.Primary.SoundEmpty = {"zcitysnd/sound/weapons/makarov/handling/makarov_empty.wav", 75, 100, 105, CHAN_WEAPON, 2}
 SWEP.Primary.Force = 23
 SWEP.Primary.Wait = PISTOLS_WAIT
-SWEP.ReloadTime = 4
+SWEP.ReloadTime = 2.8
 SWEP.ReloadSoundes = {
 	"none",
 	"weapons/tfa_ins2/usp_tactical/magout.wav",
@@ -74,7 +74,7 @@ SWEP.DeploySnd = {"homigrad/weapons/draw_pistol.mp3", 55, 100, 110}
 SWEP.HolsterSnd = {"homigrad/weapons/holster_pistol.mp3", 55, 100, 110}
 SWEP.HoldType = "revolver"
 SWEP.SprayRand = {Angle(-0.03, -0.03, 0), Angle(-0.05, 0.03, 0)}
-SWEP.Ergonomics = 1.3
+SWEP.Ergonomics = 2
 SWEP.Penetration = 7
 SWEP.WorldPos = Vector(2.8, -1.2, -0.8)
 SWEP.WorldAng = Angle(0, 0, 0)

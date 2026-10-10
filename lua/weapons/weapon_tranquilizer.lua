@@ -17,7 +17,7 @@ SWEP.EjectPos = Vector(0,2,4)
 SWEP.EjectAng = Angle(-70,-85,0)
 SWEP.punchmul = 0
 SWEP.punchspeed = 0
-SWEP.weight = 0.7
+SWEP.weight = 1
 
 SWEP.ScrappersSlot = "Secondary"
 SWEP.AutomaticDraw = false
@@ -36,7 +36,7 @@ SWEP.SupressedSound = {"zcitysnd/sound/weapons/makarov/makarov_suppressed_tp.wav
 SWEP.Primary.SoundEmpty = {"zcitysnd/sound/weapons/makarov/handling/makarov_empty.wav", 75, 100, 105, CHAN_WEAPON, 2}
 SWEP.Primary.Force = 0
 SWEP.Primary.Wait = 0.35
-SWEP.ReloadTime = 6
+SWEP.ReloadTime = 2.8
 SWEP.CockSound = "pwb/weapons/cz75/slideback.wav"
 SWEP.ReloadSoundes = {
 	"none",
@@ -75,7 +75,7 @@ SWEP.HolsterSnd = {"homigrad/weapons/holster_pistol.mp3", 55, 100, 110}
 SWEP.HoldType = "revolver"
 SWEP.ZoomPos = Vector(-26, -0.0054, 4.2181)
 SWEP.SprayRand = {Angle(-0.03, -0.03, 0), Angle(-0.05, 0.03, 0)}
-SWEP.Ergonomics = 1.2
+SWEP.Ergonomics = 2
 SWEP.Penetration = 0
 SWEP.WorldPos = Vector(2.8, -1.2, -0.8)
 SWEP.WorldAng = Angle(0, 0, 0)

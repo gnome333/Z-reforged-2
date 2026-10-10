@@ -184,6 +184,7 @@ local function arms(org, bone, dmg, dmgInfo, key, boneindex, dir, hit, ricochet)
 end
 
 local function spine(org, bone, dmg, dmgInfo, number, boneindex, dir, hit, ricochet)
+	if dmgInfo:IsDamageType(DMG_BULLET + DMG_BUCKSHOT + DMG_SLASH + DMG_CLUB) then return 0 end
 	if dmgInfo:IsDamageType(DMG_BLAST) then dmg = dmg / 3 end
 
 	local name = "spine" .. number

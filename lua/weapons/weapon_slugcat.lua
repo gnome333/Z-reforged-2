@@ -118,7 +118,7 @@ SWEP.Primary.Sound = {"zcity/voice/slugcat_1/waw_1.mp3", 0, 100, 100}
 SWEP.Primary.SoundEmpty = {"zcitysnd/sound/weapons/makarov/handling/makarov_empty.wav", 75, 100, 105, CHAN_WEAPON, 2}
 SWEP.Primary.Force = 555555
 SWEP.Primary.Wait = 0.01
-SWEP.ReloadTime = 0
+SWEP.ReloadTime = 2.8
 SWEP.availableAttachments = {
 	barrel = {
 		[1] = {"supressor4", Vector(0,0,0), {}},
@@ -133,7 +133,7 @@ SWEP.availableAttachments = {
 	},
 }
 
-SWEP.ReloadTime = 4
+SWEP.ReloadTime = 2.8
 SWEP.ReloadSoundes = {
 	"none",
 	"none",
@@ -155,7 +155,7 @@ SWEP.ZoomPos = Vector(-3, -0.0136, 2.9594)
 SWEP.RHandPos = Vector(-2, 0, 0)
 SWEP.LHandPos = false
 SWEP.SprayRand = {Angle(-0.00, -0.01, 0), Angle(-0.01, 0.01, 0)}
-SWEP.Ergonomics = 1
+SWEP.Ergonomics = 2
 SWEP.AnimShootMul = 2
 SWEP.AnimShootHandMul = 0.1
 SWEP.addSprayMul = 0.25

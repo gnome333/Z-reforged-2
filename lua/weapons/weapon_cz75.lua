@@ -142,7 +142,7 @@ SWEP.SupressedSound = {"m9/m9_suppressed_fp.wav", 65, 90, 100}
 SWEP.Primary.SoundEmpty = {"zcitysnd/sound/weapons/makarov/handling/makarov_empty.wav", 75, 100, 105, CHAN_WEAPON, 2}
 SWEP.Primary.Force = 25
 SWEP.Primary.Wait = PISTOLS_WAIT
-SWEP.ReloadTime = 4
+SWEP.ReloadTime = 2.8
 SWEP.ReloadSoundes = {
 	"none",
 	"none",
@@ -160,7 +160,7 @@ SWEP.ZoomPos = Vector(-30, 0.9078, 8.355)
 SWEP.RHandPos = Vector(-13.5, 0, 4)
 SWEP.LHandPos = false
 SWEP.SprayRand = {Angle(-0.03, -0.03, 0), Angle(-0.05, 0.03, 0)}
-SWEP.Ergonomics = 1
+SWEP.Ergonomics = 2
 SWEP.Penetration = 7
 SWEP.WorldPos = Vector(8, -0.4, 3.55)
 SWEP.WorldAng = Angle(0, 0, 0)

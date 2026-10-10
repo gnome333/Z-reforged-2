@@ -167,7 +167,7 @@ SWEP.availableAttachments = {
 
 SWEP.Primary.Force = 25
 SWEP.Primary.Wait = PISTOLS_WAIT
-SWEP.ReloadTime = 4
+SWEP.ReloadTime = 2.8
 SWEP.ReloadSoundes = {
 	"none",
 	"weapons/tfa_ins2/usp_tactical/magout.wav",
@@ -187,7 +187,7 @@ SWEP.ZoomPos = Vector(-9, -0.0138, 2.8327)
 SWEP.RHandPos = Vector(0, -0.5, -1)
 SWEP.LHandPos = false
 SWEP.SprayRand = {Angle(-0.03, -0.03, 0), Angle(-0.05, 0.03, 0)}
-SWEP.Ergonomics = 1.2
+SWEP.Ergonomics = 2
 SWEP.Penetration = 7
 SWEP.WorldPos = Vector(2.9, -1.2, -2.2)
 SWEP.WorldAng = Angle(0, 0, 0)

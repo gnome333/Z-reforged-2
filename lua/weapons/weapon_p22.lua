@@ -96,7 +96,7 @@ SWEP.IconOverride = "vgui/wep_jack_hmcd_suppressed.png"
 
 SWEP.weaponInvCategory = 4
 
-SWEP.weight = 0.8
+SWEP.weight = 1
 SWEP.punchmul = 1.5
 SWEP.punchspeed = 3
 SWEP.CustomShell = "9x19"
@@ -140,7 +140,7 @@ SWEP.availableAttachments = {
 
 SWEP.Primary.Force = 20
 SWEP.Primary.Wait = PISTOLS_WAIT
-SWEP.ReloadTime = 4
+SWEP.ReloadTime = 2.8
 SWEP.ReloadSoundes = {
 	"none",
 	"none",
@@ -162,7 +162,7 @@ SWEP.ZoomPos = Vector(-3, -0.0136, 2.9594)
 SWEP.RHandPos = Vector(-2, 0, 0)
 SWEP.LHandPos = false
 SWEP.SprayRand = {Angle(-0.00, -0.01, 0), Angle(-0.01, 0.01, 0)}
-SWEP.Ergonomics = 1.5
+SWEP.Ergonomics = 2
 SWEP.AnimShootMul = 2
 SWEP.AnimShootHandMul = 0.1
 SWEP.addSprayMul = 0.25
