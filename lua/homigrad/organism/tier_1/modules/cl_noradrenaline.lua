@@ -1,3 +1,4 @@
+local Clamp, sin, CurTime = math.Clamp, math.sin, CurTime
 hg.undernoradrenaline = hg.undernoradrenaline or false
 hg.noradrenalineStartTime = hg.noradrenalineStartTime or 0
 hg.noradrenalineStation = hg.noradrenalineStation or nil
@@ -43,7 +44,7 @@ hook.Add("RenderScreenspaceEffects", "noradrenalineEffect", function()
 	end
 
 	local noradrenaline = (organism.noradrenaline or 0)
-	local noradrenalineClamped = math.Clamp(noradrenaline, 0, 3) * (organism.consciousness or 1)
+	local noradrenalineClamped = Clamp(noradrenaline, 0, 3) * (organism.consciousness or 1)
 	
 	hg.noradrenalineClamped = noradrenalineClamped
 
@@ -94,9 +95,9 @@ hook.Add("Post Post Processing", "noradrenalineEffect", function()
 		render.UpdateScreenEffectTexture()
 		render.UpdateFullScreenDepthTexture()
 
-		local start = math.Clamp((SysTime() - hg.noradrenalineStartTime) * 2, 0, 1) * lply.organism.noradrenaline
+		local start = Clamp((SysTime() - hg.noradrenalineStartTime) * 2, 0, 1) * lply.organism.noradrenaline
 
-		local asad = math.sin(CurTime() * 10) / 4
+		local asad = sin(CurTime() * 10) / 4
 		--print(asad)
 		grainMat:SetFloat("$c0_x", CurTime() * start) -- time
 		grainMat:SetFloat("$c0_y", asad * start) -- gate

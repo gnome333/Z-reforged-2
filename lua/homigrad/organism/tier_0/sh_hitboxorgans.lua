@@ -1,3 +1,4 @@
+local IsValid = IsValid
 hg.organism = hg.organism or {}
 local empty = {}
 local hook_Run = hook.Run

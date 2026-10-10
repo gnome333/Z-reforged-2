@@ -1,3 +1,4 @@
+local Approach, Clamp, Round, Rand, min, max, random, cos, IsValid, hook_Run = math.Approach, math.Clamp, math.Round, math.Rand, math.min, math.max, math.random, math.cos, IsValid, hook.Run
 --local Organism = hg.organism
 hg.organism.module = hg.organism.module or {}
 local module = hg.organism.module
@@ -374,7 +375,7 @@ hook.Add("Org Think", "Main", function(owner, org, timeValue)
 	end
 
 	if org.owner.PlayerClassName != "furry" and org.furryinfected then
-		org.assimilated = math.Approach(org.assimilated, 1, timeValue / 30 * org.pulse / 70)
+		org.assimilated = Approach(org.assimilated, 1, timeValue / 30 * org.pulse / 70)
 
 		if org.assimilated == 1 then
 			hg.Furrify(org.owner)
@@ -383,7 +384,7 @@ hook.Add("Org Think", "Main", function(owner, org, timeValue)
 		end
 	else
 		if (org.lightstun - CurTime()) <= 0 then
-			org.assimilated = math.Approach(org.assimilated, 0, (timeValue / 60 * org.pulse / 70) * 6)
+			org.assimilated = Approach(org.assimilated, 0, (timeValue / 60 * org.pulse / 70) * 6)
 		end
 	end
 
@@ -392,8 +393,8 @@ hook.Add("Org Think", "Main", function(owner, org, timeValue)
 		org.owner:SetPlayerClass("furry")
 	end
 
-	org.berserk = math.Approach(org.berserk, 0, timeValue / 60)
-	org.noradrenaline = math.Approach(org.noradrenaline, 0, timeValue / 45)
+	org.berserk = Approach(org.berserk, 0, timeValue / 60)
+	org.noradrenaline = Approach(org.noradrenaline, 0, timeValue / 45)
 
 	if org.berserk > 0 and !org.berserkActive then
 		org.berserkActive = true
@@ -429,7 +430,7 @@ hook.Add("Org Think", "Main", function(owner, org, timeValue)
 	--[[if isPly then
 		local aimed = false
 
-		local entities = ents.FindInCone(owner:EyePos(), owner:GetAimVector(), 128, math.cos(math.rad(90)))
+		local entities = ents.FindInCone(owner:EyePos(), owner:GetAimVector(), 128, cos(math.rad(90)))
 		for i, ent in ipairs(entities) do
 			if !ent:IsPlayer() then continue end
 			if ent == owner then continue end
@@ -441,11 +442,11 @@ hook.Add("Org Think", "Main", function(owner, org, timeValue)
 
 		if aimed then
 			owner.aimed_at = owner.aimed_at or 0
-			owner.aimed_at = math.Approach(owner.aimed_at, 1, timeValue / 5)
+			owner.aimed_at = Approach(owner.aimed_at, 1, timeValue / 5)
 			org.fearadd = org.fearadd + timeValue * 2
 		else
 			owner.aimed_at = owner.aimed_at or 0
-			owner.aimed_at = math.Approach(owner.aimed_at, 0, timeValue / 5)
+			owner.aimed_at = Approach(owner.aimed_at, 0, timeValue / 5)
 		end
 	end--]]
 	--bullshit
@@ -459,16 +460,14 @@ hook.Add("Org Think", "Main", function(owner, org, timeValue)
 
 	local just_went_uncon = not org.otrub and org.needotrub
 	local just_woke_up = not org.needotrub and org.otrub and (org.uncon_timer or 0) > 6
-	if isPly and just_went_uncon then hook.Run("HG_OnOtrub", owner); hook.Run("PlayerDropWeapon", owner) end
-	if isPly and just_woke_up then hook.Run("HG_OnWakeOtrub", owner) end
+	if isPly and just_went_uncon then hook_Run("HG_OnOtrub", owner); hook_Run("PlayerDropWeapon", owner) end
+	if isPly and just_woke_up then hook_Run("HG_OnWakeOtrub", owner) end
 
 	org.canmove = (org.spine2 < hg.organism.fake_spine2 and org.spine3 < hg.organism.fake_spine3) and not org.otrub
 	org.canmovehead = (org.spine3 < hg.organism.fake_spine3) and not org.otrub
 	
 	if not (org.canmove and org.canmovehead and (org.stun - CurTime()) < 0) then org.needfake = true end
 	if (org.blood < 2700) then org.needfake = true end
-
-	local just_went_uncon = not org.otrub and org.needotrub
 
 	if org.posturing then //-- the decerebrate one
 		local ent = hg.GetCurrentCharacter(org.owner)
@@ -492,15 +491,15 @@ hook.Add("Org Think", "Main", function(owner, org, timeValue)
 		-- full heal in ~30 minutes (really fast tho) -- Ну не идет столько раунд даже в каких-нибудь скраперсах ну какой даун это придумал
 		-- 8 minutes with thiamine -- ДАЖЕ СТОЛЬКО НЕ ВСЕГДА ДЛИТСЯ
 
-		org.thiamine = math.Approach(org.thiamine, 0, timeValue / 240)
+		org.thiamine = Approach(org.thiamine, 0, timeValue / 240)
 		-- you'd need to give 1 thiamine each 4 minutes
 
-		if org.liver < 1 then org.liver = math.Approach(org.liver, 0, naturalHeal) end
-		if org.heart < 1 then org.heart = math.Approach(org.heart, 0, naturalHeal) end
-		if org.stomach < 1 then org.stomach = math.Approach(org.stomach, 0, naturalHeal) end
-		if org.intestines < 1 then org.intestines = math.Approach(org.intestines, 0, naturalHeal) end
-		if org.lungsR[1] < 1 then org.lungsR[1] = math.Approach(org.lungsR[1], 0, naturalHeal) end
-		if org.lungsL[1] < 1 then org.lungsL[1] = math.Approach(org.lungsL[1], 0, naturalHeal) end
+		if org.liver < 1 then org.liver = Approach(org.liver, 0, naturalHeal) end
+		if org.heart < 1 then org.heart = Approach(org.heart, 0, naturalHeal) end
+		if org.stomach < 1 then org.stomach = Approach(org.stomach, 0, naturalHeal) end
+		if org.intestines < 1 then org.intestines = Approach(org.intestines, 0, naturalHeal) end
+		if org.lungsR[1] < 1 then org.lungsR[1] = Approach(org.lungsR[1], 0, naturalHeal) end
+		if org.lungsL[1] < 1 then org.lungsL[1] = Approach(org.lungsL[1], 0, naturalHeal) end
 	end
 
 	if org.otrub and isPly and org.owner:Alive() then
@@ -517,7 +516,7 @@ hook.Add("Org Think", "Main", function(owner, org, timeValue)
 	end
 
 	if org.brain > 0.05 then
-		if math.random(600) < org.brain * 20 then
+		if random(600) < org.brain * 20 then
 			org.needfake = true
 		end
 	end
@@ -534,7 +533,7 @@ hook.Add("Org Think", "Main", function(owner, org, timeValue)
 
 	if owner:IsPlayer() and (org.healthRegen or 0) < CurTime() then
 		org.healthRegen = CurTime() + 30
-		owner:SetHealth(math.min(owner:GetMaxHealth(), owner:Health() + math.max(1.5 - org.hurt, 0)))
+		owner:SetHealth(min(owner:GetMaxHealth(), owner:Health() + max(1.5 - org.hurt, 0)))
 	end
 
 	org.health = owner:Health()
@@ -550,7 +549,7 @@ hook.Add("Org Think", "Main", function(owner, org, timeValue)
 
 		if not org.likely_phrase then org.likely_phrase = 0 end
 
-		org.likely_phrase = math.max(org.likely_phrase + math.Rand(0, mul) / 100, 0)
+		org.likely_phrase = max(org.likely_phrase + Rand(0, mul) / 100, 0)
 		//print(org.likely_phrase)
 		if org.likely_phrase >= 1 and !hg.GetCurrentCharacter(owner):IsOnFire() then
 			org.likely_phrase = 0
@@ -558,7 +557,7 @@ hook.Add("Org Think", "Main", function(owner, org, timeValue)
 			local str = hg.get_status_message(owner)
 			//print(str)
 			-- (msg, delay, msgKey, showTime, func, clr)
-			owner:Notify(str, 1, "phrase", 1, nil, Color(255, math.Clamp(1 / hg.likely_to_phrase(owner) * 255, 0, 255), math.Clamp(1 / hg.likely_to_phrase(owner) * 255, 0, 255), 255))
+			owner:Notify(str, 1, "phrase", 1, nil, Color(255, Clamp(1 / mul * 255, 0, 255), Clamp(1 / mul * 255, 0, 255), 255))
 		end
 	end
 
@@ -569,7 +568,7 @@ hook.Add("Org Think", "Main", function(owner, org, timeValue)
 		org.heartstop = true
 	end
 
-	time = CurTime()
+	local time = CurTime()
 
 	if IsValid(owner) then
 		org.sendPlyTime = org.sendPlyTime or CurTime()
@@ -591,54 +590,54 @@ hook.Add("Org Think", "regenerationberserk", function(owner, org, timeValue)
 	if !owner:IsBerserk() then return end
 	//if org.heartstop then return end
 
-	org.blood = math.Approach(org.blood, 5000, timeValue * 60)
+	org.blood = Approach(org.blood, 5000, timeValue * 60)
 
-	for i, wound in pairs(org.wounds) do
-		wound[1] = math.max(wound[1] - timeValue * 10,0)
+	for _, wound in pairs(org.wounds) do
+		wound[1] = max(wound[1] - timeValue * 10,0)
 	end
 
-	for i, wound in pairs(org.arterialwounds) do
-		wound[1] = math.max(wound[1] - timeValue * 10,0)
+	for _, wound in pairs(org.arterialwounds) do
+		wound[1] = max(wound[1] - timeValue * 10,0)
 	end
 
-	org.internalBleed = math.max(org.internalBleed - timeValue * 10, 0)
+	org.internalBleed = max(org.internalBleed - timeValue * 10, 0)
 
 	local regen = timeValue / 120 * org.berserk
 
-	org.lleg = math.max(org.lleg - regen, 0)
-	org.rleg = math.max(org.rleg - regen, 0)
-	org.rarm = math.max(org.rarm - regen, 0)
-	org.larm = math.max(org.larm - regen, 0)
-	org.chest = math.max(org.chest - regen, 0)
-	org.pelvis = math.max(org.pelvis - regen, 0)
-	org.spine1 = math.max(org.spine1 - regen, 0)
-	org.spine2 = math.max(org.spine2 - regen, 0)
-	org.spine3 = math.max(org.spine3 - regen, 0)
-	org.skull = math.max(org.skull - regen, 0)
+	org.lleg = max(org.lleg - regen, 0)
+	org.rleg = max(org.rleg - regen, 0)
+	org.rarm = max(org.rarm - regen, 0)
+	org.larm = max(org.larm - regen, 0)
+	org.chest = max(org.chest - regen, 0)
+	org.pelvis = max(org.pelvis - regen, 0)
+	org.spine1 = max(org.spine1 - regen, 0)
+	org.spine2 = max(org.spine2 - regen, 0)
+	org.spine3 = max(org.spine3 - regen, 0)
+	org.skull = max(org.skull - regen, 0)
 
-	org.liver = math.max(org.liver - regen, 0)
-	org.intestines = math.max(org.intestines - regen, 0)
-	org.heart = math.max(org.heart - regen, 0)
-	org.stomach = math.max(org.stomach - regen, 0)
-	org.lungsR[1] = math.max(org.lungsR[1] - regen, 0)
-	org.lungsL[1] = math.max(org.lungsL[1] - regen, 0)
-	org.lungsR[2] = math.max(org.lungsR[2] - regen, 0)
-	org.lungsL[2] = math.max(org.lungsL[2] - regen, 0)
-	org.brain = math.max(org.brain - regen, 0)
+	org.liver = max(org.liver - regen, 0)
+	org.intestines = max(org.intestines - regen, 0)
+	org.heart = max(org.heart - regen, 0)
+	org.stomach = max(org.stomach - regen, 0)
+	org.lungsR[1] = max(org.lungsR[1] - regen, 0)
+	org.lungsL[1] = max(org.lungsL[1] - regen, 0)
+	org.lungsR[2] = max(org.lungsR[2] - regen, 0)
+	org.lungsL[2] = max(org.lungsL[2] - regen, 0)
+	org.brain = max(org.brain - regen, 0)
 
 	org.hungry = 0
 
-	org.pain = math.Approach(org.pain, 0, timeValue * 10)
-	org.painadd = math.Approach(org.painadd, 0, timeValue * 10)
-	org.avgpain = math.Approach(org.avgpain, 0, timeValue * 10)
-	org.shock = math.Approach(org.shock, 0, timeValue * 10)
-	org.immobilization = math.Approach(org.immobilization, 0, timeValue * 10)
-	org.disorientation = math.Approach(org.disorientation, 0, timeValue * 10)
+	org.pain = Approach(org.pain, 0, timeValue * 10)
+	org.painadd = Approach(org.painadd, 0, timeValue * 10)
+	org.avgpain = Approach(org.avgpain, 0, timeValue * 10)
+	org.shock = Approach(org.shock, 0, timeValue * 10)
+	org.immobilization = Approach(org.immobilization, 0, timeValue * 10)
+	org.disorientation = Approach(org.disorientation, 0, timeValue * 10)
 
 	org.lungsfunction = true
 	org.heartstop = false
 
-	owner:SetRunSpeed(math.min(500, 400 + (25 * org.berserk)))
+	owner:SetRunSpeed(min(500, 400 + (25 * org.berserk)))
 end)
 
 hook.Add("Org Think", "regenerationnoradrenaline", function(owner, org, timeValue)
@@ -647,29 +646,29 @@ hook.Add("Org Think", "regenerationnoradrenaline", function(owner, org, timeValu
 	
 	local regen = timeValue / 60 * org.noradrenaline
 
-	org.lungsR[1] = math.max(org.lungsR[1] - regen, 0)
-	org.lungsL[1] = math.max(org.lungsL[1] - regen, 0)
-	org.lungsR[2] = math.max(org.lungsR[2] - regen, 0)
-	org.lungsL[2] = math.max(org.lungsL[2] - regen, 0)
+	org.lungsR[1] = max(org.lungsR[1] - regen, 0)
+	org.lungsL[1] = max(org.lungsL[1] - regen, 0)
+	org.lungsR[2] = max(org.lungsR[2] - regen, 0)
+	org.lungsL[2] = max(org.lungsL[2] - regen, 0)
 
 	org.hungry = 0
 
-	org.pain = math.Approach(org.pain, 0, regen * 10)
-	org.painadd = math.Approach(org.painadd, 0, regen * 10)
-	org.avgpain = math.Approach(org.avgpain, 0, regen * 10)
-	org.shock = math.Approach(org.shock, 0, regen * 10)
-	org.immobilization = math.Approach(org.immobilization, 0, regen * 10)
-	org.disorientation = math.Approach(org.disorientation, 0, regen * 10)
-	org.adrenaline = math.Approach(org.adrenaline, 5, regen * 100)
-	org.analgesia = math.Approach(org.analgesia, 1, regen * 10)
+	org.pain = Approach(org.pain, 0, regen * 10)
+	org.painadd = Approach(org.painadd, 0, regen * 10)
+	org.avgpain = Approach(org.avgpain, 0, regen * 10)
+	org.shock = Approach(org.shock, 0, regen * 10)
+	org.immobilization = Approach(org.immobilization, 0, regen * 10)
+	org.disorientation = Approach(org.disorientation, 0, regen * 10)
+	org.adrenaline = Approach(org.adrenaline, 5, regen * 100)
+	org.analgesia = Approach(org.analgesia, 1, regen * 10)
 
 	if org.noradrenaline > 2 then
-		org.brain = math.Approach(org.brain, 0.3, timeValue / 60)
+		org.brain = Approach(org.brain, 0.3, timeValue / 60)
 	end
 
-	org.pulse = math.Approach(org.pulse, 70, regen * 10)
-	org.heartbeat = math.Approach(org.heartbeat, 220, regen * 10)
-	--org.stamina.regen = math.Approach(org.stamina.regen, 1.2, regen * 10)
+	org.pulse = Approach(org.pulse, 70, regen * 10)
+	org.heartbeat = Approach(org.heartbeat, 220, regen * 10)
+	--org.stamina.regen = Approach(org.stamina.regen, 1.2, regen * 10)
 
 	org.lungsfunction = true
 	org.heartstop = false
@@ -717,8 +716,6 @@ concommand.Add("hg_organism_clear", function(ply, cmd, args)
 	end
 end)
 
-hook.Add("SetupMove", "hg-speed", function(ply, mv) end) --mv:SetMaxClientSpeed(100) --mv:SetMaxSpeed(100)
-
 hook.Add("StartCommand","hg_lol",function(ply,cmd)
 	if ply.organism.otrub and ply:Alive() then
 		cmd:ClearMovement()
@@ -737,7 +734,7 @@ hook.Add("HG_OnWakeOtrub", "afterOtrub", function( owner )
 	-- (msg, delay, msgKey, showTime, func, clr)
 	timer.Simple(0.1,function()
 		if not IsValid(owner) then return end
-		owner:Notify(str, 1, "wake", 1, nil, Color(255, math.Clamp(1 / hg.likely_to_phrase(owner) * 255, 0, 255), math.Clamp(1 / hg.likely_to_phrase(owner) * 255, 0, 255)) )
+		owner:Notify(str, 1, "wake", 1, nil, Color(255, Clamp(1 / hg.likely_to_phrase(owner) * 255, 0, 255), Clamp(1 / hg.likely_to_phrase(owner) * 255, 0, 255)) )
 	end)
 
 	owner.organism.fearadd = owner.organism.fearadd + 5
@@ -776,35 +773,35 @@ local finally_fixed = {
 }
 
 local function fixlimb(org, key, fixer)
-	if math.random(100) > (97 + (fixer != org.owner and (fixer.organism and fixer.organism.pain or 0) or 0) - (org.analgesia * 50 + org.painkiller * 15) - (fixer != org.owner and 30 or 0) - (fixer.tries or 0) * 10 - (fixer.Profession == "doctor" and 100 or 0) - (org.owner == fixer and (IsValid(org.owner.FakeRagdoll) or (org.owner.Crouching and org.owner:Crouching())) and 10 or 0)) then
+	if random(100) > (97 + (fixer != org.owner and (fixer.organism and fixer.organism.pain or 0) or 0) - (org.analgesia * 50 + org.painkiller * 15) - (fixer != org.owner and 30 or 0) - (fixer.tries or 0) * 10 - (fixer.Profession == "doctor" and 100 or 0) - (org.owner == fixer and (IsValid(org.owner.FakeRagdoll) or (org.owner.Crouching and org.owner:Crouching())) and 10 or 0)) then
 		org[key.."dislocation"] = false
-		org.painadd = org.painadd + 5 * math.random(1, 3)
+		org.painadd = org.painadd + 5 * random(1, 3)
 		org.fearadd = org.fearadd + 0.1
 
 		org.owner:EmitSound("physics/flesh/flesh_impact_hard6.wav", 65)
 
-		if fixer == org.owner and (fixer.tries or 0) > 3 and math.random(3) == 1 then
-			fixer:Notify(finally_fixed[math.random(#finally_fixed)], 1, "dislocations_unlucky", 1, nil, Color(255, 255, 255, 255))
+		if fixer == org.owner and (fixer.tries or 0) > 3 and random(3) == 1 then
+			fixer:Notify(finally_fixed[random(#finally_fixed)], 1, "dislocations_unlucky", 1, nil, Color(255, 255, 255, 255))
 		end
 
 		fixer.tries = 0
 	else
 		fixer.tries = (fixer.tries or 0) + 1
-		org.painadd = org.painadd + 15 * math.random(1, 3)
+		org.painadd = org.painadd + 15 * random(1, 3)
 
 		org.fearadd = org.fearadd + 0.3
 
 		org.owner:EmitSound("physics/body/body_medium_impact_soft"..math.random(7)..".wav", 65)
 		
-		if fixer.Profession != "doctor" and math.random(5) == 1 then
+		if fixer.Profession != "doctor" and random(5) == 1 then
 			local dmgInfo = DamageInfo()
 			dmgInfo:SetDamage(50)
 			dmgInfo:SetDamageType(DMG_CLUB)
 			hg.organism.input_list[key.."down"](org.owner.organism, 1, 6, dmgInfo, 0, vector_up)
 		end
 
-		if fixer == org.owner and fixer.tries > 3 and math.random(3) == 1 then
-			fixer:Notify(unlucky_dislocations[math.random(#unlucky_dislocations)], 1, "dislocations_unlucky", 1, nil, Color(255, 255, 255, 255))
+		if fixer == org.owner and fixer.tries > 3 and random(3) == 1 then
+			fixer:Notify(unlucky_dislocations[random(#unlucky_dislocations)], 1, "dislocations_unlucky", 1, nil, Color(255, 255, 255, 255))
 		end
 	end
 end
@@ -812,7 +809,7 @@ end
 concommand.Add("hg_fixdislocation", function(ply, cmd, args)
 	local fixer = ply
 
-	if args and args[2] and math.Round(tonumber(args[2])) == 1 then
+	if args and args[2] and Round(tonumber(args[2])) == 1 then
 		ply = hg.eyeTrace(fixer).Entity
 	end
 
@@ -826,19 +823,19 @@ concommand.Add("hg_fixdislocation", function(ply, cmd, args)
 	if !fixer.organism.canmove or !fixer.organism.canmovehead or fixer.organism.pain > 60 then return end
 	fixer.tried_fixing_limb = CurTime() + fixer.organism.pain / 30
 
-	if math.Round(tonumber(args[1])) == 1 then
+	if Round(tonumber(args[1])) == 1 then
 		if org.llegdislocation then
 			fixlimb(org, "lleg", fixer)
 		elseif org.rlegdislocation then
 			fixlimb(org, "rleg", fixer)
 		end
-	elseif math.Round(tonumber(args[1])) == 2 then
+	elseif Round(tonumber(args[1])) == 2 then
 		if org.larmdislocation then
 			fixlimb(org, "larm", fixer)
 		elseif org.rarmdislocation then
 			fixlimb(org, "rarm", fixer)
 		end
-	elseif math.Round(tonumber(args[1])) == 3 then
+	elseif Round(tonumber(args[1])) == 3 then
 		if org.jawdislocation then
 			fixlimb(org, "jaw", fixer)
 		end

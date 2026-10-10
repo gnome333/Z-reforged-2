@@ -130,7 +130,7 @@ SWEP.AnimList = {
 }
 
 SWEP.AnimsEvents = {
-	["pullback_high"] = {
+	["pullbackhigh"] = {
 		[0.01] = function(self)
 			self:EmitSound("weapons/molotov/handling/molotov_lighter_open.wav",65)
 			--
@@ -152,6 +152,7 @@ SWEP.AnimsEvents = {
 			--
 			--self:GetWM():ManipulateBoneScale(47, vector_full)
 		end,
+		[0.35] = function(self) end,
 		[0.55] = function(self)
 			self:EmitSound("weapons/molotov/handling/molotov_lighter_close.wav",65)
 			self:GetOwner():PullLHTowards("ValveBiped.Bip01_Spine", 0.5)
@@ -159,7 +160,7 @@ SWEP.AnimsEvents = {
 			--self:GetWM():ManipulateBoneScale(47, vector_full)
 		end
 	},
-	["pullback_low"] = {
+	["pullbacklow"] = {
 		[0.01] = function(self)
 			self:EmitSound("weapons/molotov/handling/molotov_lighter_open.wav",65)
 			--
@@ -181,6 +182,7 @@ SWEP.AnimsEvents = {
 			--
 			--self:GetWM():ManipulateBoneScale(47, vector_full)
 		end,
+		[0.35] = function(self) end,
 		[0.55] = function(self)
 			self:EmitSound("weapons/molotov/handling/molotov_lighter_close.wav",65)
 			self:GetOwner():PullLHTowards("ValveBiped.Bip01_Spine", 0.5)
@@ -188,6 +190,8 @@ SWEP.AnimsEvents = {
 			--self:GetWM():ManipulateBoneScale(47, vector_full)
 		end
 	},
+	["revers_pullbackhigh"] = {},
+	["revers_pullbacklow"] = {},
 }
 
 SWEP.HoldPos = Vector(2,0.2,-1.5)

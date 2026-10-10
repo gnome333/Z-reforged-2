@@ -1,3 +1,4 @@
+local CurTime = CurTime
 local max, min, Clamp, Approach = math.max, math.min, math.Clamp, math.Approach
 --local Organism = hg.organism
 hg.organism.module.pain = {}
@@ -52,12 +53,12 @@ module[2] = function(owner, org, timeValue)
 
 	local shouldPainAdd = not (org.otrub or org.spine2 >= hg.organism.fake_spine2 or org.spine3 >= hg.organism.fake_spine3)
 	
-	local add = math.min(timeValue * 20, org.painadd)
+	local add = min(timeValue * 20, org.painadd)
 	local sub = (add <= 0.2) and (timeValue * 2 * (org.otrub and 2 or 1) + timeValue * (org.painkiller * 2) + timeValue * (org.analgesia * 4)) or (0)
 
 	if adrenaline > 0.5 then
-		sub = sub * math.max(1 - adrenaline, 0.05) / 1.5// / (adrenaline >= 2 and 16 or 8)
-		add = add * math.max(1 - adrenaline, 0.05) / 1.5// / (adrenaline >= 2 and 16 or 8)
+		sub = sub * max(1 - adrenaline, 0.05) / 1.5// / (adrenaline >= 2 and 16 or 8)
+		add = add * max(1 - adrenaline, 0.05) / 1.5// / (adrenaline >= 2 and 16 or 8)
 	end
 
 	if org.pain > 60 and not org.otrub then
@@ -68,26 +69,26 @@ module[2] = function(owner, org, timeValue)
 			sub = sub / 5
 		end
 
-		org.disorientation = math.max(org.pain / 50, org.disorientation)//org.disorientation + add
+		org.disorientation = max(org.pain / 50, org.disorientation)//org.disorientation + add
 		org.fearadd = 1
 	end
 
-	org.disorientation = math.min(org.disorientation, 10)
+	org.disorientation = min(org.disorientation, 10)
 
 	if org.pain > 80 then
-		org.shock = math.Approach(org.shock, 70, timeValue * 4)
+		org.shock = Approach(org.shock, 70, timeValue * 4)
 	end
 
 	if (org.shock > (30 * analgesiaMul)) or org.otrub then
-		org.consciousness = math.Approach(org.consciousness, 0.1, timeValue / 5)
+		org.consciousness = Approach(org.consciousness, 0.1, timeValue / 5)
 	end
 
 	if org.tranquilizer > 0 then
-		org.tranquilizer = math.Approach(org.tranquilizer, 0, org.tranquilizer > 1 and timeValue / 5 or timeValue / 30)
-		--org.shock = math.Approach(org.shock, 50, timeValue * org.tranquilizer * 5)
-		org.consciousness = math.Approach(org.consciousness, 0, timeValue / 30 * org.tranquilizer)
+		org.tranquilizer = Approach(org.tranquilizer, 0, org.tranquilizer > 1 and timeValue / 5 or timeValue / 30)
+		--org.shock = Approach(org.shock, 50, timeValue * org.tranquilizer * 5)
+		org.consciousness = Approach(org.consciousness, 0, timeValue / 30 * org.tranquilizer)
 	else
-		org.consciousness = math.Approach(org.consciousness, org.blood < 3000 and (org.blood - 2500) / 500 or 1, timeValue / 15)
+		org.consciousness = Approach(org.consciousness, org.blood < 3000 and (org.blood - 2500) / 500 or 1, timeValue / 15)
 	end
 
 	if org.consciousness < 0.1 then
@@ -102,7 +103,7 @@ module[2] = function(owner, org, timeValue)
 	if !org.lasthit or org.lasthit + 1 < CurTime() then org.avgpain = max(org.avgpain - sub, 0) end
 	org.painlessen = sub
 
-	org.pain = org.avgpain * math.max(1 - adrenaline / 4, 0.75) * math.max(1 - org.analgesia, 0)
+	org.pain = org.avgpain * max(1 - adrenaline / 4, 0.75) * max(1 - org.analgesia, 0)
 
 	org.painadd = min(max(org.painadd - add * analgesiaMul, 0), 150)
 
@@ -155,9 +156,9 @@ module[2] = function(owner, org, timeValue)
 		--org.needfake = true
 	end
 
-	//local tempo = math.Clamp(5 - (org.temperature - 31), 0, 15)
+	//local tempo = Clamp(5 - (org.temperature - 31), 0, 15)
 	
-	//org.shock = math.max(org.shock, tempo * 4)
+	//org.shock = max(org.shock, tempo * 4)
 	
-	org.disorientation = math.Approach(org.disorientation, 0, timeValue / 5)
+	org.disorientation = Approach(org.disorientation, 0, timeValue / 5)
 end

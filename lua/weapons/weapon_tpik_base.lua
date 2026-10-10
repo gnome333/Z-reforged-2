@@ -528,6 +528,9 @@ function SWEP:PlayAnim(anim,time,cycling,callbackFuncName,reverse,sendtoclient,c
 		if self.AnimsEvents and (self.AnimsEvents[self.anim]) then
 			local Time = time
 			for k,v in pairs(self.AnimsEvents[self.anim]) do
+				local nk = tonumber(k)
+				if nk == nil then continue end
+				k = nk
 				self.VM_TimerEvents = self.VM_TimerEvents or {}
 
 				local TimerName = "VM_Events_ZC-Base" .. self:EntIndex() .. self.anim .. k
@@ -597,6 +600,9 @@ function SWEP:PlayAnim(anim,time,cycling,callbackFuncName,reverse,sendtoclient,c
     if self.AnimsEvents and (self.AnimsEvents[anim] or self.AnimsEvents[self.seq]) then
 		local Time = time or tAnim[2] or 1
 		for k,v in pairs(self.AnimsEvents[anim] or self.AnimsEvents[self.seq]) do
+			local nk = tonumber(k)
+			if nk == nil then continue end
+			k = nk
 			self.VM_TimerEvents = self.VM_TimerEvents or {}
 
 			local TimerName = "VM_Events_ZC-Base" .. self:EntIndex() .. self.seq .. k

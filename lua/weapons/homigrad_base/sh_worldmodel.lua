@@ -2,7 +2,7 @@ AddCSLuaFile()
 local IsValid = IsValid
 --
 hook.Add("PhysgunPickup", "homigrad-weapons", function(ply, ent) if ent:GetNWBool("nophys") then return false end end)
-SWEP.WorldPos = Vector(13, -0.3, 3.4)
+SWEP.WorldPos = Vector(13, 1, 3.4)
 SWEP.WorldAng = Angle(5, 0, 180)
 SWEP.UseCustomWorldModel = false
 

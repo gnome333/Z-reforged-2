@@ -1,3 +1,4 @@
+local Clamp, ceil, min, random, CurTime, IsValid = math.Clamp, math.ceil, math.min, math.random, CurTime, IsValid
 local mats = {}
 for i = 1, 6 do
 	mats[i] = CreateMaterial( "blood_particle0"..i, "Sprite", {
@@ -54,8 +55,8 @@ local function addBloodPart2(pos, vel, mat, w, h, time, water, owner)
 	pos2:Set(pos)
 	
 	if #hg.bloodparticles2 > 200 then table.remove(hg.bloodparticles2, 1) end
-	--if water and math.random(2) == 1 then return end
-	--if water and math.random(3) > 1 then return end
+	--if water and random(2) == 1 then return end
+	--if water and random(3) > 1 then return end
 
 	hg.bloodparticles2[#hg.bloodparticles2 + 1] = {pos, pos2, vel, mat or cloudmat, w or 60, h or 60, CurTime() + time, time, water = water, owner = owner}
 end
@@ -68,8 +69,8 @@ local Rand = math.Rand
 local hg_bloodimpacts = ConVarExists("hg_bloodimpacts") and GetConVar("hg_bloodimpacts") or CreateConVar("hg_bloodimpacts", 0, FCVAR_ARCHIVE + FCVAR_REPLICATED, "Enable custom blood impact effects spray cool kill death", 0, 1)
 
 local function impact(pos,vel,mul)
-	local max = math.min(mul,8)
-	local iters = math.ceil(math.random(1, max) * 2.5)
+	local max = min(mul,8)
+	local iters = ceil(random(1, max) * 2.5)
 	local velnorm = -vel:GetNormalized() * 5
 	
 	if hg_bloodimpacts:GetBool() then
@@ -79,7 +80,7 @@ local function impact(pos,vel,mul)
 	end
 
 	for i = 1, iters do
-		local size = 1--math.random(2, 4) * 1
+		local size = 1--random(2, 4) * 1
 		addBloodPart(pos, -vel * i / iters + Vector(Rand(-20, 20), Rand(-20, 20), 0), mat_huy, size, size, false, false)
 	end
 end
@@ -89,7 +90,7 @@ net.Receive("hg_bloodimpact", function()
 	local vel = net.ReadVector() * 500
 	local mul = net.ReadFloat()
 	local amt = net.ReadInt(8)
-	amt = math.Clamp(amt,0,32)
+	amt = Clamp(amt,0,32)
 	//debugoverlay.Line(pos, vel, 5, color_white)
 	for i = 1, amt do impact(pos,vel,mul) end
 end)
@@ -106,7 +107,7 @@ local function explode(pos, size, force)
 			dir:Rotate(Angle(h * y * Rand(0.9, 1.1), w * x * Rand(0.9, 1.1), 0))
 			dir[3] = dir[3] + Rand(0.5, 1.5)
 			dir:Mul(250 * size)
-			addBloodPart(pos, force * 0.2 + dir, mat_huy, math.Rand(5,10), math.Rand(5,10), false, true)
+			addBloodPart(pos, force * 0.2 + dir, mat_huy, Rand(5,10), Rand(5,10), false, true)
 		end
 	end
 end
@@ -194,7 +195,7 @@ net.Receive("bloodsquirt", function()
 		local pos, dir = LocalToWorld(localPos, localDir, mat:GetTranslation(), mat:GetAngles())
 		dir = dir:Forward() * len
 		vechuy = vechuy + VectorRand(-amt * 5,amt * 5)
-		addBloodPart(pos, dir * amt * 90 + vechuy * amt, mat_huy, math.Rand(3,3), math.Rand(3,3), true, false)
+		addBloodPart(pos, dir * amt * 90 + vechuy * amt, mat_huy, Rand(3,3), Rand(3,3), true, false)
 		i = i - 1
 	end)
 	timer.Adjust(name, 0)
@@ -205,7 +206,7 @@ end)
 --[[concommand.Add("testpart", function()
 	if not LocalPlayer():IsAdmin() then return end
 	local pos = Vector(0, 0, 0)
-	addBloodPart(pos, Vector(25, 0, 0), mat_huy, math.random(10, 15), math.random(10, 15))
+	addBloodPart(pos, Vector(25, 0, 0), mat_huy, random(10, 15), random(10, 15))
 end)]]
 
 net.Receive("bloodsquirt2", function()
@@ -238,7 +239,7 @@ net.Receive("bloodsquirt2", function()
 		if not IsValid(ent) then timer.Remove(name) return end
 		local ent = IsValid(ent.FakeRagdoll) and ent.FakeRagdoll or ent
 		local amt = math.max(i / maxI, 0.2)
-		if math.random(5) == 1 then return end
+		if random(5) == 1 then return end
 		local mat = ent:GetBoneMatrix(bone)
 		if not mat then timer.Remove(name) return end
 
@@ -255,7 +256,7 @@ net.Receive("bloodsquirt2", function()
 		end
 
 		dir = dir:Forward() * len
-		addBloodPart(pos + VectorRand(-0.2, 0.2), dir * amt * 90 + VectorRand(-amt * 25,amt * 25), mat_huy, math.Rand(3,3), math.Rand(3,3), false, false)
+		addBloodPart(pos + VectorRand(-0.2, 0.2), dir * amt * 90 + VectorRand(-amt * 25,amt * 25), mat_huy, Rand(3,3), Rand(3,3), false, false)
 		i = i - 1
 	end)
 	timer.Adjust(name, 0)

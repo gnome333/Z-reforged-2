@@ -1,3 +1,4 @@
+local Approach, Clamp, cos, Rand, floor, random, IsValid = math.Approach, math.Clamp, math.cos, math.Rand, math.floor, math.random, IsValid
 local CurTime = CurTime
 local time
 local max, min, Round = math.max, math.min, math.Round
@@ -37,7 +38,7 @@ module[1] = function(org)
 	org.wantToVomit = 0
 	org.vomitInThroat = nil
 
-	org.bloodtype = table.GetKeys(hg.organism.bloodtypes)[math.random(8)]
+	org.bloodtype = table.GetKeys(hg.organism.bloodtypes)[random(8)]
 	
 	if org.bloodtype == "c-" then
 		org.bloodtype = "o-" --эпик
@@ -69,7 +70,7 @@ local arterialBleedMul = 0.5
 local function instant_disorientation(org)
 	if not org.isPly or not IsValid(org.owner) then return end
 
-	local level = math.floor(org.disorientation or 0)
+	local level = floor(org.disorientation or 0)
 	if level == org.disorientationSent then return end
 	org.disorientationSent = level
 
@@ -86,7 +87,7 @@ local function instant_disorientation(org)
 end
 
 module[2] = function(owner, org, mulTime)
-	local adrenaline = math.min(org.adrenaline, 2)
+	local adrenaline = min(org.adrenaline, 2)
 
 	if org.vomitInThroat then
 		local ent = hg.GetCurrentCharacter(owner)
@@ -103,31 +104,31 @@ module[2] = function(owner, org, mulTime)
 			net.WriteString(bon)
 			net.WriteMatrix(mat)
 			net.WriteVector(mat:GetTranslation() + mat:GetAngles():Right() * 6 + mat:GetAngles():Forward() * 1)
-			net.WriteVector(mat:GetAngles():Right() * 2 * math.Clamp(org.pulse / 70, 0.4, 1))
+			net.WriteVector(mat:GetAngles():Right() * 2 * Clamp(org.pulse / 70, 0.4, 1))
 			net.Broadcast()
 
 			ent:EmitSound("vomit/vomit5.mp3")
 		end
 	end
 
-	if org.isPly and not org.otrub and org.blood < 2900 then org.owner:Notify(math.random(2) == 1 and "I cant feel anything..." or (math.random(2) == 1 and "I think I'm gonna faint right now...") or "I dont feel so good...",60,"blood2",0) end
+	if org.isPly and not org.otrub and org.blood < 2900 then org.owner:Notify(random(2) == 1 and "I cant feel anything..." or (random(2) == 1 and "I think I'm gonna faint right now...") or "I dont feel so good...",60,"blood2",0) end
 
 	if org.internalBleed < 0.5 and org.bleed < 0.05 and org.pulse > 5 then
 		org.blood = min(org.blood + mulTime * 5 * (adrenaline * 1.5 + 1) * (org.satiety / 100 + 1) * org.pulse / 70, 5000)
 	end
 
 	if org.hemotransfusionshock > 0 then
-		org.hemotransfusionshock = math.max(org.hemotransfusionshock - mulTime / 200,0)
+		org.hemotransfusionshock = max(org.hemotransfusionshock - mulTime / 200,0)
 		org.internalBleed = org.internalBleed + mulTime / 30
 	end
 
 	if org.arteria == 1 then
 		org.o2.regen = 0
 		org.o2ArteriaSuppressed = true
-		org.o2[1] = math.max(org.o2[1] - mulTime * 2.5,0)
+		org.o2[1] = max(org.o2[1] - mulTime * 2.5,0)
 
-		org.arteriaDisorient = math.min((org.arteriaDisorient or 0) + mulTime * 4, 10)
-		org.disorientation = math.max(org.disorientation or 0, org.arteriaDisorient)
+		org.arteriaDisorient = min((org.arteriaDisorient or 0) + mulTime * 4, 10)
+		org.disorientation = max(org.disorientation or 0, org.arteriaDisorient)
 		instant_disorientation(org)
 	else
 		if org.o2ArteriaSuppressed then
@@ -136,15 +137,15 @@ module[2] = function(owner, org, mulTime)
 		end
 
 		if (org.arteriaDisorient or 0) > 0 then
-			org.arteriaDisorient = math.max(org.arteriaDisorient - mulTime * 2, 0)
-			org.disorientation = math.Approach(org.disorientation or 0, math.max((org.pain or 0) / 50, 0), mulTime * 2)
+			org.arteriaDisorient = max(org.arteriaDisorient - mulTime * 2, 0)
+			org.disorientation = Approach(org.disorientation or 0, max((org.pain or 0) / 50, 0), mulTime * 2)
 			instant_disorientation(org)
 		end
 	end
 
-	org.consciousness = math.min(org.consciousness, math.min(org.blood / 3000, 1) * math.Clamp(((org.temperature < 30 and org.temperature - 30 or 0) * 0.25 + 1), 0.25, 1))
+	org.consciousness = min(org.consciousness, min(org.blood / 3000, 1) * Clamp(((org.temperature < 30 and org.temperature - 30 or 0) * 0.25 + 1), 0.25, 1))
 
-	local beatsPerSecond = max(min(60 / math.max(org.pulse,2) / (org.bleed / 15), 7), 0.3)
+	local beatsPerSecond = max(min(60 / max(org.pulse,2) / (org.bleed / 15), 7), 0.3)
 	time = CurTime()
 
 	local coagulatespeed = 0
@@ -153,14 +154,14 @@ module[2] = function(owner, org, mulTime)
 		local ent = IsValid(owner.FakeRagdoll) and owner.FakeRagdoll or owner
 		
 		for i, wound in pairs(org.wounds) do
-			local rand1 = math.Rand(4, 10) * 1
-			local rand2 = math.Rand(0.5, 1) * 1
-			local bleed = rand1 * wound[1] * mulTime * math.max(org.pulse, 20) / 70 * 2.0 * (1 - math.min(adrenaline / 6, 0.5)) * org.bleedingmul * 0.02
+			local rand1 = Rand(4, 10) * 1
+			local rand2 = Rand(0.5, 1) * 1
+			local bleed = rand1 * wound[1] * mulTime * max(org.pulse, 20) / 70 * 2.0 * (1 - min(adrenaline / 6, 0.5)) * org.bleedingmul * 0.02
 			local coagulate = 2 * mulTime * rand2 * (adrenaline * 0.1 + 1) * 0.04-- / #org.wounds
 			bleedoutspeed = bleedoutspeed + bleed / rand1 * 3--we pray for the luck of it being in the center
 			coagulatespeed = coagulatespeed + coagulate / rand2 * 1
 			
-			local rand = math.Rand(0, 2) * 2
+			local rand = Rand(0, 2) * 2
 			//if wound[5] + beatsPerSecond * 2 < time then
 				wound[5] = time
 				org.blood = max(org.blood - bleed, 1)
@@ -176,28 +177,28 @@ module[2] = function(owner, org, mulTime)
 	end
 
 	if org.heart == 1 then
-		org.blood = math.max(org.blood - mulTime * 100 * org.pulse / 70,0)
+		org.blood = max(org.blood - mulTime * 100 * org.pulse / 70,0)
 		bleedoutspeed = bleedoutspeed + mulTime * 100 * org.pulse / 70
 	end
 
 	if org.liver > 0.5 then
-		//org.blood = math.max(org.blood - mulTime * 10 * org.pulse / 70 * org.liver,0)
+		//org.blood = max(org.blood - mulTime * 10 * org.pulse / 70 * org.liver,0)
 		//bleedoutspeed = bleedoutspeed + mulTime * 10 * org.pulse / 70 * org.liver
 	end
 
 	bleedoutspeed = bleedoutspeed / (beatsPerSecond + 2)
 
 	local bleedoutspeed2 = 0
-	local next_arterypump = 1 / math.max(org.pulse, 10)
+	local next_arterypump = 1 / max(org.pulse, 10)
 	local ent = owner:IsPlayer() and IsValid(owner.FakeRagdoll) and owner.FakeRagdoll or owner
 	for i, wound in pairs(org.arterialwounds) do
 		local artmul = wound[7] == "arteria" and 2 or 1
-		bleedoutspeed2 = bleedoutspeed2 + wound[1] * mulTime * 0.2 * artmul * arterialBleedMul * math.max(org.pulse, 20) / 80
+		bleedoutspeed2 = bleedoutspeed2 + wound[1] * mulTime * 0.2 * artmul * arterialBleedMul * max(org.pulse, 20) / 80
 
 		if wound[5] + next_arterypump * (wound[7] == "arteria" and 1 or 2) < time then
 			local pos, ang = ent:GetBonePosition(ent:LookupBone(wound[4]))
 			wound[5] = time
-			org.blood = max(org.blood - wound[1] * mulTime * 4.5 * artmul * arterialBleedMul * math.max(org.pulse, 20) / 80, 1)
+			org.blood = max(org.blood - wound[1] * mulTime * 4.5 * artmul * arterialBleedMul * max(org.pulse, 20) / 80, 1)
 			if (owner:IsPlayer() and owner:Alive()) or not owner:IsPlayer() then
 				local dir = wound[6]
 				local len = dir:Length()
@@ -216,29 +217,29 @@ module[2] = function(owner, org, mulTime)
 	end
 	bleedoutspeed2 = bleedoutspeed2 / next_arterypump
 
-	if org.blood < (2400 / (adrenaline / 3 + 1)) * ((math.cos(CurTime()/2) + 1) / 2 * 0.1 + 1) then org.needotrub = true end
+	if org.blood < (2400 / (adrenaline / 3 + 1)) * ((cos(CurTime()/2) + 1) / 2 * 0.1 + 1) then org.needotrub = true end
 
 	local bleed = org.internalBleed / 14 -- + org.lungsR[3] + org.lungsL[3]
-	org.internalBleed = math.Approach(org.internalBleed, 0, org.internalBleedHeal > 0 and mulTime / 2 or mulTime / 55)
+	org.internalBleed = Approach(org.internalBleed, 0, org.internalBleedHeal > 0 and mulTime / 2 or mulTime / 55)
 	coagulatespeed = coagulatespeed + mulTime
-	org.internalBleedHeal = math.Approach(org.internalBleedHeal, 0, mulTime / 2)
+	org.internalBleedHeal = Approach(org.internalBleedHeal, 0, mulTime / 2)
 	
 	if bleed > 0 then org.blood = max(org.blood - bleed * mulTime * 10 * org.pulse / 70, 1) end
 	
 	if (org.internalBleed > 1 or org.pneumothorax > 0) and org.blood > 2000 and org.o2[1] > 0 then
 		org.wantToVomit = org.wantToVomit or 0
 
-		org.wantToVomit = org.wantToVomit + math.Rand(0, org.internalBleed / 1000 + org.pneumothorax / 200) * mulTime * 5
+		org.wantToVomit = org.wantToVomit + Rand(0, org.internalBleed / 1000 + org.pneumothorax / 200) * mulTime * 5
 		
 		if org.wantToVomit > 0.90 then
-			//owner:Notify(about_to_puke[math.random(#about_to_puke)], 15, "internalbleed_pre")
+			//owner:Notify(about_to_puke[random(#about_to_puke)], 15, "internalbleed_pre")
 		end
 	end
 
 	if org.wantToVomit > 1 then
 		org.wantToVomit = 0
 
-		if org.isPly then owner:Notify(internalbleed_phrases[math.random(#internalbleed_phrases)], 15, "internalbleed") end
+		if org.isPly then owner:Notify(internalbleed_phrases[random(#internalbleed_phrases)], 15, "internalbleed") end
 
 		hg.organism.Vomit(owner)
 	end
@@ -272,7 +273,7 @@ function hg.organism.Vomit(owner, snd)
 	if !hg.IsValidPlayer(owner) then return end
 	
 	local org = owner.organism
-	org.blood = math.max(org.blood - 200, 0)
+	org.blood = max(org.blood - 200, 0)
 	local ent = hg.GetCurrentCharacter(owner)
 
 	local bon = "ValveBiped.Bip01_Head1"
@@ -300,7 +301,7 @@ function hg.organism.Vomit(owner, snd)
 			net.WriteString(bon)
 			net.WriteMatrix(mat)
 			net.WriteVector(mat:GetTranslation() + mat:GetAngles():Right() * 6 + mat:GetAngles():Forward() * 1)
-			net.WriteVector(mat:GetAngles():Right() * 2 * math.Clamp(org.pulse / 70, 0.4, 1))
+			net.WriteVector(mat:GetAngles():Right() * 2 * Clamp(org.pulse / 70, 0.4, 1))
 			net.Broadcast()
 		end
 	end
@@ -308,12 +309,12 @@ end
 
 function hg.organism.CoughBlood(org)
 	local ply = org.owner
-	local phr = "zcitysnd/real_sonar/" .. (ThatPlyIsFemale(ply) and "female" or "male") .. "_cough" .. math.random(4) .. ".mp3"
+	local phr = "zcitysnd/real_sonar/" .. (ThatPlyIsFemale(ply) and "female" or "male") .. "_cough" .. random(4) .. ".mp3"
 	ply:EmitSound(phr)
 	ply.phrCld = CurTime() + 2
 	ply.lastPhr = phr
 
-	if math.random(5) == 1 then
+	if random(5) == 1 then
 		org.vomitInThroat = nil
 
 		net.Start("bloodsquirt2")
@@ -321,7 +322,7 @@ function hg.organism.CoughBlood(org)
 		net.WriteString(bon)
 		net.WriteMatrix(mat)
 		net.WriteVector(mat:GetTranslation() + mat:GetAngles():Right() * 6 + mat:GetAngles():Forward() * 1)
-		net.WriteVector(mat:GetAngles():Right() * 2 * math.Clamp(org.pulse / 70, 0.4, 1))
+		net.WriteVector(mat:GetAngles():Right() * 2 * Clamp(org.pulse / 70, 0.4, 1))
 		net.Broadcast()
 
 		ent:EmitSound("vomit/vomit5.mp3")

@@ -1,3 +1,4 @@
+local IsValid = IsValid
 hg.organism = hg.organism or {}
 --local Organism = hg.organism
 hg.organism.list = hg.organism.list or {}
@@ -60,7 +61,7 @@ local CurTime = CurTime
 local SysTime = SysTime
 hook.Add("Think", "homigrad-organism", function()
 	time = CurTime()
-	local tickrate2 = tickrate// / math.max(game.GetTimeScale(), 0.01)
+	local tickrate2 = tickrate// / max(game.GetTimeScale(), 0.01)
 	//print(delay ,time + tickrate)
 	if delay + tickrate2 > time then return end
 

@@ -1,12 +1,13 @@
+local Approach, Round, Rand, min, max, random, CurTime, IsValid = math.Approach, math.Round, math.Rand, math.min, math.max, math.random, CurTime, IsValid
 --local Organism = hg.organism
 local function isCrush(dmgInfo)
 	return not dmgInfo:IsDamageType(DMG_BULLET + DMG_BUCKSHOT + DMG_SLASH + DMG_BLAST)
 end
 
 local function damageOrgan(org, dmg, dmgInfo, key)
-	local prot = math.max(0.3 - org[key],0)
+	local prot = max(0.3 - org[key],0)
 	local oldval = org[key]
-	org[key] = math.Round(math.min(org[key] + dmg * (isCrush(dmgInfo) and 1 or 3), 1), 3)
+	org[key] = Round(min(org[key] + dmg * (isCrush(dmgInfo) and 1 or 3), 1), 3)
 	
 	//local damage = org[key] - oldval
 	//dmgInfo:SetDamage(dmgInfo:GetDamage() + (damage * 5))
@@ -33,14 +34,14 @@ end
 
 input_list.liver = function(org, bone, dmg, dmgInfo)
 	local oldDmg = org.liver
-	local prot = math.max(0.3 - org.liver,0)
+	local prot = max(0.3 - org.liver,0)
 	
 	hg.AddHarmToAttacker(dmgInfo, (org.liver - oldDmg) * 3, "Liver damage harm")
 	
 	org.shock = org.shock + dmg * 20
 	org.painadd = org.painadd + dmg * 35
 	
-	org.liver = math.min(org.liver + dmg, 1)
+	org.liver = min(org.liver + dmg, 1)
 	local harmed = (org.liver - oldDmg)
 	if org.analgesia < 0.4 and harmed >= 0.2 then
 		timer.Simple(0, function()
@@ -101,13 +102,13 @@ input_list.brain = function(org, bone, dmg, dmgInfo)
 
 		local ent = hg.GetCurrentCharacter(org.owner)
 		
-		if !ent.organism.SpawnedBrainChunks and math.random(5) == 1 then
+		if !ent.organism.SpawnedBrainChunks and random(5) == 1 then
 			SpawnMeatGore(ent, dmgPos + dirCool * 5, 3, dirCool * 1000, 0.4)
 			ent.organism.SpawnedBrainChunks = true
 		end
 	end
 
-	if org.brain >= 0.01 and (org.brain - oldDmg) > 0.01 and math.random(3) == 1 then
+	if org.brain >= 0.01 and (org.brain - oldDmg) > 0.01 and random(3) == 1 then
 		--hg.applyFencingToPlayer(org.owner, org)
 		org.shock = 70
 
@@ -123,7 +124,7 @@ input_list.brain = function(org, bone, dmg, dmgInfo)
 		end)
 	end
 
-	org.consciousness = math.Approach(org.consciousness, 0, dmg * 3)
+	org.consciousness = Approach(org.consciousness, 0, dmg * 3)
 	
 	org.disorientation = org.disorientation + dmg * 1
 	org.shock = org.shock + dmg * 3
@@ -199,13 +200,13 @@ local function hitArtery(artery, org, dmg, dmgInfo, boneindex, dir, hit)
 
 	if isCrush(dmgInfo) and not isGunshot(dmgInfo) and not throatCut then return 1 end
 	if dmgInfo:IsDamageType(DMG_BLAST) then return 1 end
-	if dmgInfo:IsDamageType(DMG_SLASH) and !throatCut and !isMeleeSlash(dmgInfo) and (math.random(5) != 1) and dmg < 2 then return end
+	if dmgInfo:IsDamageType(DMG_SLASH) and !throatCut and !isMeleeSlash(dmgInfo) and (random(5) != 1) and dmg < 2 then return end
 	org.painadd = org.painadd + dmg * 1
 	if org[artery] == 1 then return 0 end
 	if org[string.Replace(artery, "artery", "").."amputated"] then return end
 
 	if artery ~= "arteria" then
-		hg.AddHarmToAttacker(dmgInfo, 4, "Random artery punctured harm")//((1 - org[artery]) - math.max((1 - org[artery]) - dmg,0)) / 4
+		hg.AddHarmToAttacker(dmgInfo, 4, "Random artery punctured harm")//((1 - org[artery]) - max((1 - org[artery]) - dmg,0)) / 4
 	else
 		if org.isPly and not org.otrub then
 			org.owner:Notify(table.Random(arteryMessages), true, "arteria", 0)
@@ -214,7 +215,7 @@ local function hitArtery(artery, org, dmg, dmgInfo, boneindex, dir, hit)
 		hg.AddHarmToAttacker(dmgInfo, 15, "Carotid artery punctured harm")
 	end
 
-	org[artery] = math.min(org[artery] + 1, 1)
+	org[artery] = min(org[artery] + 1, 1)
 
 	local owner = org.owner
 	local bonea = owner:LookupBone(boneindex)
@@ -235,13 +236,13 @@ input_list.rlegartery = function(org, bone, dmg, dmgInfo, boneindex, dir, hit) r
 input_list.llegartery = function(org, bone, dmg, dmgInfo, boneindex, dir, hit) return hitArtery("llegartery", org, dmg, dmgInfo, boneindex, dir, hit) end
 input_list.spineartery = function(org, bone, dmg, dmgInfo, boneindex, dir, hit) return 0 end--hitArtery("spineartery", org, dmg, dmgInfo, boneindex, dir, hit) end
 input_list.lungsL = function(org, bone, dmg, dmgInfo)
-	local prot = math.max(0.3 - org.lungsL[1],0)
+	local prot = max(0.3 - org.lungsL[1],0)
 	local oldval = org.lungsL[1]
 
 	hg.AddHarmToAttacker(dmgInfo, (dmg * 0.25), "Lung left damage harm")
 
-	org.lungsL[1] = math.min(org.lungsL[1] + dmg / 4, 1)
-	if (dmgInfo:IsDamageType(DMG_BULLET+DMG_SLASH+DMG_BUCKSHOT)) or (math.random(3) == 1) then org.lungsL[2] = math.min(org.lungsL[2] + dmg * 1, 1) end
+	org.lungsL[1] = min(org.lungsL[1] + dmg / 4, 1)
+	if (dmgInfo:IsDamageType(DMG_BULLET+DMG_SLASH+DMG_BUCKSHOT)) or (random(3) == 1) then org.lungsL[2] = min(org.lungsL[2] + dmg * 1, 1) end
 
 	org.internalBleed = org.internalBleed + (org.lungsL[1] - oldval) * 2
 	
@@ -255,8 +256,8 @@ input_list.lungsR = function(org, bone, dmg, dmgInfo)
 
 	hg.AddHarmToAttacker(dmgInfo, (dmg * 0.25), "Lung right damage harm")
 
-	org.lungsR[1] = math.min(org.lungsR[1] + dmg / 4, 1)
-	if (dmgInfo:IsDamageType(DMG_BULLET+DMG_SLASH+DMG_BUCKSHOT)) or (math.random(3) == 1) then org.lungsR[2] = math.min(org.lungsR[2] + dmg * 1, 1) end
+	org.lungsR[1] = min(org.lungsR[1] + dmg / 4, 1)
+	if (dmgInfo:IsDamageType(DMG_BULLET+DMG_SLASH+DMG_BUCKSHOT)) or (random(3) == 1) then org.lungsR[2] = min(org.lungsR[2] + dmg * 1, 1) end
 
 	org.internalBleed = org.internalBleed + (org.lungsR[1] - oldval) * 2
 

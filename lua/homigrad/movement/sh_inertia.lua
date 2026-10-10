@@ -512,7 +512,7 @@ local Angle, Vector, AngleRand, VectorRand, math, hook, util, game = Angle, Vect
 			ply.HgAirSpeed = math.max(ply.HgAirSpeed or 0, vel:Length2D())
 		elseif ply.HgWasAirborne then
 			if (ply.HgAirSpeed or 0) > 200 then
-				ply.HgLandSlowUntil = CurTime() + 0.5
+				ply.HgLandSlowUntil = CurTime() + 1.5
 			end
 
 			ply.HgAirSpeed = 0

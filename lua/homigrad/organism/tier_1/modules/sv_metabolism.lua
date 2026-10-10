@@ -1,3 +1,4 @@
+local Rand, random, CurTime = math.Rand, math.random, CurTime
 --
 local hg_hungersystem = CreateConVar("hg_hungersystem", 0, FCVAR_ARCHIVE + FCVAR_REPLICATED + FCVAR_NOTIFY, "Enables/disabled hunger system", 0, 1)
 local max, min, Round, Lerp, halfValue2 = math.max, math.min, math.Round, Lerp, util.halfValue2
@@ -19,10 +20,10 @@ module[2] = function(owner, org, timeValue)
         if org.alive and org.hungryDmgCd < CurTime() and org.hungry > 45 then
             //org.owner:Notify(table.Random(veryPharse),20,"hungry",6,nil,colorRed)
             org.painadd = org.painadd + 25 * (org.hungry/45)
-            org.hungryDmgCd = CurTime() + (math.random(40,55) - (org.hungry/5.5))
+            org.hungryDmgCd = CurTime() + (random(40,55) - (org.hungry/5.5))
             //owner:TakeDamage(5,owner,owner)
             if org.hungry > 80 then
-                org.stomach = math.min(org.stomach + 0.1,1)
+                org.stomach = min(org.stomach + 0.1,1)
                 if org.stomach > 0.85 and org.heart < 0.3 then
                     org.heart = org.heart + 0.1
                 end
@@ -39,7 +40,7 @@ module[2] = function(owner, org, timeValue)
 
     if (org.intestines > 0.5 or org.stomach > 0.5) and not org.otrub and owner:IsPlayer() and org.satiety > 1 then
         if not org.randomPainSound or org.randomPainSound < CurTime() then
-            org.randomPainSound = CurTime() + math.random(20,45)
+            org.randomPainSound = CurTime() + random(20,45)
             owner:EmitSound("zcitysnd/"..(ThatPlyIsFemale(owner) and "female" or "male").."/pain_"..math.random(1,8)..".mp3")
             org.painadd = org.painadd + 20
             //owner:TakeDamage(5,owner,owner)
