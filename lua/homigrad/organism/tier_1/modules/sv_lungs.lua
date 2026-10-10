@@ -261,18 +261,7 @@ module[2] = function(owner, org, timeValue)
 		end
 		if gpos then considersrc(gpos) end
 
-		if best > 0 and !owner:GetNetVar("zableval_masku", false) then
-			local sky = util.TraceLine({
-				start = pos,
-				endpos = pos + Vector(0, 0, 999999),
-				mask = MASK_SOLID_BRUSHONLY
-			}).HitSky
-
-			org.COConcentration = math.min(best * (sky and 0.7 or 1.5), 2.5)
-			org.lastCOBreathe = CurTime()
-		else
-			org.COConcentration = 0
-		end
+		org.COConcentration = 0
 	end
 
 	if org.lastCOBreathe and org.lastCOBreathe + 1 > CurTime() then
