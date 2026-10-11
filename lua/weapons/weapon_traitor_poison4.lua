@@ -1,7 +1,7 @@
 if SERVER then AddCSLuaFile() end
 SWEP.Base = "weapon_base"
 SWEP.PrintName = "Curare vial"
-SWEP.Instructions = "Curare only becomes active when it contaminates a wound or is introduced directly to the bloodstream; it is not active when ingested orally. This poison causes weakness of the skeletal muscles and, when administered in a sufficient dose, eventual death by asphyxiation due to paralysis of the diaphragm."
+SWEP.Instructions = "Curare only becomes active when it contaminates a wound or is introduced directly to the bloodstream; it is not active when ingested orally. Causes progressive flaccid paralysis while consciousness is fully preserved: limbs grow numb, the legs give out, the arms drop what they hold, and finally the diaphragm paralyzes, causing death by asphyxiation. Neostigmine is the antidote."
 SWEP.Category = "ZCity Other"
 SWEP.Spawnable = true
 SWEP.AdminOnly = false
@@ -108,6 +108,7 @@ local whitelist = {
 	["weapon_adrenaline"] = true,
 	["weapon_bloodbag"] = true,
 	["weapon_naloxone"] = true,
+	["weapon_neostigmine"] = true,
 	--["weapon_tourniquet"] = true,--it doesnt actually touch the wound
 	["weapon_bigbandage_sh"] = true,
 	["weapon_fentanyl"] = true,
@@ -265,15 +266,45 @@ if SERVER then
 		if not IsValid(owner) or not owner:IsPlayer() or not owner:Alive() then return end
 		if owner.SubRole == "traitor_chemist" then return end
 		if (not org.poison4) or (not org.alive) then return end
-		
-		if (not org.poison4notificate) and ((org.poison4 + 20) < CurTime()) then
-			org.poison4notificate = true
-			org.owner:Notify("Breathing is... oddly harder...", true, "poison4", 3)
+
+		local stage_time = CurTime() - org.poison4
+
+		if (not org.poison4notificate) and stage_time > 12 then
+			org.poison4notificate = 1
+			org.owner:Notify("Muscles... going numb...", true, "poison4", 3)
 			org.owner:EmitSound( ( ThatPlyIsFemale(org.owner) and "vo/npc/female01/moan0"..math.random(5)..".wav" ) or "vo/npc/male01/moan0"..math.random(5)..".wav")
 		end
 
-		if (org.poison4 + 30) < CurTime() then
-        	org.o2.regen = 0
+		if org.poison4notificate == 1 and stage_time > 30 then
+			org.poison4notificate = 2
+			org.owner:Notify("Legs won't hold... arms so heavy...", true, "poison4", 3)
+			org.owner:EmitSound( ( ThatPlyIsFemale(org.owner) and "vo/npc/female01/moan0"..math.random(5)..".wav" ) or "vo/npc/male01/moan0"..math.random(5)..".wav")
+		end
+
+		if org.poison4notificate == 2 and stage_time > 45 then
+			org.poison4notificate = 3
+			org.owner:Notify("Can't move... can't breathe...", true, "poison4", 3)
+			org.owner:EmitSound( ( ThatPlyIsFemale(org.owner) and "vo/npc/female01/moan0"..math.random(5)..".wav" ) or "vo/npc/male01/moan0"..math.random(5)..".wav")
+		end
+
+		if stage_time > 12 then
+			org.stamina[1] = math.max((org.stamina[1] or 180) - timeValue * 6, 0)
+		end
+
+		if stage_time > 25 then
+			org.immobilization = math.min(math.max(org.immobilization or 0, (stage_time - 25) * 1.2), 28)
+		end
+
+		if stage_time > 40 then
+			local wep = owner:GetActiveWeapon()
+
+			if IsValid(wep) and wep:GetClass() != "weapon_hands_sh" then
+				owner:DropWeapon(wep)
+			end
+		end
+
+		if stage_time > 50 then
+			org.o2.regen = 0
 		end
 	end)
 end

@@ -499,6 +499,22 @@ if SERVER then
 					self:PoisonKCNOrganism(org)
 				end
 			end
+			
+			if(org.Poison_KCN and org.Poison_KCN.StartTime and (CurTime() - org.Poison_KCN.StartTime) < 15)then
+				local neutralizer = (self.FoodModelsKCNNeutralizers and self.FoodModelsKCNNeutralizers[self:GetModel()] or 0)
+				
+				if(neutralizer > 0)then
+					org.Poison_KCN.Potency = (org.Poison_KCN.Potency or 1) - neutralizer / 10
+					
+					if(org.Poison_KCN.Potency <= 0)then
+						org.Poison_KCN = nil
+						
+						organism_owner:Notify("The sweetness calms the burning... the metallic taste fades away.", true, "kcn", 4)
+					else
+						organism_owner:Notify("The sugar coats your throat... the burning dulls.", true, "kcn", 4)
+					end
+				end
+			end
 		end
 	end
 	
