@@ -10,6 +10,7 @@ ENT.PrintName = "Grenade"
 ENT.Spawnable = false
 ENT.Model = "models/pwb/weapons/w_f1_thrown.mdl"
 ENT.timeToBoom = 3
+ENT.TripwireFuse = 4
 ENT.Fragmentation = 300 * 3 --300 не страшно
 ENT.BlastDis = 8 --meters
 ENT.Penetration = 8

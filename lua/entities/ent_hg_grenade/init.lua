@@ -29,12 +29,139 @@ function ENT:Initialize()
 	self.CreateTime = CurTime()
 end
 
+local function grenadeWeaponFor(class)
+	local map = hg.grenadeWeapons
+	if not map then
+		map = {}
+
+		for _, wep in ipairs(weapons.GetList()) do
+			if wep.ENT and wep.ClassName and not map[wep.ENT] then
+				map[wep.ENT] = wep.ClassName
+			end
+		end
+
+		hg.grenadeWeapons = map
+	end
+
+	return map[class]
+end
+
 function ENT:Use(ply)
 	if self:IsPlayerHolding() then return end
+
+	if self.Defused then
+		local wepClass = grenadeWeaponFor(self:GetClass())
+
+		if wepClass then
+			local wep = ply:GetWeapon(wepClass)
+
+			if IsValid(wep) then
+				wep.count = wep.count + 1
+			else
+				ply:Give(wepClass)
+			end
+
+			ply:EmitSound("homigrad/weapons/draw_pistol.mp3", 65)
+			self:Remove()
+
+			return
+		end
+
+		local phys = self:GetPhysicsObject()
+		if IsValid(phys) then
+			phys:EnableMotion(true)
+			phys:Wake()
+		end
+	end
 
 	ply:PickupObject(self)
 	self.owner = ply
 end
+
+local function distToSegment(p, a, b)
+	local ab = b - a
+	local len2 = ab:LengthSqr()
+	local t = len2 > 0 and math.Clamp((p - a):Dot(ab) / len2, 0, 1) or 0
+
+	return p:Distance(a + ab * t)
+end
+
+local defuseWeapons = {
+	weapon_hg_bottlebroken = true,
+	weapon_buck200knife = true,
+	weapon_melee = true,
+	weapon_sogknife = true,
+	weapon_pocketknife = true,
+	weapon_tomahawk = true,
+	weapon_hg_glassshard = true,
+}
+
+hook.Add("KeyPress", "hg_tripwire_defuse", function(ply, key)
+	if key ~= IN_USE then return end
+
+	local wires = hg.tripwires
+	if not wires then return end
+
+	local wep = ply:GetActiveWeapon()
+	if not IsValid(wep) or not defuseWeapons[wep:GetClass()] then return end
+
+	local eye = ply:EyePos()
+	local aimEnd = eye + ply:GetAimVector() * 150
+
+	for trap in pairs(wires) do
+		if not IsValid(trap) then
+			wires[trap] = nil
+			continue
+		end
+
+		if not trap.lpos or not IsValid(trap.cons) then continue end
+
+		local far = trap.ent
+		if not IsValid(far) and far ~= Entity(0) then
+			wires[trap] = nil
+			continue
+		end
+
+		local a = trap:GetPos()
+		local wpos = far:LocalToWorld(trap.lpos)
+		local wireLen = a:Distance(wpos)
+		if wireLen <= 0 then continue end
+
+		local steps = math.Clamp(math.ceil(wireLen / 15), 1, 20)
+		local found = false
+
+		for i = 0, steps do
+			local p = a + (wpos - a) * (i / steps)
+
+			if distToSegment(p, eye, aimEnd) <= 30 then
+				found = true
+				break
+			end
+		end
+
+		if not found then continue end
+
+		if IsValid(trap.cons) then trap.cons:Remove() end
+		if IsValid(trap.ent2) then trap.ent2:Remove() end
+		if IsValid(trap.cons2) then trap.cons2:Remove() end
+		trap.cons2 = nil
+		trap.lpos = nil
+		trap.ent = nil
+		trap.origlen = nil
+		trap.Defused = true
+
+		local phys = trap:GetPhysicsObject()
+		if IsValid(phys) then
+			phys:EnableMotion(false)
+		end
+
+		trap:EmitSound("homigrad/weapons/draw_pistol.mp3", 65)
+
+		wires[trap] = nil
+
+		return
+	end
+end)
 
 function ENT:Think()
 	if CLIENT then return end
@@ -51,6 +178,7 @@ function ENT:Think()
 	end
 
 	if not self.timer then
+		if self.Defused then return true end
 		if IsValid(self.ent) or self.ent == Entity(0) then
 			local ent,lpos,origlen = self.ent,self.lpos,self.origlen
 			
@@ -70,7 +198,7 @@ function ENT:Think()
 			end
 		end
 		if not IsValid(self.cons2) then
-			self:Arm(CurTime() - self.timeToBoom + 1,0)
+			self:Arm(CurTime() - self.timeToBoom + (self.TripwireFuse or 4),0)
 		end
 		return true
 	end
@@ -107,19 +235,8 @@ function ENT:Arm(time,vel)
 	if not self.NotSpoon then
 		createSpoon(self)
 	end
-	self.timer = time
 	if self.lpos then
-		local wpos = self.ent:LocalToWorld(self.lpos)
-		
-		if IsValid(self.cons2) then
-			self.cons2:Remove()
-		end
-
-		timer.Simple(0.1,function()
-			if wpos and IsValid(self) then
-				self:GetPhysicsObject():SetVelocity((wpos - self:GetPos()):GetNormalized())
-			end
-		end)
+		self.timer = CurTime() - self.timeToBoom + (self.TripwireFuse or 4)
 
 		if IsValid(self.cons) then
 			self.cons:Remove()
@@ -129,6 +246,8 @@ function ENT:Arm(time,vel)
 		end
 		self.ent = nil
 		self.lpos = nil
+	else
+		self.timer = time
 	end
 end
 

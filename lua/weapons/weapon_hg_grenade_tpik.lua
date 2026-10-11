@@ -150,6 +150,9 @@ SWEP.AnimList = {
 	["revers_pullbacklow"] = {"pullbacklow", 2, false, true, function(self) 
 		self:SetShowPin(true)
 	end,0.9},
+	["trapplace"] = {"pullbacklow", 1.8, false, false, function(self)
+		self.ReadyToTrap = true
+	end},
 	["idle"] = {"draw", 1, false, false, function(self)
 	end}
 }
@@ -162,7 +165,7 @@ SWEP.ViewBobCamBone = "ValveBiped.Bip01_R_Hand"
 SWEP.ViewPunchDiv = 120
 
 SWEP.CallbackTimeAdjust = 0.1
-SWEP.NoTrap = true
+SWEP.NoTrap = false
 
 function SWEP:Deploy( wep )
 	self:PlayAnim("deploy")
@@ -692,6 +695,9 @@ function SWEP:PlaceTrap()
 
 			self.Trap.ent2 = ent2
 			self.Trap.cons = cons
+
+			hg.tripwires = hg.tripwires or {}
+			hg.tripwires[self.Trap] = true
 
 			--ply:SelectWeapon("weapon_hands_sh")
 

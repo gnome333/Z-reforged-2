@@ -26,6 +26,17 @@ end
 
 function ENT:AddThink()
 	if not self.timer then return end
+
+	if self.Exploded then
+		if self.armedNW then
+			self.armedNW = false
+			self:SetNWBool("hg_armed", false)
+		end
+	elseif not self.armedNW then
+		self.armedNW = true
+		self:SetNWBool("hg_armed", true)
+	end
+
 	self.nextthink = self.nextthink or CurTime()
 	if self.nextthink > CurTime() then return end
 	local time = self.timeToBoom - (CurTime() - self.timer)

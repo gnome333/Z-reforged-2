@@ -117,6 +117,9 @@ SWEP.AnimList = {
 		self.IsLowThrow = true
 		self.ReadyToThrow = true
 	end,0.8},
+	["trapplace"] = {"drawbacklow", 1.8, false, false, function(self)
+		self.ReadyToTrap = true
+	end},
 	["idle"] = {"draw", 1, false,false,function(self)
 	end}
 }
@@ -139,12 +142,20 @@ SWEP.AnimsEvents = {
 			self:EmitSound("weapons/m67/handling/m67_armdraw.wav",65)
 		end,
 	},
+	["trapplace"] = {
+		[0.15] = function(self)
+			self:EmitSound("weapons/grenade/tick1.wav",65)
+		end,
+		[0.85] = function(self)
+			self:EmitSound("weapons/grenade/tick1.wav",65)
+		end,
+	},
 }
 
 
 SWEP.HoldPos = Vector(-8,0,0)
 SWEP.HoldAng = Angle(0,0,0)
-SWEP.NoTrap = true
+SWEP.NoTrap = false
 
 SWEP.ViewBobCamBase = "ValveBiped.Bip01_R_UpperArm"
 SWEP.ViewBobCamBone = "ValveBiped.Bip01_R_Hand"
