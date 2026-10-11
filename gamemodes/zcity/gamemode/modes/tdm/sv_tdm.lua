@@ -184,6 +184,11 @@ end
 util.AddNetworkString( "tdm_buyitem" )
 
 local AttachmentPrice = 50
+local RefillPrices = {
+	weapon_bandage_sh = 100,
+	weapon_bigbandage_sh = 200,
+	weapon_medkit_sh = 350,
+}
 net.Receive("tdm_buyitem",function(len,ply)
 	if !CurrentRound().buymenu then return end
 	if ((zb.ROUND_START or 0) + 40 < CurTime()) then ply:ChatPrint("Time's up!") return end
@@ -208,6 +213,37 @@ net.Receive("tdm_buyitem",function(len,ply)
 		ply:EmitSound("items/itempickup.wav")
 
 		return
+	end
+
+	local refillPrice = RefillPrices[item.ItemClass]
+	if refillPrice then
+		local wep = ply:GetWeapon(item.ItemClass)
+		if IsValid(wep) and istable(wep.modeValues) and istable(wep.modeValuesdef) then
+			local vals = wep.modeValues
+			local defs = wep.modeValuesdef
+
+			local needRefill = false
+			for i, def in ipairs(defs) do
+				if (vals[i] or 0) < (istable(def) and def[1] or def) then
+					needRefill = true
+					break
+				end
+			end
+
+			if not needRefill then ply:ChatPrint("This item is already full.") return end
+			if ((ply:GetNWInt("TDM_Money",0) - refillPrice) < 0) then ply:ChatPrint("Not enough money.") return end
+
+			for i, def in ipairs(defs) do
+				vals[i] = istable(def) and def[1] or def
+			end
+
+			wep:SetNetVar("modeValues", vals)
+			wep.modeValues = vals
+			ply:SetNWInt( "TDM_Money", ply:GetNWInt("TDM_Money",0) - refillPrice )
+			ply:EmitSound("items/itempickup.wav")
+
+			return
+		end
 	end
 
 	if item.TeamBased != nil and item.TeamBased != ply:Team() then ply:ChatPrint("This item is not available for your team.") return end

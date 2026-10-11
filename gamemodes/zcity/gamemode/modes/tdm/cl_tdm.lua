@@ -327,6 +327,28 @@ local rtabFunc = function(self)
 
 end
 
+local RefillPrices = {
+	weapon_bandage_sh = 100,
+	weapon_bigbandage_sh = 200,
+	weapon_medkit_sh = 350,
+}
+
+local function GetRefillPrice(class)
+	local price = RefillPrices[class]
+	if not price then return end
+
+	local wep = LocalPlayer():GetWeapon(class)
+	if not IsValid(wep) then return end
+
+	local vals = wep:GetNetVar("modeValues")
+	local defs = wep.modeValuesdef
+	if not istable(vals) or not istable(defs) then return end
+
+	for i, def in ipairs(defs) do
+		if (vals[i] or 0) < (istable(def) and def[1] or def) then return price end
+	end
+end
+
 local function OpenBuyMenu()
 	if TDM_OpenedBuyMenu then
 		TDM_OpenedBuyMenu:Remove()
@@ -391,7 +413,8 @@ local function OpenBuyMenu()
 			lbl:SetSize(ScrW()*0.5,ScrH()*0.04)
 
 			local lbl = vgui.Create("DLabel", ItemButton)
-			lbl:SetText("Price: $"..Item.Price)
+			local refillPrice = GetRefillPrice(Item.ItemClass)
+			lbl:SetText(refillPrice and ("Refill: $" .. refillPrice) or ("Price: $" .. Item.Price))
 			lbl:DockMargin(10,0,5,0)
 			lbl:Dock(TOP)
 			lbl:SetTextColor(Color(155,200,155))
