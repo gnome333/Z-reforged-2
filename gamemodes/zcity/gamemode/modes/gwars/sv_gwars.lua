@@ -31,6 +31,7 @@ function MODE:Intermission()
 	
 	for i, ply in player.Iterator() do
 		ply:SetupTeam(ply:Team())
+		ply:SetNWInt("GWARS_Money", 1500)
 	end
 
 	net.Start("gwars_start")
@@ -58,40 +59,6 @@ local swatSpawned = false
 function MODE:RoundStart()
     swatSpawned = false 
 end
-
-local tblweps = {
-	[0] = {
-		"weapon_cz75",
-		"weapon_deagle",
-		"weapon_glock17",
-		"weapon_glock18c",
-		"weapon_revolver2",
-		"weapon_hk_usp",
-		"weapon_p22",
-		"weapon_doublebarrel_short",
-		"weapon_skorpion",
-		//"weapon_uzi",
-		"weapon_mac11",
-		//"weapon_draco",
-		//"weapon_ar_pistol",
-	},
-	[1] = {
-		"weapon_cz75",
-		"weapon_deagle",
-		"weapon_glock17",
-		"weapon_glock18c",
-		"weapon_revolver2",
-		"weapon_hk_usp",
-		"weapon_p22",
-		"weapon_doublebarrel_short",
-		"weapon_skorpion",
-		//"weapon_uzi",
-		"weapon_mac11",
-		//"weapon_draco",
-		//"weapon_ar_pistol",
-	}
-}
-
 
 --[[local tblatts = {
 	[0] = {
@@ -136,19 +103,6 @@ function MODE:GiveEquipment()
 				zb.GiveRole(ply, "Groove", Color(0,190,0))
 				ply:SetNetVar("CurPluv", "pluvgreen")
 			end
-
-			local tbl = tblweps[ply:Team()]
-			local wep = ply:Give(tbl[math.random(#tbl)])
-			ply:GiveAmmo(wep:GetMaxClip1() * 3, wep:GetPrimaryAmmoType())
-
-			if wep.SetDeagleSkin then
-				//wep:SetDeagleSkin(4)
-				//wep:SetDeagleBodygroup(1)
-			end
-
-			ply:Give("weapon_bandage_sh")
-			ply:Give("weapon_tourniquet")
-			ply:Give("weapon_fentanyl")
 
 			local hands = ply:Give("weapon_hands_sh")
 			ply:SelectWeapon("weapon_hands_sh")
@@ -235,3 +189,60 @@ end
 
 function MODE:PlayerDeath(ply)
 end
+
+local GWARS_MODE = MODE
+
+util.AddNetworkString("gwars_open_buymenu")
+util.AddNetworkString("gwars_buyitem")
+
+function MODE:ShowSpare1(ply)
+	if not ply:Alive() then return end
+	if ply:Team() != 0 and ply:Team() != 1 then return end
+	if ((zb.ROUND_START or 0) + 40 < CurTime()) then ply:ChatPrint("Time's up!") return end
+
+	net.Start("gwars_open_buymenu")
+	net.Send(ply)
+end
+
+net.Receive("gwars_buyitem", function(len, ply)
+	if not ply:Alive() then return end
+	if ply:Team() != 0 and ply:Team() != 1 then return end
+	if ((zb.ROUND_START or 0) + 40 < CurTime()) then ply:ChatPrint("Time's up!") return end
+
+	local class = net.ReadString()
+	if not isstring(class) or #class > 64 then return end
+
+	local buyList = GWARS_MODE.BuyList
+	if not buyList then return end
+
+	local item
+	for _, category in ipairs(buyList) do
+		for _, it in ipairs(category.items) do
+			if it.class == class then
+				item = it
+				break
+			end
+		end
+		if item then break end
+	end
+	if not item then return end
+
+	local money = ply:GetNWInt("GWARS_Money", 0)
+	if money < item.price then ply:ChatPrint("Not enough money.") return end
+	ply:SetNWInt("GWARS_Money", money - item.price)
+
+	if item.kind == "armor" then
+		hg.AddArmor(ply, class)
+	else
+		local wep = ply:Give(class)
+		if IsValid(wep) then
+			local ammoType = wep:GetPrimaryAmmoType()
+			local clip = wep:GetMaxClip1()
+			if ammoType >= 0 and clip > 0 then
+				ply:GiveAmmo(clip * 3, ammoType)
+			end
+		end
+	end
+
+	ply:EmitSound("items/itempickup.wav")
+end)

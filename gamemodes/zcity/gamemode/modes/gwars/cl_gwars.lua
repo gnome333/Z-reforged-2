@@ -83,6 +83,10 @@ function MODE:HUDPaint()
 		//draw.SimpleText(time, "timer_Font2", sw * 0.36, sh * 0.05, Color(255, 255, 255, 255), TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
 	end
 
+	if (lply:Team() == 0 or lply:Team() == 1) and lply:Alive() and ((zb.ROUND_START or 0) + 40 > CurTime()) then
+		draw.SimpleText("Press F3 to open buy menu", "ZB_HomicideMedium", sw * 0.5, sh * 0.96, Color(255, 255, 255, 255), TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
+	end
+
 	if zb.ROUND_START + 8 < CurTime() then
 		if playstart then
 			sound.PlayFile("sound/music_themes/ghetto_start.wav", "noblock noplay", function(station)
@@ -289,3 +293,202 @@ function MODE:RoundStart()
 		hmcdEndMenu = nil
 	end
 end
+
+surface.CreateFont("GWARS_BUYMENU", {
+	font = "Bahnschrift",
+	size = ScreenScale(12),
+	extended = true,
+	weight = 400,
+	antialias = true
+})
+
+surface.CreateFont("GWARS_BUYDESC", {
+	font = "Bahnschrift",
+	size = ScreenScale(7),
+	extended = true,
+	weight = 400,
+	antialias = true
+})
+
+surface.CreateFont("GWARS_BUYCAT", {
+	font = "Bahnschrift",
+	size = ScreenScale(6),
+	extended = true,
+	weight = 400,
+	antialias = true
+})
+
+local gradMat = Material("vgui/gradient-l")
+local GWARS_OpenedBuyMenu
+
+local function GWARS_TeamColor()
+	if lply:Team() == 1 then return Color(0, 190, 0) end
+	return Color(190, 0, 0)
+end
+
+local function OpenGWARSBuyMenu()
+	if IsValid(GWARS_OpenedBuyMenu) then
+		GWARS_OpenedBuyMenu:Remove()
+		GWARS_OpenedBuyMenu = nil
+	end
+
+	local StartTime = zb.ROUND_START or CurTime()
+	if not lply:Alive() or StartTime + 40 < CurTime() then return end
+	if lply:Team() != 0 and lply:Team() != 1 then return end
+
+	local accent = GWARS_TeamColor()
+
+	GWARS_OpenedBuyMenu = vgui.Create("ZFrame")
+	local Frame = GWARS_OpenedBuyMenu
+	Frame:SetSize(ScrW() * 0.35, ScrH() * 0.85)
+	Frame:Center()
+	Frame:MakePopup()
+	Frame:SetTitle("Gang Wars Buy Menu")
+
+	Frame.Paint = function(self, w, h)
+		BlurBackground(self)
+		surface.SetDrawColor(accent.r, accent.g, accent.b, 160)
+		surface.DrawOutlinedRect(0, 0, w, h, 2.5)
+	end
+
+	local Sheet = vgui.Create("DPropertySheet", Frame)
+	Sheet:Dock(FILL)
+	Sheet:SetTextInset(50)
+	Sheet.Paint = function() end
+	Sheet.tabScroller:SetOverlap(0)
+	Sheet.tabScroller:DockMargin(8, 0, 8, 0)
+	Sheet:SetFadeTime(0.1)
+
+	Sheet.OnActiveTabChanged = function(self, old, new)
+		if IsValid(old) then
+			old:SetTextStyleColor(Color(255, 255, 255, 150))
+			old:UpdateFGColor()
+		end
+		if IsValid(new) then
+			new:SetTextStyleColor(color_white)
+			new:UpdateFGColor()
+		end
+	end
+
+	for _, category in ipairs(MODE.BuyList) do
+		local CategoryPanel = vgui.Create("DScrollPanel")
+		CategoryPanel.Paint = function() end
+
+		for _, item in ipairs(category.items) do
+			local ItemPanel = vgui.Create("DPanel", CategoryPanel)
+			ItemPanel:SetSize(0, ScrH() * 0.1)
+			ItemPanel:Dock(TOP)
+			ItemPanel:DockMargin(0, 8, 0, 0)
+			ItemPanel.Paint = function(self, w, h)
+				surface.SetDrawColor(0, 0, 0, 155)
+				surface.DrawRect(0, 0, w, h, 2.5)
+				surface.SetDrawColor(accent.r, accent.g, accent.b, 128)
+				surface.DrawOutlinedRect(0, 0, w, h, 2.5)
+				surface.SetDrawColor(accent.r, accent.g, accent.b, 55)
+				surface.SetMaterial(gradMat)
+				surface.DrawTexturedRect(0, 0, w / 1.5, h)
+			end
+
+			local weapon = weapons.GetStored(item.class)
+			if weapon != nil and ((weapon.WepSelectIcon2 and weapon.WepSelectIcon2:GetName()) or weapon.IconOverride) then
+				local icon = vgui.Create("DImage", ItemPanel)
+				icon:SetSize(ScrH() * 0.17, ScrH() * 0.1)
+				icon:Dock(LEFT)
+				icon:DockMargin(5, 5, 5, 5)
+				icon:SetImage((weapon.WepSelectIcon2 and weapon.WepSelectIcon2:GetName() .. ".png") or weapon.IconOverride)
+			end
+
+			local ItemButton = vgui.Create("DPanel", ItemPanel)
+			ItemButton:Dock(FILL)
+			ItemButton:DockMargin(0, 5, 0, 0)
+			ItemButton.Paint = function() end
+
+			local name = vgui.Create("DLabel", ItemButton)
+			name:SetText(item.name)
+			name:DockMargin(10, 0, 5, 0)
+			name:Dock(TOP)
+			name:SetFont("GWARS_BUYMENU")
+			name:SetSize(ScrW() * 0.5, ScrH() * 0.04)
+
+			local price = vgui.Create("DLabel", ItemButton)
+			price:SetText("Price: $" .. item.price)
+			price:DockMargin(10, 0, 5, 0)
+			price:Dock(TOP)
+			price:SetTextColor(Color(155, 200, 155))
+			price:SetFont("GWARS_BUYDESC")
+			price:SetSize(ScrW() * 0.5, ScrH() * 0.02)
+
+			local BuyBtn = vgui.Create("DButton", ItemButton)
+			BuyBtn:DockMargin(10, 5, 10, 10)
+			BuyBtn:Dock(LEFT)
+			BuyBtn:SetText("Buy")
+			BuyBtn:SetTextColor(Color(200, 200, 200))
+			BuyBtn:SetFont("GWARS_BUYDESC")
+			BuyBtn:SetHeight(ScrH() * 0.025)
+			BuyBtn.Paint = function(self, w, h)
+				surface.SetDrawColor(0, 0, 0, 155)
+				surface.DrawRect(0, 0, w, h, 2.5)
+				surface.SetDrawColor(accent.r, accent.g, accent.b, self:IsHovered() and 230 or 128)
+				surface.DrawOutlinedRect(0, 0, w, h, 2.5)
+			end
+			BuyBtn.GWARS_Class = item.class
+
+			function BuyBtn:DoClick()
+				net.Start("gwars_buyitem")
+					net.WriteString(self.GWARS_Class)
+				net.SendToServer()
+			end
+		end
+
+		local tab = Sheet:AddSheet(category.category, CategoryPanel)
+		local Tab = tab.Tab
+		Tab:SetFont("GWARS_BUYCAT")
+		Tab:SetContentAlignment(5)
+		Tab.Paint = function() end
+		Tab.UpdateColours = function(self)
+			self:SetTextStyleColor(self:IsActive() and color_white or Color(255, 255, 255, 150))
+		end
+		Tab.ApplySchemeSettings = function(self)
+			self:SetTextInset(0, 4)
+			local textW = self:GetContentSize()
+			self:SetSize(textW + 10, 24)
+			self:UpdateColours()
+			self:UpdateFGColor()
+		end
+		Tab:ApplySchemeSettings()
+	end
+
+	local timeLbl = vgui.Create("DLabel", Frame)
+	timeLbl:SetText("Time Left: " .. string.FormattedTime(StartTime + 40 - CurTime(), "%02i:%02i:%02i"))
+	timeLbl:DockMargin(10, 0, 10, 10)
+	timeLbl:Dock(BOTTOM)
+	timeLbl:SetTextColor(Color(255, 255, 255))
+	timeLbl:SetFont("GWARS_BUYDESC")
+	timeLbl:SetSize(0, ScrH() * 0.015)
+
+	function timeLbl:Think()
+		if not lply:Alive() or StartTime + 40 < CurTime() then
+			if IsValid(GWARS_OpenedBuyMenu) then
+				GWARS_OpenedBuyMenu:Remove()
+				GWARS_OpenedBuyMenu = nil
+			end
+			return
+		end
+		self:SetText("Time Left: " .. string.FormattedTime(StartTime + 40 - CurTime(), "%02i:%02i:%02i"))
+	end
+
+	local cashLbl = vgui.Create("DLabel", Frame)
+	cashLbl:DockMargin(10, 5, 10, 5)
+	cashLbl:Dock(BOTTOM)
+	cashLbl:SetTextColor(Color(61, 173, 61))
+	cashLbl:SetFont("GWARS_BUYDESC")
+	cashLbl:SetSize(0, ScrH() * 0.02)
+
+	function cashLbl:Think()
+		self:SetText("Cash: $" .. lply:GetNWInt("GWARS_Money", 0))
+	end
+end
+
+net.Receive("gwars_open_buymenu", function()
+	OpenGWARSBuyMenu()
+end)
