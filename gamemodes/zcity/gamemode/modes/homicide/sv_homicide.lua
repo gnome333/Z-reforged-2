@@ -691,6 +691,10 @@ function MODE:Intermission()
 		end
 	end
 
+	if(traitors_needed == 1 and player_count >= 4 and math.random(100) <= 30)then
+		traitors_needed = 2
+	end
+
 	MODE.TraitorExpectedAmt = traitors_needed
 	local main_traitor = nil
 	local traitors = {}
@@ -1635,6 +1639,13 @@ function MODE.SpawnPlayers(spawn_with_subroles)
 
                 if(current_ply.isGunner)then
                     MODE.Types[MODE.Type].GunManLoot(current_ply)
+                end
+            end
+
+            if(current_ply.Profession and MODE.Professions[current_ply.Profession])then
+                local profession_info = MODE.Professions[current_ply.Profession]
+                if(profession_info.SpawnFunction)then
+                    profession_info.SpawnFunction(current_ply)
                 end
             end
             

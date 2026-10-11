@@ -510,6 +510,16 @@ local Angle, Vector, AngleRand, VectorRand, math, hook, util, game = Angle, Vect
 
 		if airborne then
 			ply.HgAirSpeed = math.max(ply.HgAirSpeed or 0, vel:Length2D())
+
+			if not ply.HgWasAirborne and zb and zb.CROUND == "hmcd" then
+				local max_air = ply:GetRunSpeed() * 1.15
+				local len2d = vel:Length2D()
+
+				if len2d > max_air then
+					local ratio = max_air / len2d
+					mv:SetVelocity(Vector(vel.x * ratio, vel.y * ratio, vel.z))
+				end
+			end
 		elseif ply.HgWasAirborne then
 			if (ply.HgAirSpeed or 0) > 200 then
 				ply.HgLandSlowUntil = CurTime() + 1.5

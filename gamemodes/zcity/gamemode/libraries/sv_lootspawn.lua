@@ -241,6 +241,32 @@ function hg.GenerateLoot(ply,ent,func)
 		if curRound.name == "pathowogen" and time < 90 then
 			tab = chances[1][2]
 		end
+
+		if IsValid(ply) and ply.Profession == "builder" and math.random(100) <= 15 then
+			local builder_items = {
+				["weapon_hammer"] = true,
+				["weapon_hg_sledgehammer"] = true,
+				["weapon_hg_crowbar"] = true,
+				["weapon_hatchet"] = true,
+				["weapon_hg_axe"] = true,
+				["weapon_ducttape"] = true,
+			}
+			local tools = {
+				{3, "ent_ammo_nails"},
+			}
+
+			for _, category in ipairs(chances) do
+				for _, item in ipairs(category[2] or {}) do
+					if builder_items[item[2]] then
+						tools[#tools + 1] = item
+					end
+				end
+			end
+
+			if #tools > 0 then
+				tab = tools
+			end
+		end
 	end
 
 	--print(tab)
