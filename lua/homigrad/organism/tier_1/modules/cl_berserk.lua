@@ -1,4 +1,3 @@
-local Round, abs, sqrt, cos, sin, min, Clamp, CurTime, IsValid = math.Round, math.abs, math.sqrt, math.cos, math.sin, math.min, math.Clamp, CurTime, IsValid
 hg.underberserk = hg.underberserk or false
 hg.underberserk2 = hg.underberserk2 or false
 hg.berserkStartTime = hg.berserkStartTime or 0
@@ -55,7 +54,7 @@ hook.Add("RenderScreenspaceEffects", "berserkEffect", function()
 	end
 
 	local berserk = (organism.berserk or 0)
-	local berserkClamped = Clamp(berserk, 0, 3) * (organism.consciousness or 1)
+	local berserkClamped = math.Clamp(berserk, 0, 3) * (organism.consciousness or 1)
 
 	if berserk > 0.0001 and (!hg.underberserk and !hg.underberserk2) then
 		hg.underberserk = true
@@ -124,18 +123,18 @@ hook.Add("RenderScreenspaceEffects", "berserkEffect", function()
 
 	if hg.underberserk2 and IsValid(hg.berserkStation) then
 		--local intensity = ((hg.berserkStartTime2 + SysTime()) / 60) * 70 % 1
-		--intensity = abs(cos(1 - (intensity * 2))) * berserkClamped
+		--intensity = math.abs(math.cos(1 - (intensity * 2))) * berserkClamped
 		local intensity = 1 - ((hg.berserkStation:GetTime() - offset:GetFloat()) / 60 * bpm:GetInt())
-		intensity = (intensity - Round(intensity)) % 1
-		--intensity = sqrt(sqrt(intensity))
-		intensity = Clamp((intensity * 0.25 + 0.75), 0, 1)
-		intensity = math.ease.InExpo(intensity) * berserkClamped * 2--abs(cos(1 - (intensity * 2))) * berserkClamped
+		intensity = (intensity - math.Round(intensity)) % 1
+		--intensity = math.sqrt(math.sqrt(intensity))
+		intensity = math.Clamp((intensity * 0.25 + 0.75), 0, 1)
+		intensity = math.ease.InExpo(intensity) * berserkClamped * 2--math.abs(math.cos(1 - (intensity * 2))) * berserkClamped
 
-		tab2[ "$pp_colour_mulr" ] = (1.5 * min(1, berserk * 4)) + (intensity / 5)
-		tab2[ "$pp_colour_addr" ] = (0.1 * min(1, berserk * 4)) + intensity / 64
+		tab2[ "$pp_colour_mulr" ] = (1.5 * math.min(1, berserk * 4)) + (intensity / 5)
+		tab2[ "$pp_colour_addr" ] = (0.1 * math.min(1, berserk * 4)) + intensity / 64
 		-- tab[ "$pp_colour_contrast" ] = 1 + intensity / 8
 
-		tab2[ "$pp_colour_colour" ] = 1 - Clamp(intensity, 0, 0.9)
+		tab2[ "$pp_colour_colour" ] = 1 - math.Clamp(intensity, 0, 0.9)
 		tab2[ "$pp_colour_mulg" ] = 0
 		tab2[ "$pp_colour_mulb" ] = 0
 
@@ -149,7 +148,7 @@ hook.Add("RenderScreenspaceEffects", "berserkEffect", function()
 	end
 
 	if IsValid(hg.berserkStation) then
-		hg.berserkStation:SetVolume(min(1, (organism.otrub and 0) or berserkClamped))
+		hg.berserkStation:SetVolume(math.min(1, (organism.otrub and 0) or berserkClamped))
 	end
 end)
 
@@ -197,7 +196,7 @@ hook.Add("HG_CalcView","InsaneRollCam",function(ply, origin, angles, fova)
 	if ply:Alive() and hg.underberserk2 and IsValid(hg.berserkStation) and hg.berserkClamped then
 		local intensity = 1 - ((hg.berserkStation:GetTime() - offset:GetFloat()) / 60 * bpm:GetInt())
 		angles[1] = angles[1] - hg.berserkIntensity * 0.2
-		angles[3] = cos(CurTime() * 0.3) * hg.berserkClamped + hg.berserkIntensity * 2 * (intensity % 2 > 1 and 1 or -1)
+		angles[3] = math.cos(CurTime() * 0.3) * hg.berserkClamped + hg.berserkIntensity * 2 * (intensity % 2 > 1 and 1 or -1)
 		--print(fova)
 		fova[1] = fova[1] + hg.berserkIntensity * -2
 	end
@@ -270,7 +269,7 @@ hook.Add("PostDrawTranslucentRenderables", "berserkSky", function(depth, drawsky
 		local sun_info = util.GetSunInfo()
 		if sun_info != nil then HM_sky_material:SetVector("$sunnormal", sun_info.direction) end
 		--alphacolor.a = hg.berserkIntensity
-		HM_sky_material:SetFloat("$duskscale",abs(sin(CurTime()*1.5))*1)
+		HM_sky_material:SetFloat("$duskscale",math.abs(math.sin(CurTime()*1.5))*1)
 		HM_sky_material:SetFloat("$duskintensity",0.2*hg.berserkIntensity/(hg.berserkIntensity/3))
 
 		--print(hg.berserkIntensity)

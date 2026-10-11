@@ -1,4 +1,3 @@
-local Approach, Clamp, Remap, Rand, sqrt, random, CurTime, IsValid = math.Approach, math.Clamp, math.Remap, math.Rand, math.sqrt, math.random, CurTime, IsValid
 local max, min, Round, Lerp, halfValue2 = math.max, math.min, math.Round, Lerp, util.halfValue2
 --local Organism = hg.organism
 hg.organism.module.lungs = {}
@@ -33,7 +32,7 @@ module[1] = function(org)
 end
 
 function hg.organism.OxygenateBlood(org)
-	return (max(((1 - org.lungsL[1]) + (1 - org.lungsR[1])) / 2, 0.5) * (1 - org.trachea)) * org.o2.regen / 4 * (org.owner:WaterLevel() < 3 and 1 or 0)// * (1 - org.pneumothorax)
+	return (math.max(((1 - org.lungsL[1]) + (1 - org.lungsR[1])) / 2, 0.5) * (1 - org.trachea)) * org.o2.regen / 4 * (org.owner:WaterLevel() < 3 and 1 or 0)// * (1 - org.pneumothorax)
 end
 
 function hg.organism.CanBreath(org)
@@ -166,7 +165,7 @@ local bit_band,util_PointContents = bit.band,util.PointContents
 local color_white, color_red, color_red2, color_red3 = Color(255, 255, 255), Color(255, 0, 0), Color(200, 55, 55), Color(255, 100, 100)
 module[2] = function(owner, org, timeValue)
 	local o2 = org.o2
-	local losing_oxy = timeValue * 1 * Clamp(org.o2[1] / 30, 0.25, 1)
+	local losing_oxy = timeValue * 1 * math.Clamp(org.o2[1] / 30, 0.25, 1)
 	org.losing_oxy = losing_oxy
 	o2[1] = max(o2[1] - losing_oxy, 0)
 	local ent = hg.GetCurrentCharacter(owner)
@@ -200,14 +199,14 @@ module[2] = function(owner, org, timeValue)
 	
 	local inwater = bit_band(util_PointContents(head),CONTENTS_WATER) == CONTENTS_WATER
 	-- test
-	local success = owner:IsBerserk() or (not org.heartstop and org.alive and not (org.brain >= 0.4 and random(10 - (org.brain * 10)) < 4) and org.lungsfunction)
+	local success = owner:IsBerserk() or (not org.heartstop and org.alive and not (org.brain >= 0.4 and math.random(10 - (org.brain * 10)) < 4) and org.lungsfunction)
 	if success and owner:IsPlayer() and inwater then success = false end
 	if success and org.choking then org.needfake = true success = false end
 	if success and org.vomitInThroat then success = false end
 	org.choking = false
 	local pneumothorax = (org.lungsR[2] == 1 or org.lungsL[2] == 1) and org.needle == 0
 	
-	org.needle = Approach(org.needle, 0, timeValue / 1200)
+	org.needle = math.Approach(org.needle, 0, timeValue / 1200)
 
 	org.pneumothorax = pneumothorax and min(org.pneumothorax + timeValue / 180 * (org.lungsL[2] + org.lungsR[2]), (org.lungsL[2] + org.lungsR[2]) / 2) or max(org.pneumothorax - timeValue / 10, 0)
 	
@@ -236,7 +235,7 @@ module[2] = function(owner, org, timeValue)
 				if tr.Hit then return end
 			end
 
-			local s = 0.6 + 1.4 * (1 - sqrt(dsqr) / 200)
+			local s = 0.6 + 1.4 * (1 - math.sqrt(dsqr) / 200)
 			if s > best then best = s end
 		end
 
@@ -266,29 +265,29 @@ module[2] = function(owner, org, timeValue)
 	end
 
 	if org.lastCOBreathe and org.lastCOBreathe + 1 > CurTime() then
-		org.COregen = Approach(org.COregen, 30, timeValue * 1)
+		org.COregen = math.Approach(org.COregen, 30, timeValue * 1)
 	else
-		org.COregen = Approach(org.COregen, 0, timeValue * 0.5)
+		org.COregen = math.Approach(org.COregen, 0, timeValue * 0.5)
 	end
 
 	org.CO = max(org.CO - timeValue, 0)
 	if success then
 		local oxygenate = hg.organism.OxygenateBlood(org) * 0.5
 		local lerp = min(max(org.pulse - 20, 0) / 20, 1)
-		local regen = Lerp(lerp, 0, o2.regen * oxygenate * Rand(0.95, 1.05))
+		local regen = Lerp(lerp, 0, o2.regen * oxygenate * math.Rand(0.95, 1.05))
 
 		org.CO = min(org.CO + (not org.holdingbreath and org.COregen > 0 and timeValue * 1.5 * (org.COConcentration or 0) or 0), 30)
 
-		org.consciousness = min(org.consciousness, (30 - org.CO) / 30)
+		org.consciousness = math.min(org.consciousness, (30 - org.CO) / 30)
 
 		local mask_blevota = owner:GetNetVar("zableval_masku", false)
 
 		local sprayed = org.is_sprayed_at
 		org.is_sprayed_at = nil
 
-		local fent = (org.fent or 0) * max(1 - (org.naloxone or 0) / 2, 0)
-		local regenerate = regen * timeValue * 4 * (org.stamina[1] / org.stamina.max) * (mask_blevota and 0 or 1) * ((org.temperature > 38) and Clamp(Remap(org.temperature, 38, 41, 1, 0.1), 0.1, 1) or 1) * max(1 - fent * 0.5, 0)
-		o2[1] = min(o2[1] + regenerate * Clamp(org.o2[1] / 30, 0.25, 1) * (org.holdingbreath and 0 or 1) * (sprayed and 0 or 1) * min((10 / max(org.CO,1)),1), o2.range * max(1 - org.pneumothorax * org.pneumothorax, 0.1) * min(org.blood / 4500, 1) * max(1 - (org.lungsL[1] + org.lungsR[1]) / 2, 0.5))
+		local fent = (org.fent or 0) * math.max(1 - (org.naloxone or 0) / 2, 0)
+		local regenerate = regen * timeValue * 4 * (org.stamina[1] / org.stamina.max) * (mask_blevota and 0 or 1) * ((org.temperature > 38) and math.Clamp(math.Remap(org.temperature, 38, 41, 1, 0.1), 0.1, 1) or 1) * max(1 - fent * 0.5, 0)
+		o2[1] = min(o2[1] + regenerate * math.Clamp(org.o2[1] / 30, 0.25, 1) * (org.holdingbreath and 0 or 1) * (sprayed and 0 or 1) * min((10 / max(org.CO,1)),1), o2.range * math.max(1 - org.pneumothorax * org.pneumothorax, 0.1) * math.min(org.blood / 4500, 1) * math.max(1 - (org.lungsL[1] + org.lungsR[1]) / 2, 0.5))
 
 		o2.curregen = regenerate
 
@@ -301,7 +300,7 @@ module[2] = function(owner, org, timeValue)
 	end
 
 	if owner:IsBerserk() then
-		o2[1] = max(5, o2[1])
+		o2[1] = math.max(5, o2[1])
 	end
 	
 	if org.isPly and not org.otrub and o2.curregen < losing_oxy and org.analgesia <= 1.5 and !org.heartstop then
@@ -309,16 +308,16 @@ module[2] = function(owner, org, timeValue)
 			if o2[1] < 15 then
 				org.owner:Notify("DROP THE FUCKING MASK", 25, "take_gasmask2", 0, nil, color_red2)
 			else
-				org.owner:Notify(drop_mask[random(#drop_mask)], 15, "take_gasmask", 0)
+				org.owner:Notify(drop_mask[math.random(#drop_mask)], 15, "take_gasmask", 0)
 			end
 		else
 			if o2[1] < 25 and o2[1] > 12 then
-				org.owner:Notify(not_enough_intake[random(#not_enough_intake)], 61, "oxygen_lowintake", 0)
+				org.owner:Notify(not_enough_intake[math.random(#not_enough_intake)], 61, "oxygen_lowintake", 0)
 			end
 		end
 
 		if o2[1] < 12 then
-			org.owner:Notify(lowoxy[random(#lowoxy)], 30, "lowoxy", 0, nil, color_red3)
+			org.owner:Notify(lowoxy[math.random(#lowoxy)], 30, "lowoxy", 0, nil, color_red3)
 	
 			if o2[1] < 6 then
 				org.owner:Notify("Oxygen... please...", 30, "lowoxy2", 0, nil, color_red)
@@ -327,21 +326,21 @@ module[2] = function(owner, org, timeValue)
 	end
 
 	if org.analgesia > 1.5 then
-		org.owner:Notify(drugged[random(#drugged)], 30, "drugged", 0, nil, color_white)
+		org.owner:Notify(drugged[math.random(#drugged)], 30, "drugged", 0, nil, color_white)
 	end
 
 	if org.analgesia > 1.5 or org.painkiller > 2.4 then
-		if Rand(0, 500) < (org.analgesia + org.painkiller) then
+		if math.Rand(0, 500) < (org.analgesia + org.painkiller) then
 			//org.lungsfunction = false
 		end
 	end
 
 	if o2[1] == 0 then
-		if random(50) == 1 then
+		if math.random(50) == 1 then
 			org.lungsfunction = false
 		end
 	else
-		if random(50) == 1 then
+		if math.random(50) == 1 then
 			org.lungsfunction = true
 		end
 	end
@@ -355,7 +354,7 @@ module[2] = function(owner, org, timeValue)
 		org.nextCough = org.nextCough and org.nextCough or (CurTime() + 5)
 		
 		if org.nextCough < CurTime() then
-			org.nextCough = CurTime() + random(15,30 - timeSub + max(10 - o2[1],0))
+			org.nextCough = CurTime() + math.random(15,30 - timeSub + math.max(10 - o2[1],0))
 			owner:EmitSound("homigrad/player/male/male_cough"..math.random(5)..".wav",50 + Round(timeSub * 2.5))
 		end
 	end--]]
@@ -409,25 +408,25 @@ module[2] = function(owner, org, timeValue)
 	end
 
 	if owner:IsBerserk() then
-		org.brain = min(0.5, org.brain)
+		org.brain = math.min(0.5, org.brain)
 	end
 
 	if org.skull >= 0.6 then k = 0 end
 	if org.brain >= 0.6 then k = 0 end
 
 	if org.skull < 1 and org.skull >= 0.5 and org.bandagedskull then
-		org.skull = Approach(org.skull, 0, timeValue / 600)
+		org.skull = math.Approach(org.skull, 0, timeValue / 600)
 	end
 
 	if org.brain >= 0.3 then
 		if org.brain >= 0.5 then
-			if random(60) == 1 then
+			if math.random(60) == 1 then
 				org.heartstop = true
 			end
 		end
 
 		if org.brain > 0.35 and !org.heartstop then
-			if random(60) == 1 then
+			if math.random(60) == 1 then
 				org.lungsfunction = true
 			end
 		end
@@ -445,14 +444,14 @@ module[2] = function(owner, org, timeValue)
 
 	if org.isPly then
 		if org.brain > 0.1 and org.brain < 0.3 then
-			org.owner:Notify(random(2) == 1 and "My head hurts..." or "Where am I?", true, "brain", 5)
+			org.owner:Notify(math.random(2) == 1 and "My head hurts..." or "Where am I?", true, "brain", 5)
 		else
 			org.owner:ResetNotification("brain") 
 		end
 	end
 
 	org.brain = max(org.brain - timeValue / 400 * ((org.mannitol > 0 and org.brain < 0.6) and 1 or (org.brain > 0.1 and 0.1 or 0)), 0)
-	org.mannitol = Approach(org.mannitol, 0, timeValue / 200)
+	org.mannitol = math.Approach(org.mannitol, 0, timeValue / 200)
 	
 	if k < 0.25 then
 		if not org.alive and owner:IsPlayer() and death_from_braindamage and org.o2[1] == 0 then
@@ -462,6 +461,6 @@ module[2] = function(owner, org, timeValue)
 			end
 		end
 		
-		org.brain = min(org.brain + timeValue / (org.brain < 0.3 and 300 or 120) * min(((org.o2[1] < 0.25 and 1 or 0) + org.skull), 1), 1)
+		org.brain = min(org.brain + timeValue / (org.brain < 0.3 and 300 or 120) * math.min(((org.o2[1] < 0.25 and 1 or 0) + org.skull), 1), 1)
 	end --~120 seconds to fully die (0.3 of 300 and 0.4 of 60 seconds after)
 end

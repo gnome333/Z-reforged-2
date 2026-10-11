@@ -1,4 +1,3 @@
-local IsValid = IsValid
 hook.Add("Player Think", "Berserk", function(ply, time, dtime)
     if !ply:IsBerserk() or ply:GetMoveType() == MOVETYPE_NOCLIP then return end
     local velocity = ply:GetVelocity():Length2DSqr()

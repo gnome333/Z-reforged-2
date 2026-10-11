@@ -1,4 +1,3 @@
-local Rand, min, max, random, CurTime, IsValid = math.Rand, math.min, math.max, math.random, CurTime, IsValid
 util.AddNetworkString("VirusStageUpdate")
 
 local VirusModule = {}
@@ -21,7 +20,7 @@ function VirusModule.InfectPlayer(ply)
         BrainDamageInterval = 2,
         NextBrainDamageTime = CurTime(),
         NextHPDamageTime = CurTime() + 5,
-        NextOxygenIssueTime = CurTime() + random(10, 15)
+        NextOxygenIssueTime = CurTime() + math.random(10, 15)
     }
     net.Start("VirusStageUpdate")
     net.WriteInt(ply.Virus.Stage, 8)
@@ -54,7 +53,7 @@ function VirusModule.UpdateVirusStage(ply)
             virus.InternalBleeding = true
             ply.organism.internalBleed = 10 
             ply.organism.otrub = true
-            timer.Simple(random(10, 20), function()
+            timer.Simple(math.random(10, 20), function()
                 if IsValid(ply) then
                     ply.organism.otrub = false
                 end
@@ -83,8 +82,8 @@ function VirusModule.ApplyVirusEffects(ply)
             ply:TakeDamage(2, ply, ply)
             virus.NextHPDamageTime = CurTime() + 5
         end
-        ply.organism.lungsL[1] = min(ply.organism.lungsL[1] + virus.LungDamage, 1)
-        ply.organism.lungsR[1] = min(ply.organism.lungsR[1] + virus.LungDamage, 1)
+        ply.organism.lungsL[1] = math.min(ply.organism.lungsL[1] + virus.LungDamage, 1)
+        ply.organism.lungsR[1] = math.min(ply.organism.lungsR[1] + virus.LungDamage, 1)
     end
 
     if virus.Stage == 5 and CurTime() >= virus.NextBrainDamageTime then
@@ -93,11 +92,11 @@ function VirusModule.ApplyVirusEffects(ply)
     end
 
     if virus.OxygenIssues and CurTime() >= virus.NextOxygenIssueTime then
-        ply.organism.o2[1] = max(ply.organism.o2[1] - 20, 5)
+        ply.organism.o2[1] = math.max(ply.organism.o2[1] - 20, 5)
         timer.Simple(5, function()
             if IsValid(ply) then
-                ply.organism.o2[1] = min(ply.organism.o2[1] + 20, 30)
-                virus.NextOxygenIssueTime = CurTime() + random(10, 15)
+                ply.organism.o2[1] = math.min(ply.organism.o2[1] + 20, 30)
+                virus.NextOxygenIssueTime = CurTime() + math.random(10, 15)
             end
         end)
     end
@@ -106,9 +105,9 @@ function VirusModule.ApplyVirusEffects(ply)
         ply.organism.internalBleed = 10
     end
 
-    if virus.Convulsions and random(1, 100) <= 5 then
+    if virus.Convulsions and math.random(1, 100) <= 5 then
         ply.organism.otrub = true
-        timer.Simple(random(10, 20), function()
+        timer.Simple(math.random(10, 20), function()
             if IsValid(ply) then
                 ply.organism.otrub = false
             end
@@ -116,9 +115,9 @@ function VirusModule.ApplyVirusEffects(ply)
     end
 
     if virus.Pain < virus.PainTarget then
-        virus.Pain = min(virus.Pain + 0.1, virus.PainTarget)
+        virus.Pain = math.min(virus.Pain + 0.1, virus.PainTarget)
     elseif virus.Pain > virus.PainTarget then
-        virus.Pain = max(virus.Pain - 0.1, virus.PainTarget)
+        virus.Pain = math.max(virus.Pain - 0.1, virus.PainTarget)
     end
 
     ply.organism.pain = virus.Pain
@@ -156,7 +155,7 @@ hook.Add("EntityTakeDamage", "ZombieInfect", function(target, dmginfo)
             if target.Virus and target.Virus.Infected then return end
             local chance = target.VirusInfectionChance or 5
             --print(target:Nick() .. " has a " .. chance .. "% chance of being infected.")
-            if random(1, 100) <= chance then
+            if math.random(1, 100) <= chance then
                 VirusModule.InfectPlayer(target)
             else
                 target.VirusInfectionChance = (target.VirusInfectionChance or 5) + 5

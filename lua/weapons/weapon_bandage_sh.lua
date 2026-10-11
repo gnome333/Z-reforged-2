@@ -823,7 +823,10 @@ if SERVER then
 			ent.tourniquets[#ent.tourniquets + 1] = {wound[2], wound[3], wound[4]}
 			org[wound[7]] = 0
 
-			if wound[7] == "arteria" then org.o2.regen = 0 end
+			if wound[7] == "arteria" then
+				org.o2.regen = 0
+				org.o2Tourniquet = true
+			end
 
 			table.remove(org.arterialwounds,pw)
 

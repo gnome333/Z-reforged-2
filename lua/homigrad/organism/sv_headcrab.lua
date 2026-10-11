@@ -1,4 +1,3 @@
-local Rand, random, CurTime, IsValid, FrameTime = math.Rand, math.random, CurTime, IsValid, FrameTime
 
 local PLAYER = FindMetaTable("Player")
 util.AddNetworkString("hg_headcrab")
@@ -58,7 +57,7 @@ hook.Add("Org Think", "Headcrab",function(owner, org, timeValue)
 		local ent = hg.GetCurrentCharacter(owner) or owner
 		local mul = ((org.headcrabon + 60) - CurTime()) / 60
 		if mul > 0 then
-			ent:GetPhysicsObjectNum(random(ent:GetPhysicsObjectCount()) - 1):ApplyForceCenter(VectorRand(-750 * mul,750 * mul))
+			ent:GetPhysicsObjectNum(math.random(ent:GetPhysicsObjectCount()) - 1):ApplyForceCenter(VectorRand(-750 * mul,750 * mul))
 		end
 	end
 
@@ -75,7 +74,7 @@ hook.Add("Org Think", "Headcrab",function(owner, org, timeValue)
 			end
 
 			if (org.headcrabon + 60) < CurTime() and org.alive and not org.headcrabevent then
-				owner:EmitSound("npc/zombie/zombie_alert" .. random(3) .. ".wav", 80, random(60, 70))
+				owner:EmitSound("npc/zombie/zombie_alert" .. math.random(3) .. ".wav", 80, math.random(60, 70))
 				owner:EmitSound("neck_snap_01.wav", 80, 80, 1, CHAN_AUTO)
 				owner:SetPlayerClass("headcrabzombie")
 				org.painadd = org.painadd + 5
@@ -97,7 +96,7 @@ hook.Add("Org Think", "Headcrab",function(owner, org, timeValue)
 
         if org.alive and org.headcrabon and (org.headcrabon + 20) < CurTime() then
 			if (org.headcrabon + 30) > CurTime() then
-				owner:EmitSound("npc/zombie/zombie_pain"..math.random(6)..".wav", 80, random(80, 90))
+				owner:EmitSound("npc/zombie/zombie_pain"..math.random(6)..".wav", 80, math.random(80, 90))
 				org.painadd = org.painadd + 15
 				hg.StunPlayer(owner, 5)
 			end

@@ -1,4 +1,3 @@
-local IsValid = IsValid
 local CurTime, IsValid = CurTime, IsValid
 local math_min, math_clamp, math_rand, math_random, math_sin = math.min, math.Clamp, math.Rand, math.random, math.sin
 local VectorRand = VectorRand

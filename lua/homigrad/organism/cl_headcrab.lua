@@ -1,4 +1,3 @@
-local IsValid = IsValid
 hook.Add("RenderScreenspaceEffects","hg-headcrab",function()
     if lply:GetNetVar("headcrab") and lply == GetViewEntity() and lply.PlayerClassName ~= "headcrabzombie" then
         lply:ScreenFade(SCREENFADE.IN, color_black, 1, 1)

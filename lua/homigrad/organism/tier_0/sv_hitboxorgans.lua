@@ -1,4 +1,3 @@
-local Clamp, Rand, abs, max, random = math.Clamp, math.Rand, math.abs, math.max, math.random
 hg.organism = hg.organism or {}
 local empty = {}
 local Vector = Vector --ыыы
@@ -26,7 +25,7 @@ function hg.organism.Trace(pos, dir, size, maxpen, boxs, center, endDis, organs,
 	local dirSub = 0
 	local ricocheted
 	local ricochetAng
-	distance = Clamp(distance, 0, 50)
+	distance = math.Clamp(distance, 0, 50)
 	dir:Normalize()
 	dir = dir * stepDis
 	local oldDir = Vector()
@@ -75,7 +74,7 @@ function hg.organism.Trace(pos, dir, size, maxpen, boxs, center, endDis, organs,
 			end
 		end
 		
-		frac = max(frac, 0.001)
+		frac = math.max(frac, 0.001)
 
 		dir = dir:GetNormalized() * frac * 105
 		
@@ -90,9 +89,9 @@ function hg.organism.Trace(pos, dir, size, maxpen, boxs, center, endDis, organs,
 				local prot = (organs[box[6]] and organs[box[6]][box[7]][8] or 0) / distance
 
 				normal:Rotate(box[2])
-				ricochetAng = math.deg(math.acos(abs(normal:Dot(dir:GetNormalized()))))
+				ricochetAng = math.deg(math.acos(math.abs(normal:Dot(dir:GetNormalized()))))
 
-				local randomness = random(100) <= max(ricochetAng - 70,10) / 30 * 100
+				local randomness = math.random(100) <= math.max(ricochetAng - 70,10) / 30 * 100
 				ricocheted = ((bonemul >= 0.5 and randomness) or prot >= 1)
 				ricocheted = ricocheted and (ricochetAng > 70)
 
@@ -100,7 +99,7 @@ function hg.organism.Trace(pos, dir, size, maxpen, boxs, center, endDis, organs,
 					if ricochetAng > 60 then
 						local NewVec = dir:Angle()
 						NewVec:RotateAroundAxis(normal,180)
-						NewVec = LerpAngle(Rand(0, 1), NewVec, (-dir):Angle())
+						NewVec = LerpAngle(math.Rand(0, 1), NewVec, (-dir):Angle())
 						dir = -NewVec:Forward() * frac * 100
 					end
 				end

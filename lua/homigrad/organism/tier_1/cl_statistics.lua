@@ -1,4 +1,3 @@
-local cos, sin, Clamp, floor, min, CurTime, IsValid, FrameTime = math.cos, math.sin, math.Clamp, math.floor, math.min, CurTime, IsValid, FrameTime
 hg.organism_ents = hg.organism_ents or {}
 
 net.Receive("organism_send", function()
@@ -284,8 +283,8 @@ hook.Add("HUDPaint", "homigrad-organism-debug", function()
 	if not LocalPlayer():IsAdmin() then return end
 	if !hg_stats:GetBool() then return end
 	local textList = getTextTable(organism)
-	local h = Round(ScreenScaleH(5.5))
-	local cutoff = floor((ScrH() - 150 - 50) / h)
+	local h = math.Round(ScreenScaleH(5.5))
+	local cutoff = math.floor((ScrH() - 150 - 50) / h)
 
 	draw.RoundedBox(0, 15, 150, weight, cutoff * h, black)
 	
@@ -464,7 +463,7 @@ end)
 	local dmg = net.ReadFloat()--actually pen
 	local size = net.ReadFloat()
 
-	local traveltime = min(dmg,8)
+	local traveltime = math.min(dmg,8)
 
 	local bone = net.ReadInt(32)
 	local matpos = net.ReadVector()
@@ -577,7 +576,7 @@ local len = 50
 function hg.DeathCam(ply,origin,angles,fov,znear,zfar)
 	 
 	if not lply:Alive() then
-		len = Clamp(len - delta * 10,10,50)
+		len = math.Clamp(len - delta * 10,10,50)
 		if timeHuy == 0 then timeHuy = CurTime() end
 		if lply:KeyDown(IN_RELOAD) then timeHuy = nil hg.hits = {} end
 		if timeHuy and ((timeHuy + traveltime) > CurTime()) then
@@ -585,18 +584,18 @@ function hg.DeathCam(ply,origin,angles,fov,znear,zfar)
 
 			local part = 1 - ((timeHuy + traveltime) - CurTime()) / traveltime
 			local alpha = ((timeHuy + traveltime) - CurTime()) / 0.2
-			local alpha2 = Clamp(1 - ((timeHuy + traveltime) - CurTime()) / 0.5,0,1)
+			local alpha2 = math.Clamp(1 - ((timeHuy + traveltime) - CurTime()) / 0.5,0,1)
 					
-			local firstpoint = tbl[min(floor(#tbl * part) + 1,#tbl)]
-			local secondpoint = tbl[min(floor(#tbl * part) + 2,#tbl)]
+			local firstpoint = tbl[math.min(math.floor(#tbl * part) + 1,#tbl)]
+			local secondpoint = tbl[math.min(math.floor(#tbl * part) + 2,#tbl)]
 
-			local nextfirstpoint = tbl[min(floor(#tbl * part) + 2,#tbl)]
-			local nextsecondpoint = tbl[min(floor(#tbl * part) + 3,#tbl)]
+			local nextfirstpoint = tbl[math.min(math.floor(#tbl * part) + 2,#tbl)]
+			local nextsecondpoint = tbl[math.min(math.floor(#tbl * part) + 3,#tbl)]
 			
 			if not firstpoint or not secondpoint or not nextfirstpoint or not nextsecondpoint then return end
 
-			local point1 = LerpVector((#tbl * part) - floor(#tbl * part),firstpoint,nextfirstpoint)
-			local point2 = LerpVector((#tbl * part) - floor(#tbl * part),secondpoint,nextsecondpoint)
+			local point1 = LerpVector((#tbl * part) - math.floor(#tbl * part),firstpoint,nextfirstpoint)
+			local point2 = LerpVector((#tbl * part) - math.floor(#tbl * part),secondpoint,nextsecondpoint)
 
 			local view = {
 				origin = point2 + angles:Forward()*-len,
@@ -664,18 +663,18 @@ hook.Add("HUDPaint","homigrad-wound-debug",function()
 
 			local part = 1 - ((timeHuy + traveltime) - CurTime()) / traveltime
 			local alpha = ((timeHuy + traveltime) - CurTime()) / 0.2
-			local alpha2 = Clamp(1 - ((timeHuy + traveltime) - CurTime()) / 0.5,0,1)	
+			local alpha2 = math.Clamp(1 - ((timeHuy + traveltime) - CurTime()) / 0.5,0,1)	
 					
-			local firstpoint = tbl[min(floor(#tbl * part) + 1,#tbl)]
-			local secondpoint = tbl[min(floor(#tbl * part) + 2,#tbl)]
+			local firstpoint = tbl[math.min(math.floor(#tbl * part) + 1,#tbl)]
+			local secondpoint = tbl[math.min(math.floor(#tbl * part) + 2,#tbl)]
 
-			local nextfirstpoint = tbl[min(floor(#tbl * part) + 2,#tbl)]
-			local nextsecondpoint = tbl[min(floor(#tbl * part) + 3,#tbl)]
+			local nextfirstpoint = tbl[math.min(math.floor(#tbl * part) + 2,#tbl)]
+			local nextsecondpoint = tbl[math.min(math.floor(#tbl * part) + 3,#tbl)]
 			
 			if not firstpoint or not secondpoint or not nextfirstpoint or not nextsecondpoint then return end
 			
-			local point1 = LerpVector((#tbl * part) - floor(#tbl * part),firstpoint,nextfirstpoint)
-			local point2 = LerpVector((#tbl * part) - floor(#tbl * part),secondpoint,nextsecondpoint)
+			local point1 = LerpVector((#tbl * part) - math.floor(#tbl * part),firstpoint,nextfirstpoint)
+			local point2 = LerpVector((#tbl * part) - math.floor(#tbl * part),secondpoint,nextsecondpoint)
 			colblack.a = 255 * alpha
 			--draw.RoundedBox(0,posX,posY,sizeX,sizeY,colblack)
 			angle = angle + Angle(0,0.25,0)
@@ -750,7 +749,7 @@ hook.Add("HUDPaint","homigrad-wound-debug",function()
 
 					--if organ and hitorgans[i] then
 					--	cam.Start2D()
-					--		draw.SimpleText(hg.organism.translationTbl[organ[1]] or organ[1], "HomigradFontSmall", box[1]:ToScreen().x + sin(CurTime()%(i))^3 * (5%i),box[1]:ToScreen().y + cos(CurTime()%(i)) * (5%i), organ and organ[6])
+					--		draw.SimpleText(hg.organism.translationTbl[organ[1]] or organ[1], "HomigradFontSmall", box[1]:ToScreen().x + math.sin(CurTime()%(i))^3 * (5%i),box[1]:ToScreen().y + math.cos(CurTime()%(i)) * (5%i), organ and organ[6])
 					--	cam.End2D()
 					--end
 					

@@ -1,9 +1,8 @@
-local Remap, Rand, random, CurTime, IsValid = math.Remap, math.Rand, math.random, CurTime, IsValid
 --local Organism = hg.organism
 hg.organism.module.random_events = {}
 local module = hg.organism.module.random_events
 module[1] = function(org)
-	org.timeToRandom = CurTime() + random(120,320)
+	org.timeToRandom = CurTime() + math.random(120,320)
 end
 
 local RandomEvents = {
@@ -65,7 +64,7 @@ module[2] = function(owner, org, timeValue)
             table.Random(RandomEvents)(owner,org)
         end
 
-        org.timeToRandom = CurTime() + random(120,320)
+        org.timeToRandom = CurTime() + math.random(120,320)
     end
 end
 
@@ -73,9 +72,9 @@ hook.Add("Org Think", "VirusRandomEvents", function(owner, org, timeValue)
     if not owner:IsPlayer() or not owner:Alive() then return end
     if owner:IsPlayer() and owner.Virus and owner.Virus.Infected and (owner.Virus.Stage == 1 or owner.Virus.Stage == 2) then
         if not owner.NextVirusRandomEventTime or CurTime() >= owner.NextVirusRandomEventTime then
-            local event = random(1, 2) == 1 and "Cough" or "Sneeze"
+            local event = math.random(1, 2) == 1 and "Cough" or "Sneeze"
             module.TriggerRandomEvent(owner, event)
-            owner.NextVirusRandomEventTime = CurTime() + random(10, 15)
+            owner.NextVirusRandomEventTime = CurTime() + math.random(10, 15)
         end
     end
 end)
@@ -84,9 +83,9 @@ hook.Add("Org Think", "TemperatureSounds", function(owner, org, timeValue) -- д
     if not owner:IsPlayer() or not owner:Alive() or org.otrub then return end
     if owner:IsPlayer() and org.temperature > 24 and org.temperature < 35 then
         if not owner.ColdRandomEventTime or CurTime() >= owner.ColdRandomEventTime then
-            local event = random(1, 2) == 1 and "Cough" or "Sneeze"
+            local event = math.random(1, 2) == 1 and "Cough" or "Sneeze"
             module.TriggerRandomEvent(owner, event)
-            owner.ColdRandomEventTime = CurTime() + random(Remap(org.temperature, 35, 24, 60, 15), Remap(org.temperature, 35, 24, 120, 30))
+            owner.ColdRandomEventTime = CurTime() + math.random(math.Remap(org.temperature, 35, 24, 60, 15), math.Remap(org.temperature, 35, 24, 120, 30))
         end
     end
 end)
