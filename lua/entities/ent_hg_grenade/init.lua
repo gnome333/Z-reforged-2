@@ -185,7 +185,7 @@ function ENT:Think()
 			local wpos = ent:LocalToWorld(lpos)
 
 			if wpos:Distance(self:GetPos()) > origlen + 20 then
-				self:Arm(CurTime() - self.timeToBoom + 1)
+				self:Arm(CurTime() - self.timeToBoom + (self.TripwireFuse or 4))
 			end
 
 			local tr = {}
@@ -194,7 +194,7 @@ function ENT:Think()
 			tr.filter = {self,self.ent2,self.ent}
 			local trace = util.TraceLine(tr)
 			if IsValid(trace.Entity) then
-				self:Arm(CurTime() - self.timeToBoom + 1,trace.Entity:GetVelocity())
+				self:Arm(CurTime() - self.timeToBoom + (self.TripwireFuse or 4),trace.Entity:GetVelocity())
 			end
 		end
 		if not IsValid(self.cons2) then
@@ -230,6 +230,7 @@ local function createSpoon(self)
 end
 
 function ENT:Arm(time,vel)
+	if self.timer then return end
 	local vel = vel or Vector(0,0,0)
 	time = time or CurTime()
 	if not self.NotSpoon then
