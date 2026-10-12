@@ -138,6 +138,7 @@ AddItemToBUY( "Beta-Blocker", "Weapon", "weapon_betablock", 250, "Medical", {} )
 AddItemToBUY( "M67", "Weapon", "weapon_hg_grenade_tpik", 500, "Explosive", {}, nil, 1 )
 AddItemToBUY( "RGD-5", "Weapon", "weapon_hg_rgd_tpik", 450, "Explosive", {}, nil, 0 )
 AddItemToBUY( "F-1", "Weapon", "weapon_hg_f1_tpik", 500, "Explosive", {}, nil, 0 )
+AddItemToBUY( "Smoke Grenade", "Weapon", "weapon_hg_smokenade_tpik", 250, "Explosive", {}, nil, 0 )
 AddItemToBUY( "Flashbang", "Weapon", "weapon_hg_flashbang_tpik", 250, "Explosive", {} )
 
 --Ammo

@@ -81,7 +81,8 @@ module[2] = function(owner, org, timeValue)
 	stamina.sub = stamina.sub + stamina.sub * stamina.weight * (muffed and 2 or 1)
 	org.hungry = org.hungry or 0
 	stamina.max = (org.superfighter and 2 or 1) * ((stamina.range * (1 - (org.pneumothorax) / 2) + org.adrenaline * 20 ) * math.max(1 - org.hemotransfusionshock,0.2)) * math.max(1 - (org.hungry/100),0.65)
-	stamina[1] = max(stamina[1] - stamina.sub * timeValue * 16 * (2 - (org.o2[1] / org.o2.range)), 0)
+	local satietyMul = 1 - min(max((org.satiety or 0) / 100, 0), 1) * 0.25
+	stamina[1] = max(stamina[1] - stamina.sub * timeValue * 16 * (2 - (org.o2[1] / org.o2.range)) * satietyMul, 0)
 	//org.o2[1] = org.o2[1] - min(stamina.sub * timeValue, org.o2.regen * timeValue)
 	
 	//local old = stamina[1]

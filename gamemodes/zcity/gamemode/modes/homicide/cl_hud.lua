@@ -40,6 +40,35 @@ local function draw_RotatedText(text, font, x, y, color, ang, scale)
 	render.PopFilterMin()
 end
 
+local neckbreak_key
+local neckbreak_key_next = 0
+
+local function GetNeckBreakBindText()
+	if CurTime() >= neckbreak_key_next then
+		local code = tonumber(cookie.GetString("hg_bind_neckbreak", "0")) or 0
+		local bind
+		
+		if code > 0 then
+			bind = input.GetKeyName(code)
+		end
+		
+		if not bind or bind == "" then
+			bind = input.LookupBinding("+neckbreak", true)
+		end
+		
+		if bind and bind != "" then
+			bind = string.lower(bind)
+			neckbreak_key = string.StartWith(bind, "mouse") and ("Mouse " .. string.sub(bind, 6)) or string.upper(bind)
+		else
+			neckbreak_key = "NOT BOUND"
+		end
+		
+		neckbreak_key_next = CurTime() + 0.5
+	end
+	
+	return neckbreak_key
+end
+
 hook.Add("HUDPaint", "HMCD_SubRoles_Abilities", function()
 	local ply = LocalPlayer()
 	local aim_ent, other_ply, trace = MODE.GetPlayerTraceToOther(ply)
@@ -52,7 +81,7 @@ hook.Add("HUDPaint", "HMCD_SubRoles_Abilities", function()
 	if(ply:Alive())then
 		if(ply.isTraitor)then
 			if(ply.SubRole == "traitor_infiltrator" or ply.SubRole == "traitor_infiltrator_soe")then
-				local text = "(HOLD)[ALT + E] Break Neck"
+				local text = "(HOLD)[" .. GetNeckBreakBindText() .. "] Break Neck"
 				local tw, th = surface.GetTextSize(text)
 				local cx, cy = trace.HitPos:ToScreen().x, trace.HitPos:ToScreen().y
 				cy = cy + y_offset
@@ -261,8 +290,9 @@ net.Receive("HMCD_UpdateTraitorAssistants", function()
         local color = net.ReadColor()
         local name = net.ReadString()
         local steamID = net.ReadString()
+        local is_main = net.ReadBool()
         
-        table.insert(MODE.TraitorsLocal, {color, name, steamID})
+        table.insert(MODE.TraitorsLocal, {color, name, steamID, is_main})
     end
 end)
 
@@ -296,7 +326,12 @@ hook.Add("HUDPaint", "DrawTraitorPanel", function()
     traitor_panel.smooth_toggle = Lerp(FrameTime() * 10, traitor_panel.smooth_toggle, target)
     
     local is_main = ply.MainTraitor
-    local height = is_main and traitor_panel.height or traitor_panel.assist_height
+    local height = traitor_panel.height
+
+    if not is_main then
+        local list_count = math.max(#(MODE.TraitorsLocal or {}) - 1, 0)
+        height = math.max(traitor_panel.assist_height, 205 + math.min(list_count, 6) * 25)
+    end
     local x = ScrW() - traitor_panel.width - 20 + traitor_panel.smooth_toggle
     local y = ScrH() / 2 - (height / 2)
     
@@ -346,7 +381,7 @@ hook.Add("HUDPaint", "DrawTraitorPanel", function()
     draw.SimpleText(word2, "TraitorPanelWords", x + traitor_panel.width/2, word_y, 
                     traitor_panel.colors.words, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
     
-    if is_main then
+    do
         for steamid, avatar in pairs(traitor_panel.assistant_avatars) do
             if IsValid(avatar) then
                 avatar:SetVisible(false)
@@ -357,12 +392,12 @@ hook.Add("HUDPaint", "DrawTraitorPanel", function()
         local has_assistants = false
         MODE.TraitorsLocal = MODE.TraitorsLocal or {}
         
-        if #MODE.TraitorsLocal > (ply.MainTraitor and 1 or 0) then
+        if #MODE.TraitorsLocal > 1 then
             has_assistants = true
         end
         
         if has_assistants then
-            draw.SimpleText("Your Assistants:", "TraitorPanelText", x + traitor_panel.width/2, assist_y, 
+            draw.SimpleText(is_main and "Your Assistants:" or "Traitor Team:", "TraitorPanelText", x + traitor_panel.width/2, assist_y, 
                             Color(220, 220, 220), TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
             
             assist_y = assist_y + 25   
@@ -370,7 +405,7 @@ hook.Add("HUDPaint", "DrawTraitorPanel", function()
             for _, traitor_info in ipairs(MODE.TraitorsLocal) do
                 if not traitor_info or #traitor_info < 2 then continue end
                 
-                if ply.MainTraitor and ply.CurAppearance and traitor_info[2] == ply.CurAppearance.AName then
+                if ply.CurAppearance and traitor_info[2] == ply.CurAppearance.AName then
                     continue
                 end
                 
@@ -411,6 +446,10 @@ hook.Add("HUDPaint", "DrawTraitorPanel", function()
                 
                 local status = is_alive and "" or " [DEAD]"
 
+                if traitor_info[4] then
+                    status = status .. " [MAIN]"
+                end
+
 
                 local display_name = name
                 if #name > 20 then
@@ -449,15 +488,8 @@ hook.Add("HUDPaint", "DrawTraitorPanel", function()
             end
         else
 
-            draw.SimpleText("No assistants available", "TraitorPanelText", x + traitor_panel.width/2, assist_y, 
+            draw.SimpleText(is_main and "No assistants available" or "No team information", "TraitorPanelText", x + traitor_panel.width/2, assist_y, 
                             Color(150, 150, 150), TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
-        end
-    else
-
-        for steamid, avatar in pairs(traitor_panel.assistant_avatars) do
-            if IsValid(avatar) then
-                avatar:SetVisible(false)
-            end
         end
     end
 end)
@@ -479,7 +511,7 @@ end)
 
 
 hook.Add("Think", "UpdateTraitorAssistants", function()
-	if not LocalPlayer().isTraitor or not LocalPlayer().MainTraitor then return end
+	if not LocalPlayer().isTraitor then return end
 
 	if not traitor_panel.next_assistant_check or traitor_panel.next_assistant_check < CurTime() then
 		traitor_panel.next_assistant_check = CurTime() + 0.5
@@ -502,7 +534,7 @@ end)
 
 
 hook.Add("Think", "RequestTraitorStatus", function()
-	if not LocalPlayer().isTraitor or not LocalPlayer().MainTraitor then return end
+	if not LocalPlayer().isTraitor then return end
 	
 	if not traitor_panel.next_status_request or traitor_panel.next_status_request < CurTime() then
 		traitor_panel.next_status_request = CurTime() + 2

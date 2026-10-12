@@ -389,13 +389,32 @@ local function OpenGWARSBuyMenu()
 				surface.DrawTexturedRect(0, 0, w / 1.5, h)
 			end
 
+			local iconPath
+			local iconSquare = false
 			local weapon = weapons.GetStored(item.class)
 			if weapon != nil and ((weapon.WepSelectIcon2 and weapon.WepSelectIcon2:GetName()) or weapon.IconOverride) then
+				iconPath = (weapon.WepSelectIcon2 and weapon.WepSelectIcon2:GetName() .. ".png") or weapon.IconOverride
+			elseif item.kind == "armor" then
+				iconSquare = true
+				local key = string.Replace(item.class, "ent_armor_", "")
+				local path = hg.armorIcons and hg.armorIcons[key]
+				if path and not Material(path):IsError() then
+					iconPath = path
+				else
+					local ent = scripted_ents.GetStored(item.class)
+					local model = ent and ent.t and ent.t.Model
+					if model then
+						iconPath = "spawnicons/" .. string.StripExtension(model) .. ".png"
+					end
+				end
+			end
+
+			if iconPath then
 				local icon = vgui.Create("DImage", ItemPanel)
-				icon:SetSize(ScrH() * 0.17, ScrH() * 0.1)
+				icon:SetSize(ScrH() * (iconSquare and 0.1 or 0.17), ScrH() * 0.1)
 				icon:Dock(LEFT)
 				icon:DockMargin(5, 5, 5, 5)
-				icon:SetImage((weapon.WepSelectIcon2 and weapon.WepSelectIcon2:GetName() .. ".png") or weapon.IconOverride)
+				icon:SetImage(iconPath)
 			end
 
 			local ItemButton = vgui.Create("DPanel", ItemPanel)

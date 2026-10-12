@@ -73,24 +73,11 @@ hook.Add("PlayerPostThink", "HMCD_SubRoles_Abilities", function(ply)
 						end
 					end
 					
-					if(ply:KeyPressed(IN_USE))then
-						local aim_ent, other_ply = MODE.GetPlayerTraceToOther(ply)
-						
-						if(IsValid(aim_ent))then
-							if(other_ply and MODE.CanPlayerBreakOtherNeck(ply, aim_ent))then
-								MODE.StartBreakingOtherNeck(ply, other_ply)
-							end
-						end
-					elseif(ply:KeyDown(IN_USE))then
-						if(ply.Ability_NeckBreak)then
-							MODE.ContinueBreakingOtherNeck(ply)
-						end
-					end
-					
-					if(ply:KeyReleased(IN_USE))then
-						MODE.StopBreakingOtherNeck(ply)
-					end
-				else
+				end
+				
+				if(ply.NeckBreakBind and ply.Ability_NeckBreak)then
+					MODE.ContinueBreakingOtherNeck(ply)
+				elseif(not ply.NeckBreakBind)then
 					MODE.StopBreakingOtherNeck(ply)
 				end
 			end
@@ -165,12 +152,33 @@ hook.Add("HomigradDamage", "HMCD_GrabStab", function(ent, dmgInfo, hitgroup, kil
 
 	if not IsValid(victim) or not IsValid(victim.GrabbedBy) then return end
 	if dmgInfo:GetAttacker() != victim.GrabbedBy then return end
-	if not dmgInfo:IsDamageType(DMG_SLASH) then return end
+	if not dmgInfo:IsDamageType(DMG_SLASH + DMG_CLUB) then return end
 
-	victim.GrabEscapeTime = (victim.GrabEscapeTime or CurTime()) + 1
+	victim.GrabEscapeTime = (victim.GrabEscapeTime or CurTime()) + 5
 end)
 
 hook.Add("PlayerSpawn", "HMCD_GrabCleanup", function(ply)
 	ply.GrabbedBy = nil
 	ply.GrabEscapeTime = nil
+	ply.NeckBreakBind = nil
+end)
+
+concommand.Add("+neckbreak", function(ply)
+	if not MODE.RoleChooseRoundTypes[MODE.Type] then return end
+	if not ply:Alive() or not ply.organism or ply.organism.otrub then return end
+	if ply.SubRole != "traitor_infiltrator" and ply.SubRole != "traitor_infiltrator_soe" then return end
+
+	ply.NeckBreakBind = true
+
+	if ply.Ability_NeckBreak then return end
+
+	local aim_ent, other_ply = MODE.GetPlayerTraceToOther(ply)
+	if IsValid(aim_ent) and other_ply and MODE.CanPlayerBreakOtherNeck(ply, aim_ent) then
+		MODE.StartBreakingOtherNeck(ply, other_ply)
+	end
+end)
+
+concommand.Add("-neckbreak", function(ply)
+	ply.NeckBreakBind = false
+	MODE.StopBreakingOtherNeck(ply)
 end)

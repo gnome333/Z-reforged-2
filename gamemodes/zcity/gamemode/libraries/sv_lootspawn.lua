@@ -267,6 +267,13 @@ function hg.GenerateLoot(ply,ent,func)
 				tab = tools
 			end
 		end
+
+		if IsValid(ply) and ply.Profession == "engineer" and math.random(100) <= 15 then
+			tab = {
+				{6, "weapon_hg_bottle"},
+				{8, "weapon_bandage_sh"},
+			}
+		end
 	end
 
 	--print(tab)
