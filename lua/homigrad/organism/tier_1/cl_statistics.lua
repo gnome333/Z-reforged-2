@@ -74,7 +74,6 @@ local list = {
 	"heatbuff",
 	"blindness",
 	"fear",
-	"assimilated",
 	"berserk",
 	"noradrenaline",
 	"fearadd",

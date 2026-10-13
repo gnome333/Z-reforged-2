@@ -500,7 +500,7 @@ end
 		local override = (CLIENT and hg.override[ply]) or (SERVER and OverrideSpawn)
 
 		if eightbit and eightbit.EnableEffect and ply.UserID then
-			eightbit.EnableEffect(ply:UserID(), ply.PlayerClassName == "furry" and eightbit.EFF_PROOT or 0)
+			eightbit.EnableEffect(ply:UserID(), 0)
 		end
 
 		if not override then
@@ -667,11 +667,7 @@ local IsValid = IsValid
 		//hg.HomigradBones(self, CurTime(), FrameTime())
 
 		if IsValid(self.OldRagdoll) then DrawAppearance(ent, self, true) end
-		if !hg.converging[self] then
-			ent:DrawModel()
-		else
-			DrawConversion(ent, self)
-		end
+		ent:DrawModel()
 		if IsValid(self.OldRagdoll) then
 			DrawAppearance(ent, self)
 		else
@@ -1163,7 +1159,7 @@ local IsValid = IsValid
 --//
 --\\ flashlight custom switch
 	hook.Add("PlayerSwitchFlashlight", "removeflashlights", function(ply, enabled)
-		if ply.PlayerClassName == "Combine" or ply.PlayerClassName == "furry" then return false end --!! TODO: CLASS.NoFlashLight boolean
+		if ply.PlayerClassName == "Combine" then return false end --!! TODO: CLASS.NoFlashLight boolean
 
 		local wep = ply:GetActiveWeapon()
 

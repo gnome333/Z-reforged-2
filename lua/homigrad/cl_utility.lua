@@ -534,7 +534,7 @@ players : 1 humans, 0 bots (20 max)
 		local brainadjust = org.brain > 0.05 and math.Clamp(((org.brain - 0.05) * math.sin(CurTime()) * 20), -2, 2) or 0
 		local stunmul = math.max((1 - math.max(LocalPlayer():GetLocalVar("stun", CurTime()) - CurTime(), 0) / 3), 0)
 		if lply:KeyDown(IN_SPEED) and lply:KeyDown(IN_WALK) and vel:LengthSqr() >= 10000 and IsValid(wep) and wep:GetClass() == "weapon_hands_sh" then
-			return (math.max((lply.PlayerClassName == "furry" and 0.2 or 0.25) / ((org.immobilization or 0) / 30 + 1),0.2) * wepMul) * weaponAdjust * stunmul + brainadjust
+			return (math.max(0.25 / ((org.immobilization or 0) / 30 + 1),0.2) * wepMul) * weaponAdjust * stunmul + brainadjust
 		end
 		if isrunning and lply:GetMoveType() ~= MOVETYPE_NOCLIP then
 			return 0.5 * math.max(1 / ((org.immobilization or 0) / 30 + 1),0.4) * wepMul * weaponAdjust * stunmul + brainadjust

@@ -168,10 +168,6 @@ function SWEP:DrawWorldModel()
 		self.worldModel = ClientsideModel(self.WorldModel)
 	end
 
-	if owner.PlayerClassName == "furry" and self.worldModel != "models/weapons/salat/anims/furry_fists.mdl" then
-		self.worldModel:SetModel("models/weapons/salat/anims/furry_fists.mdl")
-	end
-
 	if not self:GetFists() then return end
 
 	local WorldModel = self.worldModel
@@ -194,10 +190,6 @@ function SWEP:DrawWorldModel()
 		local _,ang = LocalToWorld(vector_origin,blocking_ang * self.blockinganim,vector_origin,ang)
 
 		local pos, ang = self:ModelAnim(WorldModel, pos, ang)
-
-		if owner.PlayerClassName == "furry" then
-			pos = pos + ang:Forward() * 10
-		end
 
 		--print(pos)
 		WorldModel:SetRenderOrigin(pos)
@@ -559,7 +551,6 @@ function SWEP:IsLocal()
 	return self:GetOwner() == LocalPlayer()
 end
 
-local paw = Material("zbattle/paw_hmcd.png")
 local cqcicon = Material("vgui/inventory/perk_quick_reload")
 SWEP.changedName = false
 
@@ -570,10 +561,6 @@ function SWEP:Think()
 		if owner.PlayerClassName == "sc_infiltrator" and self.PrintName ~= "CQC" then
 			self.PrintName = "CQC"
 			self.WepSelectIcon = cqcicon
-		elseif owner.PlayerClassName == "furry" and self.PrintName ~= "Paws" then
-			self.PrintName = "Paws"
-			self.WepSelectIcon = paw
-			self.Instructions = "LMB - raise paws\nRELOAD - lower paws\n\nIn the raised state:\nLMB - strike\nRMB - block\n\n<color=91,121,229>As a bearer of a pathowogen infection, you have new abilities.\n\nIn lowered state, hold RMB to grab uninfected prey, then hold LMB to assimilate them.\n\nYou can press LMB to lick your fellow mates, doing so helps them alleviate their pain.\n\n:3<color=180,180,180>"
 		else
 			self.PrintName = "Hands"
 		end
@@ -600,13 +587,12 @@ function SWEP:Think()
 	end
 end
 
-local specang1, specang2, specangfur = Angle(-1, -3, 3), Angle(4, 12, 3), Angle(-15, 2, 2)
+local specang1, specang2 = Angle(-1, -3, 3), Angle(4, 12, 3)
 function SWEP:PrimaryAttack(forcespecial)
 	local owner = self:GetOwner()
 	if not IsValid(owner) or owner:InVehicle() then return end
 	if (self.attacked or 0) > CurTime() then return end
-	local isfur = owner.PlayerClassName == "furry"
-	local side = isfur and "fists_left" or "attack_quick_2"
+	local side = "attack_quick_2"
 	local rand = math.Round(util.SharedRandom( "fist_Punching", 1, 2 ),0) == 1
 
 	local inv = owner:GetNetVar("Inventory",{})
@@ -614,11 +600,7 @@ function SWEP:PrimaryAttack(forcespecial)
 	local havekastet = inv["Weapons"] and inv["Weapons"]["hg_brassknuckles"]
 
 	if rand or (CLIENT and ((owner:GetTable().ChatGestureWeight and owner:GetTable().ChatGestureWeight >= 0.1) or twohands)) or havekastet then
-		if isfur then
-			side = "fists_right"
-		else
-			side = "attack_quick_1"
-		end
+		side = "attack_quick_1"
 	end
 	if owner:KeyDown(IN_ATTACK2) and owner.PlayerClassName ~= "sc_infiltrator" then return end
 	if owner:GetNetVar("handcuffed",false) then return end
@@ -649,15 +631,9 @@ function SWEP:PrimaryAttack(forcespecial)
 		ViewPunch(special_attack and specang1 or Angle(-1, -(rand and -3 or 3), (rand and -9 or 9)))
 		//ViewPunch2(special_attack and Angle(5, -2, 2) or Angle((-1), -(rand and 2 or -2), (rand and 6 or -6)))
 		if special_attack then
-			if not isfur then
-				timer.Simple(0.4, function()
-					ViewPunch(specang2)
-				end)
-			else
-				timer.Simple(0.06, function()
-					ViewPunch(specangfur)
-				end)
-			end
+			timer.Simple(0.4, function()
+				ViewPunch(specang2)
+			end)
 		end
 	end
 

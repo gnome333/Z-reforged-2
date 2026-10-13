@@ -20,13 +20,6 @@ local hg_coolcamera = ConVarExists("hg_coolcamera") and GetConVar("hg_coolcamera
 		local sprint = hg.KeyDown(ply, IN_SPEED)
 		ply.lastStepTime = CurTime() + 0.7 * (sprint and 1.5 or 1) * (1 / math_max(len, sprint and 200 or 150)) * 100
 
-		if ply.PlayerClassName == "furry" then
-			local wep = ply:GetActiveWeapon()
-			if sprint and hg.KeyDown(ply, IN_WALK) and IsValid(wep) and wep:GetClass() == "weapon_hands_sh" then
-				ply.lastStepTime = CurTime() + 0.4 * (sprint and 1.5 or 1) * (1 / math_max(len, sprint and 200 or 150)) * 100
-			end
-		end
-
 		hook_Run("HG_PlayerFootstep_Notify", ply, pos, foot, sound, volume, rf)	--; Do not return anything from this _Notify hook
 
 		if CLIENT and ply == lply and ply.move then
@@ -59,12 +52,7 @@ local hg_coolcamera = ConVarExists("hg_coolcamera") and GetConVar("hg_coolcamera
 			if Hook then return Hook end
 
 			if !(ply:IsWalking() or ply:Crouching()) and ent == ply then
-				local snd
-				if ply.PlayerClassName == "furry" then
-					snd = "zbattle/footstep/hardbarefoot" .. math.random(1, 5) .. ".ogg"
-				else
-					snd = "zcitysnd/"..sound -- missing footsteps fix
-				end
+				local snd = "zcitysnd/" .. sound
 				if SoundDuration(snd) <= 0 or ply.PlayerClassName == "Gordon" then
 					snd = sound
 				end

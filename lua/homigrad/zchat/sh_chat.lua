@@ -128,14 +128,6 @@ if CLIENT then
 			antialias = fontAntiAliasing
 		})
 
-		surface.CreateFont("ZB_ProotOSChat", {
-			font = "Ari-W9500",
-			size = ScreenScale(size),
-			extended = true,
-			weight = fontW,
-			antialias = fontAntiAliasing
-		})
-
 		surface.CreateFont("BerserkChatFont", {
 			font = "Who asks Satan",
 			size = ScreenScale(size + 3),
@@ -175,9 +167,7 @@ if CLIENT then
 	hook.Add("ModifyMessageBuffer", "ChatFont", function(buffer, speaker)
 		if !IsValid(speaker) or !speaker:IsPlayer() then return end
 
-		if speaker.PlayerClassName == "furry" then
-			buffer[#buffer + 1] = "<font=ZB_ProotOSChat>"
-		elseif speaker:IsBerserk() then
+		if speaker:IsBerserk() then
 			buffer[#buffer + 1] = "<font=BerserkChatFont>"
 		end
 	end)

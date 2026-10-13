@@ -219,15 +219,9 @@ end )]]
 	halo.Add( pickuphalo, color_red, 1, 1, 1 )
 end )]]
 
--- funny :)
-
---that one furry game
-
-
 local painMat = Material("effects/shaders/zb_grain")
 local noiseMat = Material("effects/shaders/zb_grainwhite")
 local vignetteMat = Material("effects/shaders/zb_vignette")
-local assimilationMat = Material("effects/shaders/zb_assimilation")
 local coldMat = Material("effects/shaders/zb_colda")
 local grainMat = Material("effects/shaders/zb_grain2")
 local heatMat = Material("effects/shaders/zb_heat")
@@ -235,7 +229,6 @@ local blindMat = Material("effects/shaders/zb_blind")
 
 local PainLerp = 0
 local O2Lerp = 0
-local assimilatedLerp = 0
 local tempLerp = 36.6
 
 local show_image_time = 0
@@ -255,7 +248,6 @@ local function stopthings()
 	PainLerp = 0
 	O2Lerp = 0
 	shockLerp = 0
-	assimilatedLerp = 0
 	tempLerp = 36.6
 	consciousnessLerp = 1
 
@@ -304,11 +296,6 @@ local function stopthings()
 	if IsValid(Tinnitus) then
 		Tinnitus:Stop()
 		Tinnitus = nil
-	end
-
-	if IsValid(AssimilationStation) then
-		AssimilationStation:Stop()
-		AssimilationStation = nil
 	end
 end
 
@@ -403,41 +390,6 @@ hook.Add("Post Post Processing", "ItHurts", function()
 	consciousnessLerp = LerpFT(org.consciousness < (consciousnessLerp or 1) and 1 or 0.01, consciousnessLerp or 1, org.consciousness)
 	-- local immobilization = org.immobilization
 	PainLerp = LerpFT(0.05, PainLerp, math.max(pain * (org.otrub and 0.2 or 1), 0))
-	assimilatedLerp = LerpFT(0.01, assimilatedLerp, (org.assimilated or 0))
-
-	if assimilatedLerp > 0.001 then
-		render.UpdateScreenEffectTexture()
-
-		assimilationMat:SetFloat("$c0_x", -CurTime())//math.sin(CurTime() * 0.1) * CurTime() * 0.01) //time
-		assimilationMat:SetFloat("$c0_y", assimilatedLerp * 3)//(math.sin(CurTime()) + 1) * 2) //intensity (strict)
-		local ctime = CurTime() * 2
-		local val = math.Clamp(3 - 1 / 3 * (math.sin(ctime * 2.8862) + math.cos(ctime * 1.115) - math.sin(ctime * 0.6215) + 3), 0, 5)
-		local val2 = math.Clamp(1 - 1 / 6 * (math.sin(ctime * 1.1862) + math.cos(ctime * 2.315) - math.sin(ctime * 0.9215) + 3), 0, 1)
-		assimilationMat:SetFloat("$c1_y", val)
-		assimilationMat:SetFloat("$c1_x", val2 - 0.5)
-
-		if !IsValid(AssimilationStation) or AssimilationStation:GetState() != GMOD_CHANNEL_PLAYING then
-			sound.PlayFile("sound/zbattle/furry/conversion/assimilation_noise3.ogg", "noblock noplay", function(station, err)
-				if IsValid(station) then
-					station:SetVolume(0)
-					station:Play()
-					AssimilationStation = station
-					station:EnableLooping(true)
-				end
-			end)
-		else
-			AssimilationStation:SetVolume(assimilatedLerp * 2)
-			//AssimilationStation:SetPlaybackRate(assimilatedLerp * 1)
-		end
-
-		render.SetMaterial(assimilationMat)
-		render.DrawScreenQuad()
-	else
-		if IsValid(AssimilationStation) then
-			AssimilationStation:Stop()
-			AssimilationStation = nil
-		end
-	end
 
 	if (org.consciousness or 0) < 1 then
 		local consciousness = 1 - consciousnessLerp

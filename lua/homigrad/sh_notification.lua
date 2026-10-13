@@ -149,7 +149,7 @@ if CLIENT then
 	local defaultShowTimer = 3
 
 	local function CreateNotification(msg, showTimer, clr)
-		if hg_furcity:GetBool() or lply.PlayerClassName == "furry" then
+		if hg_furcity:GetBool() then
 			msg = hg.FurrifyPhrase(msg)
 		end
 
@@ -161,7 +161,7 @@ if CLIENT then
 	end
 
 	local function CreateNotificationBerserk(msg, showTimer, clr)
-		if hg_furcity:GetBool() or lply.PlayerClassName == "furry" then
+		if hg_furcity:GetBool() then
 			msg = hg.FurrifyPhrase(msg) -- uhhhh... hate to break it to you but-
 		end
 
@@ -256,8 +256,6 @@ if CLIENT then
 	local last_time
 
 	local vector_one = Vector( 1, 1, 0)
-
-	local bluewhite = Color(187, 187, 255)
 
 	local function NotificationsDraw()
 		time_spent = CurTime()
@@ -356,11 +354,6 @@ if CLIENT then
 					cam.PopModelMatrix()
 
 					render.PopFilterMag()
-				elseif lply.PlayerClassName == "furry" then
-					local x, y = ScrW() / 2 - txtw / 2 + math.Rand(0, org.pain > 10 and org.pain / 10 or 0) + math.Rand(0, (255 - clr.g) / 255 * 2), ScrH() - ScrH() / 6 + math.Rand(0, org.pain > 10 and org.pain / 10 or 0) + math.Rand(0, (255 - clr.g) / 255 * 2)
-
-					draw.SimpleText(last_message or txt, "ZB_ProotOSMedium", x + 2, y + 2, ColorAlpha(color_black, col.a), TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
-					draw.SimpleText(last_message or txt, "ZB_ProotOSMedium", x, y, ColorAlpha(bluewhite, col.a), TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
 				else
 					local x, y = ScrW() / 2 - txtw / 2 + math.Rand(0, org.pain > 10 and org.pain / 10 or 0) + math.Rand(0, (255 - clr.g) / 255 * 2), ScrH() - ScrH() / 6 + math.Rand(0, org.pain > 10 and org.pain / 10 or 0) + math.Rand(0, (255 - clr.g) / 255 * 2)
 

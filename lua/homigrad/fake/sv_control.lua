@@ -574,14 +574,6 @@ hook.Add("Think", "Fake", function()
 					if hg_fake_stamina:GetBool() then
 						org.stamina.subadd = org.stamina.subadd + 0.06 * (ragdoll.staminaLeftModifyer or 0.5) * ( IsValid(ragdoll.ConsRH) and 0.35 or 1.25) * (on_ground and 0.25 or 1)
 					end
-					
-					local ent2 = ragdoll.ConsLH.Ent2
-					local ply2 = hg.RagdollOwner(ent2) or ent2
-
-					if ply.PlayerClassName == "furry" and ply2.PlayerClassName != "furry" and IsValid(ent2) and ent2.organism then
-						ent2.organism.assimilated = math.Approach(ent2.organism.assimilated, 1, ragdoll.dtime / 6)
-						ent2.organism.lightstun = CurTime() + 1
-					end
 				end
 
 				local wepinreload = wep and wep.reload
@@ -662,14 +654,6 @@ hook.Add("Think", "Fake", function()
 				if IsValid(ragdoll.ConsRH) then
 					if hg_fake_stamina:GetBool() then
 						org.stamina.subadd = org.stamina.subadd + 0.06 * (ragdoll.staminaRightModifyer or 1) * ( IsValid(ragdoll.ConsLH) and 0.35 or 1.25) * (on_ground and 0.25 or 1)
-					end
-					
-					local ent2 = ragdoll.ConsRH.Ent2
-					local ply2 = hg.RagdollOwner(ent2) or ent2
-
-					if ply.PlayerClassName == "furry" and ply2.PlayerClassName != "furry" and IsValid(ent2) and ent2.organism then
-						ent2.organism.assimilated = math.Approach(ent2.organism.assimilated, 1, ragdoll.dtime / 6)
-						ent2.organism.lightstun = CurTime() + 1
 					end
 				end
 

@@ -408,8 +408,6 @@ table.insert(male["ValveBiped.Bip01_R_UpperArm"], 1, {"cmb_armor", 1, Vector(3, 
 table.insert(male["ValveBiped.Bip01_L_Thigh"], 1, {"cmb_armor", 1, Vector(4, 0, 0), Angle(0, 0, 90), Vector(8, 6, 5), Color(255, 242, 0), true, 7})
 table.insert(male["ValveBiped.Bip01_R_Thigh"], 1, {"cmb_armor", 1, Vector(4, 0, 0), Angle(0, 0, 90), Vector(8, 6, 5), Color(255, 242, 0), true, 7})
 
-table.insert(male["ValveBiped.Bip01_Head1"],1,{"protovisor", 1, Vector(3, -1.5, 0), Angle(0, 0, 0), Vector(6, 6, 4), Color(20, 135, 155), true, 7})
-
 --table.insert(combine["ValveBiped.Bip01_L_Calf"], 1, {"cmb_calf_armor_left", 1, Vector(4, -1, 0), Angle(0, 0, 90), Vector(6, 5, 4), Color(255, 242, 0), false, 15})
 --table.insert(combine["ValveBiped.Bip01_R_Calf"], 1, {"cmb_calf_armor_right", 1, Vector(4, -1, 0), Angle(0, 0, 90), Vector(6, 5, 4), Color(255, 242, 0), false, 16})
 

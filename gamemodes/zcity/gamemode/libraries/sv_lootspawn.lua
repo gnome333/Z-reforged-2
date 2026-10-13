@@ -237,10 +237,6 @@ function hg.GenerateLoot(ply,ent,func)
 		local _, tabs = hg.WeightedRandomSelect(chances, mul)
 
 		tab = tabs
-		
-		if curRound.name == "pathowogen" and time < 90 then
-			tab = chances[1][2]
-		end
 
 		if IsValid(ply) and ply.Profession == "builder" and math.random(100) <= 15 then
 			local builder_items = {

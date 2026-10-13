@@ -157,7 +157,7 @@ function hg.DropArmorForce(ent, equipment)
         
         if hg.armor[placement][equipment].voice_change then
             if eightbit and eightbit.EnableEffect and ent.UserID then
-                eightbit.EnableEffect(ent:UserID(), ent.PlayerClassName == "furry" and eightbit.EFF_PROOT or 0)
+                eightbit.EnableEffect(ent:UserID(), 0)
             end
         end
 
@@ -207,7 +207,7 @@ function hg.DropArmor(ply, equipment)
         
         if hg.armor[placement][equipment].voice_change then
             if eightbit and eightbit.EnableEffect and ply.UserID then
-                eightbit.EnableEffect(ply:UserID(), ply.PlayerClassName == "furry" and eightbit.EFF_PROOT or 0)
+                eightbit.EnableEffect(ply:UserID(), 0)
             end
         end
 
@@ -499,25 +499,6 @@ end
 hg.organism.input_list.metrocop_armor = function(org, bone, dmg, dmgInfo, ...)
 	force = true
 	local protect = protec(org, bone, dmg, dmgInfo, "torso", "metrocop_armor", 0.9, 0.7, false, ...)
-	return protect
-end
-
--- protogen visor
-
-hg.organism.input_list.protovisor = function(org, bone, dmg, dmgInfo, ...)
-	force = true
-
-	org.owner.armors_health = org.owner.armors_health or {}
-
-	local protect = protec(org, bone, dmg, dmgInfo, "head", "protovisor", 0.8, 0.7, true, ...)
-	
-	org.owner.armors_health["protovisor"] = org.owner.armors_health["protovisor"] or 1
-	org.owner.armors_health["protovisor"] = org.owner.armors_health["protovisor"] * math.max((1 - dmg * 10), 0)
-	
-	if org.owner.armors_health["protovisor"] == 0 then
-		org.owner.armors["head"] = nil
-	end
-	//dmgInfo:GetAttacker():ChatPrint(tostring(org.owner.armors_health["protovisor"]))
 	return protect
 end
 

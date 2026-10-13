@@ -510,27 +510,6 @@ hg.armor.head = {
 		nodrop = true,
 		Spawnable = false,
 	},
-	["protovisor"] = {
-		"head",
-		"",
-		Vector(-9, 2.5, 0),
-		Angle(0, 92, 90),
-		protection = 4,
-		bone = "ValveBiped.Bip01_Spine2",
-		model = "",
-		femPos = Vector(0, 0, 0),
-		scale = 1,
-		femscale = 1,
-		effect = "Impact",
-		surfaceprop = 67,
-		mass = 8,
-		ScrappersSlot = "Armor",
-		restricted = {"head","ears","face"},
-		viewmaterial = false,
-		voice_change = false,
-		nodrop = true,
-		Spawnable = false,
-	},
 }
 
 hg.armor.ears = {

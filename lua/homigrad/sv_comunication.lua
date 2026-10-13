@@ -133,7 +133,7 @@ end)
 hook.Add("HG_PlayerSay", "furrifyPhraseOwO", function(ply, txt)
 	local text = txt[1]
 	
-	if hg_furcity:GetBool() or ply.PlayerClassName == "furry" then
+	if hg_furcity:GetBool() then
 		text = hg.FurrifyPhrase(text)
 	end
 

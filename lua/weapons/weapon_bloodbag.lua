@@ -147,13 +147,9 @@ if SERVER then
 						self.modeValues[1] = math.min(self.modeValues[1] + FrameTime() * (math.max(ent.organism.pulse / 70,0.3)) * 0.5,1)
 						self.bloodtype = ent.organism.bloodtype
 
-						if ent.organism.furryinfected then
-							self.furryinfected = true
-						end
-						
 						if self.poisoned2 then
 							ent.organism.poison4 = CurTime()
-				
+			
 							self.poisoned2 = nil
 						end
 						
@@ -187,10 +183,6 @@ if SERVER then
 						else
 							ent.organism.blood = math.min(ent.organism.blood + math.min(FrameTime() * 0.5 * (math.max(ent.organism.pulse / 70,0.3)),self.modeValues[1]) * 200, 5200)
 							ent.organism.hemotransfusionshock = ent.organism.hemotransfusionshock + math.min(FrameTime() * 0.5,self.modeValues[1])
-						end
-
-						if (self.bloodtype == "c-" or self.furryinfected) and ent.PlayerClassName != "furry" and (ent.organism.blood - old) > 0 then
-							ent.organism.furryinfected = true
 						end
 
 						self.modeValues[1] = math.max(self.modeValues[1] - (ent.organism.blood - old) / (good_type and 500 or 200),0)

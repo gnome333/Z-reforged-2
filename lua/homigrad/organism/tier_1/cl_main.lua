@@ -676,7 +676,6 @@ local checkpulsebones = {
 local hg_blood_fps = ConVarExists("hg_blood_fps") and GetConVar("hg_blood_fps") or CreateClientConVar("hg_blood_fps", 24, true, nil, "fps to draw blood", 12, 165)
 
 local pitchAddClasses = {
-	["furry"] = 20,
 	["headcrabzombie"] = -60
 }
 local muffedClasses = {
