@@ -189,30 +189,31 @@ local RefillPrices = {
 	weapon_bigbandage_sh = 200,
 	weapon_medkit_sh = 350,
 }
-net.Receive("tdm_buyitem",function(len,ply)
-	if !CurrentRound().buymenu then return end
-	if ((zb.ROUND_START or 0) + 40 < CurTime()) then ply:ChatPrint("Time's up!") return end
-	local tItem = net.ReadTable()
-	if not istable(tItem) then return end
+local function buyItem(ply, tItem, silent)
+	local function notify(msg)
+		if silent then return end
+		ply:ChatPrint(msg)
+	end
+
 	local category = tItem[1]
 	local index = tItem[2]
-	if not category or not index then return end
+	if not category or not index then return false end
 	local buyItems = CurrentRound().BuyItems
-	if not buyItems or not buyItems[category] or not buyItems[category][index] then return end
+	if not buyItems or not buyItems[category] or not buyItems[category][index] then return false end
 	local item = buyItems[category][index]
 
-	if not item then return end
+	if not item then return false end
 
 	if tItem[3] then
-		if not ply:HasWeapon(item.ItemClass) then ply:ChatPrint("You can't buy this attachment without a weapon.") return end
-		if ((ply:GetNWInt("TDM_Money",0) - AttachmentPrice) < 0) then ply:ChatPrint("Not enough money.") return end
+		if not ply:HasWeapon(item.ItemClass) then notify("You can't buy this attachment without a weapon.") return false end
+		if ((ply:GetNWInt("TDM_Money",0) - AttachmentPrice) < 0) then notify("Not enough money.") return false end
 
 		local wep = ply:GetWeapon(item.ItemClass)
 		hg.AddAttachmentForce( ply,wep,tItem[3] )
 		ply:SetNWInt( "TDM_Money", ply:GetNWInt("TDM_Money",0) - AttachmentPrice )
 		ply:EmitSound("items/itempickup.wav")
 
-		return
+		return true
 	end
 
 	local refillPrice = RefillPrices[item.ItemClass]
@@ -230,8 +231,8 @@ net.Receive("tdm_buyitem",function(len,ply)
 				end
 			end
 
-			if not needRefill then ply:ChatPrint("This item is already full.") return end
-			if ((ply:GetNWInt("TDM_Money",0) - refillPrice) < 0) then ply:ChatPrint("Not enough money.") return end
+			if not needRefill then notify("This item is already full.") return false end
+			if ((ply:GetNWInt("TDM_Money",0) - refillPrice) < 0) then notify("Not enough money.") return false end
 
 			for i, def in ipairs(defs) do
 				vals[i] = istable(def) and def[1] or def
@@ -242,13 +243,13 @@ net.Receive("tdm_buyitem",function(len,ply)
 			ply:SetNWInt( "TDM_Money", ply:GetNWInt("TDM_Money",0) - refillPrice )
 			ply:EmitSound("items/itempickup.wav")
 
-			return
+			return true
 		end
 	end
 
-	if item.TeamBased != nil and item.TeamBased != ply:Team() then ply:ChatPrint("This item is not available for your team.") return end
+	if item.TeamBased != nil and item.TeamBased != ply:Team() then notify("This item is not available for your team.") return false end
 
-	if ((ply:GetNWInt("TDM_Money",0) - item.Price) < 0) then ply:ChatPrint("Not enough money.") return end
+	if ((ply:GetNWInt("TDM_Money",0) - item.Price) < 0) then notify("Not enough money.") return false end
 	local ent = ply:Give(item.ItemClass)
 	
 	if ent.Use and IsValid(ent) then
@@ -270,4 +271,37 @@ net.Receive("tdm_buyitem",function(len,ply)
 
 	ply:SetNWInt( "TDM_Money", ply:GetNWInt("TDM_Money",0) - item.Price )
 	ply:EmitSound("items/itempickup.wav")
+
+	return true
+end
+
+net.Receive("tdm_buyitem",function(len,ply)
+	if !CurrentRound().buymenu then return end
+	if ((zb.ROUND_START or 0) + 40 < CurTime()) then ply:ChatPrint("Time's up!") return end
+	local tItem = net.ReadTable()
+	if not istable(tItem) then return end
+
+	buyItem(ply, tItem)
+end)
+
+util.AddNetworkString( "tdm_buypreset" )
+net.Receive("tdm_buypreset",function(len,ply)
+	if !CurrentRound().buymenu then return end
+	if ((zb.ROUND_START or 0) + 40 < CurTime()) then ply:ChatPrint("Time's up!") return end
+	local preset = net.ReadTable()
+	if not istable(preset) then return end
+	local items = preset.items
+	if not istable(items) or #items == 0 or #items > 24 then return end
+
+	local bought, total = 0, 0
+	for _, tItem in ipairs(items) do
+		if not istable(tItem) then continue end
+		total = total + 1
+
+		if buyItem(ply, tItem, true) then
+			bought = bought + 1
+		end
+	end
+
+	ply:ChatPrint("Preset: bought " .. bought .. "/" .. total .. " items.")
 end)

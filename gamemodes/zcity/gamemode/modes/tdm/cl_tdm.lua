@@ -2,11 +2,49 @@ MODE.name = "tdm"
 
 local MODE = MODE
 
+local TDM_PresetFile = "zcity_tdm_presets.json"
+local TDM_MaxPresets = 10
+
+local TDM_BuyLog = {}
+local TDM_Presets
+
+local function TDM_LoadPresets()
+	local data = util.JSONToTable(file.Read(TDM_PresetFile, "DATA") or "")
+	if not istable(data) then data = {} end
+
+	for i = 1, TDM_MaxPresets do
+		local preset = data[i]
+		if not istable(preset) or not istable(preset.items) then
+			data[i] = {name = "Preset " .. i, items = {}}
+		end
+	end
+	data[TDM_MaxPresets + 1] = nil
+
+	return data
+end
+
+TDM_Presets = TDM_LoadPresets()
+
+local function TDM_SavePresets()
+	file.Write(TDM_PresetFile, util.TableToJSON(TDM_Presets, true))
+end
+
+local function TDM_LogBuy(tItem)
+	if not istable(tItem) or not tItem[1] or not tItem[2] then return end
+
+	for _, v in ipairs(TDM_BuyLog) do
+		if v[1] == tItem[1] and v[2] == tItem[2] and v[3] == tItem[3] then return end
+	end
+
+	table.insert(TDM_BuyLog, {tItem[1], tItem[2], tItem[3]})
+end
+
 net.Receive("tdm_start",function()
     surface.PlaySound("csgo_round.wav")
 	zb.rtype = net.ReadString()
 	hg.DynaMusic:Start( "swat4" )
 	zb.RemoveFade()
+	table.Empty(TDM_BuyLog)
 end)
 
 local teams = {
@@ -432,6 +470,8 @@ local function OpenBuyMenu()
 			BuyBtn.Item = {k,n}
 
 			function BuyBtn:DoClick()
+				TDM_LogBuy(self.Item)
+
 				net.Start("tdm_buyitem")
 					net.WriteTable(self.Item)
 				net.SendToServer()
@@ -465,6 +505,8 @@ local function OpenBuyMenu()
 					amm.huy = {"Ammo", name}
 
 					function amm:DoClick()
+						TDM_LogBuy(amm.huy)
+
 						net.Start("tdm_buyitem")
 							net.WriteTable(amm.huy)
 						net.SendToServer()
@@ -492,6 +534,8 @@ local function OpenBuyMenu()
 					Attach.Attachment = {k,n,AttachN}
 
 					function Attach:DoClick()
+						TDM_LogBuy(self.Attachment)
+
 						net.Start("tdm_buyitem")
 							net.WriteTable(self.Attachment)
 						net.SendToServer()
@@ -511,6 +555,131 @@ local function OpenBuyMenu()
 			--rTab:SetTextInset(50)
 		end
 	end
+
+	local PresetsPanel = vgui.Create("DScrollPanel", Sheet)
+	PresetsPanel.Paint = function() end
+
+	local function PresetPrice(preset)
+		local total = 0
+
+		for _, tItem in ipairs(preset.items) do
+			local item = MODE.BuyItems[tItem[1]] and MODE.BuyItems[tItem[1]][tItem[2]]
+			if not item then continue end
+
+			total = total + (tItem[3] and 50 or item.Price)
+		end
+
+		return total
+	end
+
+	local function RebuildPresets()
+		PresetsPanel:Clear()
+
+		for i = 1, TDM_MaxPresets do
+			local id = i
+			local preset = TDM_Presets[id]
+
+			local SlotPanel = vgui.Create("DPanel", PresetsPanel)
+			SlotPanel:SetSize(0, ScrH() * 0.09)
+			SlotPanel:Dock(TOP)
+			SlotPanel:DockMargin(0,8,0,0)
+			SlotPanel.Paint = PaintPanel1
+
+			local lbl = vgui.Create("DLabel", SlotPanel)
+			lbl:SetText(preset.name)
+			lbl:DockMargin(10,0,5,0)
+			lbl:Dock(TOP)
+			lbl:SetFont("ZB_TDM_MENU")
+			lbl:SetSize(ScrW()*0.2, ScrH()*0.035)
+
+			local lbl = vgui.Create("DLabel", SlotPanel)
+			lbl:SetText(#preset.items > 0 and (#preset.items .. " items, $" .. PresetPrice(preset)) or "Empty")
+			lbl:DockMargin(10,0,5,0)
+			lbl:Dock(TOP)
+			lbl:SetTextColor(Color(155,200,155))
+			lbl:SetFont("ZB_TDM_DESC")
+			lbl:SetSize(ScrW()*0.2, ScrH()*0.02)
+
+			local btnPanel = vgui.Create("DPanel", SlotPanel)
+			btnPanel:Dock(BOTTOM)
+			btnPanel:DockMargin(10,2,10,6)
+			btnPanel:SetTall(ScrH()*0.025)
+			btnPanel.Paint = function() end
+
+			local BuyBtn = vgui.Create("DButton", btnPanel)
+			BuyBtn:Dock(LEFT)
+			BuyBtn:SetWide(ScrW()*0.05)
+			BuyBtn:SetText("Buy")
+			BuyBtn:SetTextColor(Color(200,200,200))
+			BuyBtn:SetFont("ZB_TDM_DESC")
+			BuyBtn.Paint = PaintPanel
+
+			function BuyBtn:DoClick()
+				if #preset.items == 0 then return end
+
+				net.Start("tdm_buypreset")
+					net.WriteTable({items = preset.items})
+				net.SendToServer()
+			end
+
+			local SaveBtn = vgui.Create("DButton", btnPanel)
+			SaveBtn:Dock(LEFT)
+			SaveBtn:DockMargin(5,0,0,0)
+			SaveBtn:SetWide(ScrW()*0.07)
+			SaveBtn:SetText("Save bought items")
+			SaveBtn:SetTextColor(Color(200,200,200))
+			SaveBtn:SetFont("ZB_TDM_DESC")
+			SaveBtn.Paint = PaintPanel
+
+			function SaveBtn:DoClick()
+				if #TDM_BuyLog == 0 then return end
+
+				preset.items = table.Copy(TDM_BuyLog)
+				TDM_SavePresets()
+				RebuildPresets()
+			end
+
+			local RenameBtn = vgui.Create("DButton", btnPanel)
+			RenameBtn:Dock(LEFT)
+			RenameBtn:DockMargin(5,0,0,0)
+			RenameBtn:SetWide(ScrW()*0.05)
+			RenameBtn:SetText("Rename")
+			RenameBtn:SetTextColor(Color(200,200,200))
+			RenameBtn:SetFont("ZB_TDM_DESC")
+			RenameBtn.Paint = PaintPanel
+
+			function RenameBtn:DoClick()
+				Derma_StringRequest("Rename preset", "Preset name:", preset.name, function(text)
+					preset.name = text
+					TDM_SavePresets()
+					RebuildPresets()
+				end)
+			end
+
+			local ClearBtn = vgui.Create("DButton", btnPanel)
+			ClearBtn:Dock(LEFT)
+			ClearBtn:DockMargin(5,0,0,0)
+			ClearBtn:SetWide(ScrW()*0.04)
+			ClearBtn:SetText("Clear")
+			ClearBtn:SetTextColor(Color(200,200,200))
+			ClearBtn:SetFont("ZB_TDM_DESC")
+			ClearBtn.Paint = PaintPanel
+
+			function ClearBtn:DoClick()
+				preset.items = {}
+				TDM_SavePresets()
+				RebuildPresets()
+			end
+		end
+	end
+
+	RebuildPresets()
+
+	local tab = Sheet:AddSheet("Presets",PresetsPanel)
+	local rTab = tab["Tab"]
+	rTab.Paint = PaintPanel
+	rTab:SetFont("ZB_TDM_CATEGORY")
+	rTab.ApplySchemeSettings = rtabFunc
 
 	local StartTime = zb.ROUND_START or CurTime()
 	local lbl = vgui.Create("DLabel", Frame)
