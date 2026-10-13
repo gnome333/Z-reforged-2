@@ -1,12 +1,37 @@
 hg = hg or {}
 
 local vpang = Angle(1,-2,1)
-local function drop(ply, wep, newWeapon, vel)
+local function drop(ply, wep, newWeapon, vel, single)
 	local wep = isentity(wep) and wep or ply:GetActiveWeapon()
 	if not IsValid(wep) or wep.NoDrop then return end
 	if ply:GetNWFloat("willsuicide", 0) > 0 then return end -- you cant escape.
 	local eyeAngles = ply:LocalEyeAngles()
 	local isWep = wep.ismelee2 or ishgweapon(wep)
+
+	if single and (wep.count or 0) > 1 and wep.ENT and !wep.ReadyToThrow and !wep:GetNWBool("PlacedTrap", false) then
+		ply:AnimRestartGesture(GESTURE_SLOT_GRENADE, ACT_HL2MP_GESTURE_RANGE_ATTACK_GRENADE, true)
+		ply:ViewPunch(vpang)
+
+		local dropWep = ents.Create(wep:GetClass())
+		if IsValid(dropWep) then
+			dropWep:Spawn()
+			dropWep:SetPos(ply:EyePos() + eyeAngles:Forward() * 25)
+			dropWep:SetAngles(eyeAngles)
+			dropWep:SetOwner()
+			dropWep.init = true
+			dropWep.IsSpawned = true
+
+			local phys = dropWep:GetPhysicsObject()
+			if IsValid(phys) then
+				phys:SetVelocity(eyeAngles:Forward() * (isnumber(vel) and vel or 250) + ply:GetVelocity())
+			end
+
+			wep.count = wep.count - 1
+		end
+
+		return
+	end
+
 	ply:DoAnimationEvent(ACT_GMOD_GESTURE_MELEE_SHOVE_1HAND)
 	ply:ViewPunch(vpang)
 	timer.Simple(isWep and 0.0 or 0.0,function()
@@ -52,10 +77,14 @@ end
 
 hg.drop = drop
 
-concommand.Add("drop", drop)
-concommand.Add("dropweapon", drop)
-concommand.Add("-drop", drop)
-concommand.Add("-dropweapon", drop)
+local function dropSingle(ply)
+	drop(ply, nil, nil, nil, true)
+end
+
+concommand.Add("drop", dropSingle)
+concommand.Add("dropweapon", dropSingle)
+concommand.Add("-drop", dropSingle)
+concommand.Add("-dropweapon", dropSingle)
 local whitelist = {
 	["*drop"] = true,
 	["/drop"] = true,
@@ -64,7 +93,7 @@ local whitelist = {
 
 hook.Add("HG_PlayerSay", "homigrad-drop-weapons", function(ply, txtTbl, text)
 	if whitelist[text] then
-		drop(ply)
+		dropSingle(ply)
 		txtTbl[1] = ""
 	end
 end)
