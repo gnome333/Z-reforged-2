@@ -101,6 +101,8 @@ local IsValid, math_Clamp = IsValid, math.Clamp
 
 		hg.RenderTourniquets(ent, ply)
 
+		hg.RenderMedBelt(ent, ply)
+
 		hg.GoreCalc(ent, ply)
 
 		--local current = ent:GetManipulateBoneScale(lkp)
