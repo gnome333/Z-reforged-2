@@ -1,6 +1,45 @@
 MODE.name = "gwars"
 local MODE = MODE
 
+local GWARS_PresetFile = "zcity_gwars_presets.json"
+local GWARS_MaxPresets = 10
+
+local GWARS_BuyLog = {}
+local GWARS_Presets
+
+local function GWARS_LoadPresets()
+	local data = util.JSONToTable(file.Read(GWARS_PresetFile, "DATA") or "")
+	if not istable(data) then data = {} end
+
+	for i = 1, GWARS_MaxPresets do
+		local preset = data[i]
+		if not istable(preset) or not istable(preset.items) then
+			data[i] = {name = "Preset " .. i, items = {}}
+		elseif not isstring(preset.name) then
+			preset.name = "Preset " .. i
+		end
+	end
+	data[GWARS_MaxPresets + 1] = nil
+
+	return data
+end
+
+GWARS_Presets = GWARS_LoadPresets()
+
+local function GWARS_SavePresets()
+	file.Write(GWARS_PresetFile, util.TableToJSON(GWARS_Presets, true))
+end
+
+local function GWARS_LogBuy(class)
+	if not isstring(class) or class == "" then return end
+
+	for _, v in ipairs(GWARS_BuyLog) do
+		if v == class then return end
+	end
+
+	table.insert(GWARS_BuyLog, class)
+end
+
 local playstart
 local ended
 
@@ -11,6 +50,7 @@ net.Receive("gwars_start", function()
 	zb.RemoveFade()
 	playstart = true
 	ended = nil
+	table.Empty(GWARS_BuyLog)
 
 	sound.PlayFile("sound/music_themes/ghetto_loop.wav", "noblock noplay", function(station)
 		if IsValid(station) then
@@ -455,6 +495,8 @@ local function OpenGWARSBuyMenu()
 			BuyBtn.GWARS_Class = item.class
 
 			function BuyBtn:DoClick()
+				GWARS_LogBuy(self.GWARS_Class)
+
 				net.Start("gwars_buyitem")
 					net.WriteString(self.GWARS_Class)
 				net.SendToServer()
@@ -484,6 +526,169 @@ local function OpenGWARSBuyMenu()
 		end
 		Tab:ApplySchemeSettings()
 	end
+
+	local PresetsPanel = vgui.Create("DScrollPanel", Sheet)
+	PresetsPanel.Paint = function() end
+
+	local function PresetPrice(preset)
+		local total = 0
+
+		for _, class in ipairs(preset.items) do
+			for _, category in ipairs(MODE.BuyList) do
+				for _, it in ipairs(category.items) do
+					if it.class == class then
+						total = total + it.price
+					end
+				end
+			end
+		end
+
+		return total
+	end
+
+	local function SlotPaint(self, w, h)
+		surface.SetDrawColor(0, 0, 0, 155)
+		surface.DrawRect(0, 0, w, h, 2.5)
+		surface.SetDrawColor(accent.r, accent.g, accent.b, 128)
+		surface.DrawOutlinedRect(0, 0, w, h, 2.5)
+		surface.SetDrawColor(accent.r, accent.g, accent.b, 55)
+		surface.SetMaterial(gradMat)
+		surface.DrawTexturedRect(0, 0, w / 1.5, h)
+	end
+
+	local function SlotBtnPaint(self, w, h)
+		surface.SetDrawColor(0, 0, 0, 155)
+		surface.DrawRect(0, 0, w, h, 2.5)
+		surface.SetDrawColor(accent.r, accent.g, accent.b, self:IsHovered() and 230 or 128)
+		surface.DrawOutlinedRect(0, 0, w, h, 2.5)
+	end
+
+	local function RebuildPresets()
+		PresetsPanel:Clear()
+
+		for i = 1, GWARS_MaxPresets do
+			local id = i
+			local preset = GWARS_Presets[id]
+
+			local SlotPanel = vgui.Create("DPanel", PresetsPanel)
+			SlotPanel:SetSize(0, ScrH() * 0.09)
+			SlotPanel:Dock(TOP)
+			SlotPanel:DockMargin(0, 8, 0, 0)
+			SlotPanel.Paint = SlotPaint
+
+			local nameLbl = vgui.Create("DLabel", SlotPanel)
+			nameLbl:SetText(preset.name)
+			nameLbl:DockMargin(10, 0, 5, 0)
+			nameLbl:Dock(TOP)
+			nameLbl:SetFont("GWARS_BUYMENU")
+			nameLbl:SetSize(ScrW() * 0.2, ScrH() * 0.035)
+
+			local infoLbl = vgui.Create("DLabel", SlotPanel)
+			infoLbl:SetText(#preset.items > 0 and (#preset.items .. " items, $" .. PresetPrice(preset)) or "Empty")
+			infoLbl:DockMargin(10, 0, 5, 0)
+			infoLbl:Dock(TOP)
+			infoLbl:SetTextColor(Color(155, 200, 155))
+			infoLbl:SetFont("GWARS_BUYDESC")
+			infoLbl:SetSize(ScrW() * 0.2, ScrH() * 0.02)
+
+			local btnPanel = vgui.Create("DPanel", SlotPanel)
+			btnPanel:Dock(BOTTOM)
+			btnPanel:DockMargin(10, 2, 10, 6)
+			btnPanel:SetTall(ScrH() * 0.025)
+			btnPanel.Paint = function() end
+
+			local BuyBtn = vgui.Create("DButton", btnPanel)
+			BuyBtn:Dock(LEFT)
+			BuyBtn:SetWide(ScrW() * 0.05)
+			BuyBtn:SetText("Buy")
+			BuyBtn:SetTextColor(Color(200, 200, 200))
+			BuyBtn:SetFont("GWARS_BUYDESC")
+			BuyBtn.Paint = SlotBtnPaint
+
+			function BuyBtn:DoClick()
+				if #preset.items == 0 then return end
+
+				net.Start("gwars_buypreset")
+					net.WriteTable({items = preset.items})
+				net.SendToServer()
+			end
+
+			local SaveBtn = vgui.Create("DButton", btnPanel)
+			SaveBtn:Dock(LEFT)
+			SaveBtn:DockMargin(5, 0, 0, 0)
+			SaveBtn:SetWide(ScrW() * 0.05)
+			SaveBtn:SetText("Save")
+			SaveBtn:SetTextColor(Color(200, 200, 200))
+			SaveBtn:SetFont("GWARS_BUYDESC")
+			SaveBtn.Paint = SlotBtnPaint
+
+			function SaveBtn:DoClick()
+				if #GWARS_BuyLog == 0 then return end
+
+				preset.items = table.Copy(GWARS_BuyLog)
+				GWARS_SavePresets()
+				RebuildPresets()
+			end
+
+			local RenameBtn = vgui.Create("DButton", btnPanel)
+			RenameBtn:Dock(LEFT)
+			RenameBtn:DockMargin(5, 0, 0, 0)
+			RenameBtn:SetWide(ScrW() * 0.05)
+			RenameBtn:SetText("Rename")
+			RenameBtn:SetTextColor(Color(200, 200, 200))
+			RenameBtn:SetFont("GWARS_BUYDESC")
+			RenameBtn.Paint = SlotBtnPaint
+
+			function RenameBtn:DoClick()
+				Derma_StringRequest("Rename preset", "Preset name:", preset.name, function(text)
+					preset.name = text
+					GWARS_SavePresets()
+					RebuildPresets()
+				end)
+			end
+
+			local ClearBtn = vgui.Create("DButton", btnPanel)
+			ClearBtn:Dock(LEFT)
+			ClearBtn:DockMargin(5, 0, 0, 0)
+			ClearBtn:SetWide(ScrW() * 0.04)
+			ClearBtn:SetText("Clear")
+			ClearBtn:SetTextColor(Color(200, 200, 200))
+			ClearBtn:SetFont("GWARS_BUYDESC")
+			ClearBtn.Paint = SlotBtnPaint
+
+			function ClearBtn:DoClick()
+				preset.items = {}
+				preset.name = "Preset " .. id
+				GWARS_SavePresets()
+				RebuildPresets()
+			end
+		end
+	end
+
+	RebuildPresets()
+
+	local tab = Sheet:AddSheet("Presets", PresetsPanel)
+	local Tab = tab.Tab
+	Tab:SetFont("GWARS_BUYCAT")
+	Tab.Paint = function(self, w, h)
+		surface.SetDrawColor(0, 0, 0, 155)
+		surface.DrawRect(0, 0, w, h, 2.5)
+		surface.SetDrawColor(accent.r, accent.g, accent.b, 128)
+		surface.DrawOutlinedRect(0, 0, w, h, 2.5)
+	end
+	Tab.ApplySchemeSettings = function(self)
+		local ExtraInset = 10
+		if self.Image then
+			ExtraInset = ExtraInset + self.Image:GetWide()
+		end
+
+		self:SetTextInset(ExtraInset, 2)
+		local w, h = self:GetContentSize()
+		h = self:GetTabHeight()
+		self:SetSize(w + 10, h + 7)
+		DLabel.ApplySchemeSettings(self)
+	end
+	Tab:ApplySchemeSettings()
 
 	local timeLbl = vgui.Create("DLabel", Frame)
 	timeLbl:SetText("Time Left: " .. string.FormattedTime(StartTime + 40 - CurTime(), "%02i:%02i:%02i"))

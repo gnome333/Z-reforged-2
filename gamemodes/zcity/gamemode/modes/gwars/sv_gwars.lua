@@ -204,16 +204,19 @@ function MODE:ShowSpare1(ply)
 	net.Send(ply)
 end
 
-net.Receive("gwars_buyitem", function(len, ply)
-	if not ply:Alive() then return end
-	if ply:Team() != 0 and ply:Team() != 1 then return end
-	if ((zb.ROUND_START or 0) + 40 < CurTime()) then ply:ChatPrint("Time's up!") return end
+local function buyItem(ply, class, silent)
+	local function notify(msg)
+		if silent then return end
+		ply:ChatPrint(msg)
+	end
 
-	local class = net.ReadString()
-	if not isstring(class) or #class > 64 then return end
+	if not ply:Alive() then return false end
+	if ply:Team() != 0 and ply:Team() != 1 then return false end
+	if ((zb.ROUND_START or 0) + 40 < CurTime()) then notify("Time's up!") return false end
+	if not isstring(class) or #class > 64 then return false end
 
 	local buyList = GWARS_MODE.BuyList
-	if not buyList then return end
+	if not buyList then return false end
 
 	local item
 	for _, category in ipairs(buyList) do
@@ -225,11 +228,11 @@ net.Receive("gwars_buyitem", function(len, ply)
 		end
 		if item then break end
 	end
-	if not item then return end
-	if item.team and item.team != ply:Team() then return end
+	if not item then return false end
+	if item.team and item.team != ply:Team() then return false end
 
 	local money = ply:GetNWInt("GWARS_Money", 0)
-	if money < item.price then ply:ChatPrint("Not enough money.") return end
+	if money < item.price then notify("Not enough money.") return false end
 	ply:SetNWInt("GWARS_Money", money - item.price)
 
 	if item.kind == "armor" then
@@ -246,4 +249,34 @@ net.Receive("gwars_buyitem", function(len, ply)
 	end
 
 	ply:EmitSound("items/itempickup.wav")
+	return true
+end
+
+net.Receive("gwars_buyitem", function(len, ply)
+	local class = net.ReadString()
+	buyItem(ply, class)
+end)
+
+util.AddNetworkString("gwars_buypreset")
+net.Receive("gwars_buypreset", function(len, ply)
+	if not ply:Alive() then return end
+	if ply:Team() != 0 and ply:Team() != 1 then return end
+	if ((zb.ROUND_START or 0) + 40 < CurTime()) then ply:ChatPrint("Time's up!") return end
+
+	local preset = net.ReadTable()
+	if not istable(preset) then return end
+	local items = preset.items
+	if not istable(items) or #items == 0 or #items > 48 then return end
+
+	local bought, total = 0, 0
+	for _, class in ipairs(items) do
+		if not isstring(class) then continue end
+		total = total + 1
+
+		if buyItem(ply, class, true) then
+			bought = bought + 1
+		end
+	end
+
+	ply:ChatPrint("Preset: bought " .. bought .. "/" .. total .. " items.")
 end)

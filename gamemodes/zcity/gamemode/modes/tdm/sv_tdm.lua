@@ -189,6 +189,72 @@ local RefillPrices = {
 	weapon_bigbandage_sh = 200,
 	weapon_medkit_sh = 350,
 }
+
+local function findAmmoWeapon(ply, ammoName)
+	local function match(wep)
+		if not IsValid(wep) or not wep.Primary then return end
+		if wep.Primary.Ammo == ammoName then return wep, 0 end
+		if istable(wep.AmmoTypes) then
+			for i, t in ipairs(wep.AmmoTypes) do
+				if istable(t) and t[1] == ammoName then return wep, i end
+			end
+		end
+	end
+
+	local wep, idx = match(ply:GetActiveWeapon())
+	if wep then return wep, idx end
+
+	for _, w in ipairs(ply:GetWeapons()) do
+		wep, idx = match(w)
+		if wep then return wep, idx end
+	end
+end
+
+local function loadBoughtAmmo(ply, ammoName)
+	timer.Simple(0.15, function()
+		if not IsValid(ply) or not ply:Alive() then return end
+
+		local wep, idx = findAmmoWeapon(ply, ammoName)
+		if not IsValid(wep) then return end
+
+		if idx and idx > 0 then
+			if not wep.ApplyAmmoChanges then return end
+
+			local clip = wep:Clip1()
+			if clip > 0 then
+				ply:GiveAmmo(clip, wep.Primary.Ammo, true)
+				wep:SetClip1(0)
+			end
+
+			wep:ApplyAmmoChanges(idx)
+			if wep.Primary.Ammo != ammoName then return end
+		end
+
+		if not wep.GetMaxClip1 then return end
+
+		local maxClip = wep:GetMaxClip1()
+		if maxClip <= 0 then return end
+
+		local ammoID = game.GetAmmoID(ammoName)
+		if ammoID < 0 then return end
+
+		local clip = wep:Clip1()
+		if clip < 0 then clip = 0 end
+
+		local reserve = ply:GetAmmoCount(ammoID)
+		local need = math.min(reserve, maxClip - clip)
+		if need <= 0 then return end
+
+		wep:SetClip1(clip + need)
+		ply:SetAmmo(reserve - need, ammoID)
+
+		net.Start("hg_insertAmmo")
+			net.WriteEntity(wep)
+			net.WriteInt(wep:Clip1(), 10)
+		net.Broadcast()
+	end)
+end
+
 local function buyItem(ply, tItem, silent)
 	local function notify(msg)
 		if silent then return end
@@ -251,8 +317,19 @@ local function buyItem(ply, tItem, silent)
 
 	if ((ply:GetNWInt("TDM_Money",0) - item.Price) < 0) then notify("Not enough money.") return false end
 	local ent = ply:Give(item.ItemClass)
-	
-	if ent.Use and IsValid(ent) then
+
+	if not IsValid(ent) then
+		notify("This item is unavailable.")
+		return false
+	end
+
+	if item.Amount then
+		ent.AmmoCount = item.Amount
+	end
+
+	local ammoName = item.Type == "Ammo" and ent.AmmoType or nil
+
+	if IsValid(ent) and ent.Use then
 		ent:Use( ply )
 	end
 
@@ -261,12 +338,12 @@ local function buyItem(ply, tItem, silent)
 		ent.modeValues[1] = 1
 	end
 
-	if item.Amount then
-		ent.AmmoCount = item.Amount
+	if IsValid(ent) and ent.GetPrimaryAmmoType then
+		ply:GiveAmmo(ent:GetMaxClip1() * 1,ent:GetPrimaryAmmoType(),true)
 	end
 
-	if ent.GetPrimaryAmmoType then
-		ply:GiveAmmo(ent:GetMaxClip1() * 1,ent:GetPrimaryAmmoType(),true)
+	if ammoName then
+		loadBoughtAmmo(ply, ammoName)
 	end
 
 	ply:SetNWInt( "TDM_Money", ply:GetNWInt("TDM_Money",0) - item.Price )
@@ -293,13 +370,41 @@ net.Receive("tdm_buypreset",function(len,ply)
 	local items = preset.items
 	if not istable(items) or #items == 0 or #items > 24 then return end
 
-	local bought, total = 0, 0
+	local ammoItems, otherItems = {}, {}
+
 	for _, tItem in ipairs(items) do
 		if not istable(tItem) then continue end
-		total = total + 1
 
-		if buyItem(ply, tItem, true) then
-			bought = bought + 1
+		if tItem[1] == "Ammo" then
+			ammoItems[#ammoItems + 1] = tItem
+		else
+			otherItems[#otherItems + 1] = tItem
+		end
+	end
+
+	local bought, total = 0, 0
+
+	for _, tItem in ipairs(otherItems) do
+		local count = math.Clamp(math.floor(tonumber(tItem[4]) or 1), 1, 24)
+
+		for _ = 1, count do
+			total = total + 1
+
+			if buyItem(ply, tItem, true) then
+				bought = bought + 1
+			end
+		end
+	end
+
+	for _, tItem in ipairs(ammoItems) do
+		local count = math.Clamp(math.floor(tonumber(tItem[4]) or 1), 1, 24)
+
+		for _ = 1, count do
+			total = total + 1
+
+			if buyItem(ply, tItem, true) then
+				bought = bought + 1
+			end
 		end
 	end
 

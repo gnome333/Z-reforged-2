@@ -161,8 +161,8 @@ AddItemToBUY( "9x18mm (30)", "Ammo", "ent_ammo_9x18mm", 75, "Ammo", {}, 30)
 AddItemToBUY( "7.62x25mm (30)", "Ammo", "ent_ammo_7.62x25mm", 75, "Ammo", {}, 30)
 
 AddItemToBUY( "5.56x45mm (30)", "Ammo", "ent_ammo_5.56x45mm", 100, "Ammo", {}, 30)
-AddItemToBUY( "5.56x45mm AP (30)", "Ammo", "ent_ammo_5.56x45mmap", 200, "Ammo", {}, 30)
-AddItemToBUY( "5.56x45mm M856 (30)", "Ammo", "ent_ammo_5.56x45mmm856", 150, "Ammo", {}, 30)
+AddItemToBUY( "5.56x45mm AP (30)", "Ammo", "ent_ammo_5.56x45mmm995", 200, "Ammo", {}, 30)
+AddItemToBUY( "5.56x45mm M855 (30)", "Ammo", "ent_ammo_5.56x45mmm855", 150, "Ammo", {}, 30)
 
 AddItemToBUY( "5.45x39mm (30)", "Ammo", "ent_ammo_5.45x39mm", 100, "Ammo", {}, 30)
 AddItemToBUY( "9x39mm (30)", "Ammo", "ent_ammo_9x39mm", 200, "Ammo", {}, 30)

@@ -32,6 +32,19 @@ end
 local function TDM_LogBuy(tItem)
 	if not istable(tItem) or not tItem[1] or not tItem[2] then return end
 
+	if tItem[1] == "Ammo" then
+		for _, v in ipairs(TDM_BuyLog) do
+			if v[1] == tItem[1] and v[2] == tItem[2] then
+				v[3] = v[3] or false
+				v[4] = math.min((v[4] or 1) + 1, 24)
+				return
+			end
+		end
+
+		table.insert(TDM_BuyLog, {tItem[1], tItem[2], false, 1})
+		return
+	end
+
 	for _, v in ipairs(TDM_BuyLog) do
 		if v[1] == tItem[1] and v[2] == tItem[2] and v[3] == tItem[3] then return end
 	end
@@ -566,10 +579,21 @@ local function OpenBuyMenu()
 			local item = MODE.BuyItems[tItem[1]] and MODE.BuyItems[tItem[1]][tItem[2]]
 			if not item then continue end
 
-			total = total + (tItem[3] and 50 or item.Price)
+			total = total + (tItem[3] and 50 or item.Price) * (tonumber(tItem[4]) or 1)
 		end
 
 		return total
+	end
+
+	local function PresetCount(preset)
+		local count = 0
+
+		for _, tItem in ipairs(preset.items) do
+			if not istable(tItem) then continue end
+			count = count + (tonumber(tItem[4]) or 1)
+		end
+
+		return count
 	end
 
 	local function RebuildPresets()
@@ -593,7 +617,7 @@ local function OpenBuyMenu()
 			lbl:SetSize(ScrW()*0.2, ScrH()*0.035)
 
 			local lbl = vgui.Create("DLabel", SlotPanel)
-			lbl:SetText(#preset.items > 0 and (#preset.items .. " items, $" .. PresetPrice(preset)) or "Empty")
+			lbl:SetText(#preset.items > 0 and (PresetCount(preset) .. " items, $" .. PresetPrice(preset)) or "Empty")
 			lbl:DockMargin(10,0,5,0)
 			lbl:Dock(TOP)
 			lbl:SetTextColor(Color(155,200,155))
