@@ -47,6 +47,7 @@ end
 -- Weapons
 AddItemToBUY( "HK-USP", "Weapon", "weapon_hk_usp", 500, "Pistols", {"supressor3", "supressor4"}, nil, 1 )
 AddItemToBUY( "Glock-17", "Weapon", "weapon_glock17", 550, "Pistols", {"supressor4", "holo16", "laser3", "laser1"}, nil, 1 )
+AddItemToBUY( "Glock 18C", "Weapon", "weapon_glock18c", 800, "Pistols", {"supressor4", "holo16", "laser3", "laser1"}, nil, 1 )
 AddItemToBUY( "FNX-45", "Weapon", "weapon_fn45", 700, "Pistols", {"supressor4", "holo16", "laser3", "laser1"}, nil, 1 )
 AddItemToBUY( "Colt M45A1", "Weapon", "weapon_m45", 450, "Pistols", {}, nil, 1 )
 AddItemToBUY( "Beretta M9", "Weapon", "weapon_m9beretta", 450, "Pistols", {"supressor4"}, nil, 1 )
@@ -56,24 +57,22 @@ AddItemToBUY( "ČZ 75", "Weapon", "weapon_cz75", 500, "Pistols", {"supressor4"},
 AddItemToBUY( "Makarov Pistol", "Weapon", "weapon_makarov", 250, "Pistols", {}, nil, 0 )
 AddItemToBUY( "TT-33", "Weapon", "weapon_tokarev", 300, "Pistols", {}, nil, 0 )
 AddItemToBUY( "AB-10", "Weapon", "weapon_ab10", 350, "Pistols", {}, nil, 0 )
+AddItemToBUY( "TEC-9", "Weapon", "weapon_tec9", 450, "Pistols", {}, nil, 0 )
 
 AddItemToBUY( "Ruger 10/22", "Weapon", "weapon_ruger", 1000, "Carbines", {}, nil, 0 )
 AddItemToBUY( "Mini-14", "Weapon", "weapon_mini14", 2200, "Carbines", {}, nil, 0 )
 AddItemToBUY( "Ruger AC-556", "Weapon", "weapon_ac556", 2400, "Carbines", {"holo1","holo2"}, nil, 1 )
 AddItemToBUY( "AR-15", "Weapon", "weapon_ar15", 2200, "Carbines", {"holo1","holo2","supressor2","holo15","optic8"}, nil, 1 )
-AddItemToBUY( "Colt 9mm SMG", "Weapon", "weapon_colt9mm", 1900, "Carbines", {}, nil, 0 )
 
 AddItemToBUY( "AKM", "Weapon", "weapon_akm", 3200, "Assault", {"holo6","holo1","holo2","supressor1","optic7"}, nil, 0 )
 AddItemToBUY( "AK-74", "Weapon", "weapon_ak74", 2400, "Assault", {"holo6","holo1","holo2","supressor1","supressor8","optic7"}, nil, 0 )
-AddItemToBUY( "AKS-74U", "Weapon", "weapon_ak74u", 2600, "Assault", {"holo6","holo1","holo2","supressor1","optic7"}, nil, 0 )
-AddItemToBUY( "AK-203", "Weapon", "weapon_ak203", 3400, "Assault", {"holo6","holo1","holo2","supressor1","optic7"}, nil, 0 )
+AddItemToBUY( "AKS-74U", "Weapon", "weapon_ak74u", 2400, "Assault", {"holo6","holo1","holo2","supressor1","optic7"}, nil, 0 )
 AddItemToBUY( "AS Val", "Weapon", "weapon_asval", 4500, "Assault", {"holo6","holo1","holo2","optic7"}, nil, 0 )
 AddItemToBUY( "M4A1", "Weapon", "weapon_m4a1", 2700, "Assault", {"holo1","holo2","supressor2","holo15","optic8"}, nil, 1 )
 AddItemToBUY( "HK416", "Weapon", "weapon_hk416", 3000, "Assault", {"holo1","holo2","supressor2","holo15","optic8"}, nil, 1 )
 AddItemToBUY( "M16A2", "Weapon", "weapon_m16a2", 2500, "Assault", {"holo1","holo2","optic8"}, nil, 0 )
 
 AddItemToBUY( "MAC-11", "Weapon", "weapon_mac11", 1600, "Submachine", {"supressor4"}, nil, 0 )
-AddItemToBUY( "TEC-9", "Weapon", "weapon_tec9", 1300, "Submachine", {}, nil, 0 )
 AddItemToBUY( "MP-5", "Weapon", "weapon_mp5", 1500, "Submachine", {"supressor4"}, nil, 0 )
 AddItemToBUY( "Uzi", "Weapon", "weapon_uzi", 1300, "Submachine", {}, nil, 0 )
 AddItemToBUY( "Šcorpion vz. 61", "Weapon", "weapon_skorpion", 1200, "Submachine", {}, nil, 0 )
@@ -82,9 +81,9 @@ AddItemToBUY( "MP-7", "Weapon", "weapon_mp7", 2300, "Submachine", {"holo1","holo
 AddItemToBUY( "P90", "Weapon", "weapon_p90", 2300, "Submachine", {"holo1", "holo2", "supressor4", "holo15"}, nil, 1 )
 AddItemToBUY( "Steyr TMP", "Weapon", "weapon_tmp", 2100, "Submachine", {"holo1", "holo2", "supressor4", "holo15"}, nil, 1 )
 
-AddItemToBUY( "Remington-870", "Weapon", "weapon_remington870", 1700, "Shotguns", {"holo1","holo2","supressor5","holo15"}, nil, 1 )
+AddItemToBUY( "Remington-870", "Weapon", "weapon_remington870", 1700, "Shotguns", {"holo1","holo2","supressor5","holo15"}, nil, 0 )
 AddItemToBUY( "XM-1014", "Weapon", "weapon_xm1014", 2300, "Shotguns", {"holo14", "holo3"}, nil, 1 )
-AddItemToBUY( "Mossberg 590A1", "Weapon", "weapon_m590a1", 1900, "Shotguns", {}, nil, 1 )
+AddItemToBUY( "Mossberg 590A1", "Weapon", "weapon_m590a1", 1900, "Shotguns", {"supressor5"}, nil, 1 )
 AddItemToBUY( "IZh-43", "Weapon", "weapon_doublebarrel", 1100, "Shotguns", {}, nil, 0 )
 AddItemToBUY( "Sawed-off IZh-43", "Weapon", "weapon_doublebarrel_short", 800, "Shotguns", {}, nil, 0 )
 AddItemToBUY( "Saiga-12", "Weapon", "weapon_saiga12", 2100, "Shotguns", {"holo1","holo2"}, nil, 0 )
@@ -99,7 +98,7 @@ AddItemToBUY( "Barrett M98B", "Weapon", "weapon_m98b", 4200, "Marksman/Sniper", 
 AddItemToBUY( "SKS", "Weapon", "weapon_sks", 2900, "Marksman/Sniper", {"optic4"}, nil, 0 )
 AddItemToBUY( "SVD", "Weapon", "weapon_svd", 5200, "Marksman/Sniper", {"optic4"}, nil, 0 )
 AddItemToBUY( "Karabiner 98k", "Weapon", "weapon_kar98", 2100, "Marksman/Sniper", {"optic12"}, nil, 0 )
-AddItemToBUY( "Mosin-Nagant M38", "Weapon", "weapon_mosin", 2000, "Marksman/Sniper", {"optic4"}, nil, 0 )
+AddItemToBUY( "Mosin-Nagant M38", "Weapon", "weapon_mosin", 2000, "Marksman/Sniper", {}, nil, 0 )
 
 -- Armor
 AddItemToBUY( "IIIA Vest", "Armor", "ent_armor_vest3", 450, "Equipment", {} )

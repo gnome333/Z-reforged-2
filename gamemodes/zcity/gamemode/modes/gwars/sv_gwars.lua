@@ -226,6 +226,7 @@ net.Receive("gwars_buyitem", function(len, ply)
 		if item then break end
 	end
 	if not item then return end
+	if item.team and item.team != ply:Team() then return end
 
 	local money = ply:GetNWInt("GWARS_Money", 0)
 	if money < item.price then ply:ChatPrint("Not enough money.") return end

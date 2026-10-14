@@ -16,9 +16,8 @@ MODE.BuyList = {
 		category = "Medical",
 		items = {
 			{ name = "Fentanyl", class = "weapon_fentanyl", price = 550 },
-			{ name = "Bandage", class = "weapon_bandage_sh", price = 100 },
+			{ name = "Bandage", class = "weapon_bandage_sh", price = 200 },
 			{ name = "Tourniquet", class = "weapon_tourniquet", price = 50 },
-			{ name = "Big Bandage", class = "weapon_bigbandage_sh", price = 200 },
 		},
 	},
 	{
@@ -28,7 +27,7 @@ MODE.BuyList = {
 			{ name = "Beretta M9", class = "weapon_m9beretta", price = 450 },
 			{ name = "Glock-17", class = "weapon_glock17", price = 500 },
 			{ name = "M1911", class = "weapon_m1911", price = 400 },
-			{ name = "TEC-9", class = "weapon_tec9", price = 450 },
+			{ name = "TEC-9", class = "weapon_tec9", price = 570 },
 			{ name = "CZ 75", class = "weapon_cz75", price = 500 },
 			{ name = "CZ 75A", class = "weapon_cz75a", price = 600 },
 			{ name = "Revolver", class = "weapon_revolver2", price = 350 },
@@ -38,7 +37,8 @@ MODE.BuyList = {
 	{
 		category = "Carbines",
 		items = {
-			{ name = "AR-15", class = "weapon_ar15", price = 1000 },
+			{ name = "Mini-14", class = "weapon_mini14", price = 1150, team = 0 },
+			{ name = "AR-15", class = "weapon_ar15", price = 1350, team = 1 },
 		},
 	},
 	{
@@ -47,6 +47,15 @@ MODE.BuyList = {
 			{ name = "Skorpion", class = "weapon_skorpion", price = 750 },
 			{ name = "Uzi", class = "weapon_uzi", price = 700 },
 			{ name = "MAC-11", class = "weapon_mac11", price = 800 },
+		},
+	},
+	{
+		category = "Shotguns",
+		items = {
+			{ name = "Remington-870", class = "weapon_remington870", price = 1350, team = 0 },
+			{ name = "Sawed-off IZh-43", class = "weapon_doublebarrel_short", price = 500, team = 0 },
+			{ name = "Mossberg 590A1", class = "weapon_m590a1", price = 1250, team = 1 },
+			{ name = "IZh-43", class = "weapon_doublebarrel", price = 650, team = 1 },
 		},
 	},
 	{

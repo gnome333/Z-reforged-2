@@ -375,6 +375,8 @@ local function OpenGWARSBuyMenu()
 		CategoryPanel.Paint = function() end
 
 		for _, item in ipairs(category.items) do
+			if item.team and item.team != lply:Team() then continue end
+
 			local ItemPanel = vgui.Create("DPanel", CategoryPanel)
 			ItemPanel:SetSize(0, ScrH() * 0.1)
 			ItemPanel:Dock(TOP)
@@ -462,17 +464,23 @@ local function OpenGWARSBuyMenu()
 		local tab = Sheet:AddSheet(category.category, CategoryPanel)
 		local Tab = tab.Tab
 		Tab:SetFont("GWARS_BUYCAT")
-		Tab:SetContentAlignment(5)
-		Tab.Paint = function() end
-		Tab.UpdateColours = function(self)
-			self:SetTextStyleColor(self:IsActive() and color_white or Color(255, 255, 255, 150))
+		Tab.Paint = function(self, w, h)
+			surface.SetDrawColor(0, 0, 0, 155)
+			surface.DrawRect(0, 0, w, h, 2.5)
+			surface.SetDrawColor(accent.r, accent.g, accent.b, 128)
+			surface.DrawOutlinedRect(0, 0, w, h, 2.5)
 		end
 		Tab.ApplySchemeSettings = function(self)
-			self:SetTextInset(0, 4)
-			local textW = self:GetContentSize()
-			self:SetSize(textW + 10, 24)
-			self:UpdateColours()
-			self:UpdateFGColor()
+			local ExtraInset = 10
+			if self.Image then
+				ExtraInset = ExtraInset + self.Image:GetWide()
+			end
+
+			self:SetTextInset(ExtraInset, 2)
+			local w, h = self:GetContentSize()
+			h = self:GetTabHeight()
+			self:SetSize(w + 10, h + 7)
+			DLabel.ApplySchemeSettings(self)
 		end
 		Tab:ApplySchemeSettings()
 	end
