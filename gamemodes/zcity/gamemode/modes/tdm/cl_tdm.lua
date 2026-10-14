@@ -625,8 +625,8 @@ local function OpenBuyMenu()
 			local SaveBtn = vgui.Create("DButton", btnPanel)
 			SaveBtn:Dock(LEFT)
 			SaveBtn:DockMargin(5,0,0,0)
-			SaveBtn:SetWide(ScrW()*0.07)
-			SaveBtn:SetText("Save bought items")
+			SaveBtn:SetWide(ScrW()*0.05)
+			SaveBtn:SetText("Save")
 			SaveBtn:SetTextColor(Color(200,200,200))
 			SaveBtn:SetFont("ZB_TDM_DESC")
 			SaveBtn.Paint = PaintPanel
@@ -667,6 +667,7 @@ local function OpenBuyMenu()
 
 			function ClearBtn:DoClick()
 				preset.items = {}
+				preset.name = "Preset " .. id
 				TDM_SavePresets()
 				RebuildPresets()
 			end
