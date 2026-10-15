@@ -191,7 +191,8 @@ function hg.GenerateLoot(ply,ent,func)
 	local traitor_opened = IsValid(ply) and ply.isTraitor
 	local low_karma_player = IsValid(ply) and (ply.Karma < 70)
 	local very_low_karma_player = IsValid(ply) and (ply.Karma < 30)
-	local high_karma_player = IsValid(ply) and (ply.Karma >= zb.MaxKarma)
+	local high_karma_player = IsValid(ply) and (ply.Karma >= 130)
+	local normal_karma_player = IsValid(ply) and (ply.Karma >= 70)
 	local on_ground = not IsValid(ply)
 
 	local time = CurTime() - (zb.ROUND_START or CurTime())
@@ -200,7 +201,7 @@ function hg.GenerateLoot(ply,ent,func)
 	local mul = hook.Run("ZB_LootMultiplier", ply)
 
 	if !mul then
-		mul = traitor_opened and 1.5 or (very_low_karma_player and 0.25 or (low_karma_player and 0.5 or (high_karma_player and 1.25 or 1)))
+		mul = traitor_opened and 1.5 or (very_low_karma_player and 0.25 or (low_karma_player and 0.5 or (high_karma_player and 1.5 or (normal_karma_player and 1.25 or 1))))
 	end
 
 	if curRound.LootOnTime then

@@ -83,23 +83,9 @@ hook.Add("PlayerPostThink", "HMCD_SubRoles_Abilities", function(ply)
 			end
 			
 			if(ply.SubRole == "traitor_assasin" or ply.SubRole == "traitor_assasin_soe")then
-				if(ply:KeyDown(IN_WALK))then
-					if(ply:KeyPressed(IN_USE))then
-						local aim_ent, other_ply, trace = MODE.GetPlayerTraceToOther(ply, nil, MODE.DisarmReach)
-						
-						if(IsValid(aim_ent))then
-							if(other_ply and MODE.CanPlayerDisarmOther(ply, aim_ent, MODE.DisarmReach) and MODE.CanPlayerDisarmOtherPly(ply, other_ply, MODE.DisarmReach))then
-								MODE.StartDisarmingOther(ply, other_ply)
-							end
-						end
-					elseif(ply:KeyDown(IN_USE))then
-						if(ply.Ability_Disarm)then
-							MODE.ContinueDisarmingOther(ply)
-						end
-					end
-					
-					if(ply:KeyReleased(IN_USE))then
-						MODE.StopDisarmingOther(ply)
+				if(ply.DisarmBind)then
+					if(ply.Ability_Disarm)then
+						MODE.ContinueDisarmingOther(ply)
 					end
 				else
 					MODE.StopDisarmingOther(ply)
@@ -161,6 +147,7 @@ hook.Add("PlayerSpawn", "HMCD_GrabCleanup", function(ply)
 	ply.GrabbedBy = nil
 	ply.GrabEscapeTime = nil
 	ply.NeckBreakBind = nil
+	ply.DisarmBind = nil
 end)
 
 concommand.Add("+neckbreak", function(ply)
@@ -181,4 +168,27 @@ end)
 concommand.Add("-neckbreak", function(ply)
 	ply.NeckBreakBind = false
 	MODE.StopBreakingOtherNeck(ply)
+end)
+
+concommand.Add("+hg_disarm", function(ply)
+	if not IsValid(ply) then return end
+	if not MODE.RoleChooseRoundTypes[MODE.Type] then return end
+	if not ply:Alive() or not ply.organism or ply.organism.otrub then return end
+	if ply.SubRole != "traitor_assasin" and ply.SubRole != "traitor_assasin_soe" then return end
+
+	ply.DisarmBind = true
+
+	if ply.Ability_Disarm then return end
+
+	local aim_ent, other_ply = MODE.GetPlayerTraceToOther(ply, nil, MODE.DisarmReach)
+	if IsValid(aim_ent) and other_ply and MODE.CanPlayerDisarmOther(ply, aim_ent, MODE.DisarmReach) and MODE.CanPlayerDisarmOtherPly(ply, other_ply, MODE.DisarmReach) then
+		MODE.StartDisarmingOther(ply, other_ply)
+	end
+end)
+
+concommand.Add("-hg_disarm", function(ply)
+	if not IsValid(ply) then return end
+
+	ply.DisarmBind = false
+	MODE.StopDisarmingOther(ply)
 end)

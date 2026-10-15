@@ -110,7 +110,7 @@ local function IsLookingAt(ply, targetVec)
     return ply:GetAimVector():Dot(diff) / diff:Length() >= 0.8
 end
 
-hook.Add("HomigradDamage", "GuiltReg", function(ply, dmgInfo, hitgroup, ent, harm) 
+hook.Add("HomigradDamage", "GuiltReg", function(ply, dmgInfo, hitgroup, ent, harm)
     local Attacker, Victim = dmgInfo:GetAttacker(), ply
     
     --[[if !IsValid(Attacker) and dmgInfo:GetInflictor().steamid then
@@ -202,7 +202,11 @@ hook.Add("HomigradDamage", "GuiltReg", function(ply, dmgInfo, hitgroup, ent, har
     local add = amt * maxharm
 
     add = add * (Victim:IsPlayer() and Attacker:PlayerClassEvent("Guilt", Victim) or 1)
-    add = add * 2
+    add = add * 3
+
+    if (zb.HarmDone[Victim][Attacker] or 0) > 0 then
+        add = add * 0.25
+    end
 
     local mul, shouldBanGuilt
     
@@ -213,8 +217,9 @@ hook.Add("HomigradDamage", "GuiltReg", function(ply, dmgInfo, hitgroup, ent, har
     end
     
     local guiltadd = amt * 60
+    local karmaOld = Attacker.Karma or 100
     Attacker.Guilt = (Attacker.Guilt or 0) + guiltadd
-    Attacker.Karma = math.Clamp((Attacker.Karma or 100) - add * math.max(((1 - (zb.GuiltTable[Victim][Attacker] or 0)) / 1),0), -60, zb.MaxKarma)
+    Attacker.Karma = math.Clamp(karmaOld - add * math.max(((1 - (zb.GuiltTable[Victim][Attacker] or 0)) / 1),0), -60, zb.MaxKarma)
 
     zb.HarmDoneKarma[Victim][Attacker] = zb.HarmDoneKarma[Victim][Attacker] + add
 
@@ -229,32 +234,29 @@ hook.Add("HomigradDamage", "GuiltReg", function(ply, dmgInfo, hitgroup, ent, har
     end
 
     Attacker:SetNetVar("Karma", Attacker.Karma)
+
+    if newharm >= maxharm and oldharmdone < newharm and Victim:IsPlayer() and Attacker:Team() == Victim:Team() then
+        Attacker.Karma = math.Clamp(Attacker.Karma - 40, -60, zb.MaxKarma)
+        Attacker:SetNetVar("Karma", Attacker.Karma)
+    end
     
     zb.GuiltTable[Attacker][Victim] = math.Clamp((zb.GuiltTable[Attacker][Victim] or 0) + guiltadd, 0, 200)
 
     if Attacker.Karma <= 0 then
         local steamID = Attacker:SteamID()
         local name = Attacker:Name()
-        local karma = Attacker.Karma
 
         Attacker:guilt_SetValue( 10 )
 
-        -- we wait one tick to make them pay for all the murders they've done
-        -- also makes sure the message is displayed only once
         timer.Create("simplewaitforkarmadrop"..Attacker:EntIndex(), 0, 1, function()
-            if IsValid(Attacker) then -- if the player haven't left in that exact tick then we do him dirty
-                karma = Attacker.Karma
-            end
-
-            local time = math.Round(60 - karma * 4, 0)
 
 			-- if ULib then
-				ULib.addBan( steamID, 60, "Kicked and banned for having too low karma.", name, "System" )
+				ULib.addBan( steamID, 300, "Kicked and banned for having too low karma.", name, "System" )
 			-- else
 			-- 	Attacker:Ban(60, true)
 			-- end
             
-            PrintMessage(HUD_PRINTTALK, "Player "..name.." has been banned for "..time.." minutes for having too low karma.")
+            PrintMessage(HUD_PRINTTALK, "Player "..name.." has been banned for 5 minutes for having too low karma.")
         end)
     end
 end)
@@ -293,7 +295,7 @@ end)
 
 hook.Add("Player Think", "karmagain", function(ply)
     if (ply.KarmaGainThink or 0) > CurTime() then return end
-    ply.KarmaGainThink = CurTime() + 120
+    ply.KarmaGainThink = CurTime() + 60
 
     ply.Karma = math.Clamp(ply.Karma + (ply.Karma > 100 and 0.1 or (ply.KarmaGain or 0.75)), 0, zb.MaxKarma)// * (1 + ply:HasPurchase("zpremium")), 0, zb.MaxKarma)
     
@@ -397,8 +399,8 @@ concommand.Add("hg_setkarma",function(ply,cmd,args)
     local lenargs = #args
     local newply = player.GetListByName(lenargs > 1 and args[1] or ply:Name())[1]
 
-    newply.Karma = tonumber(lenargs > 1 and args[2] or args[1])
-    newply:SetNetVar("Karma",ply.Karma)
+    newply.Karma = tonumber(lenargs > 1 and args[2] or args[1]) or newply.Karma
+    newply:SetNetVar("Karma",newply.Karma)
     //newply:guilt_SetValue( ply.Karma or 100 )
 end)
 
@@ -420,8 +422,14 @@ net.Receive("forgive_player", function(len, ply)
     local harm = zb.HarmDoneKarma[ply][ent]
     if not harm then return end
 
+    local karmaOld = ent.Karma or 100
     ent.Karma = math.Clamp(ent.Karma + harm, 0, zb.MaxKarma)
     ent:SetNetVar("Karma",ent.Karma)
+
+    local karmaDelta = ent.Karma - karmaOld
+    if karmaDelta > 0 then
+        ent:ChatPrint("Karma +" .. math.Round(karmaDelta) .. " (forgiven)")
+    end
     //ent:guilt_SetValue((ent.Karma or 100))
 
     zb.HarmDone[ply][ent] = 0

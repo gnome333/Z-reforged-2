@@ -531,6 +531,8 @@ function ENTITY:FireLuaBullets(tInfo)
 	local iDamage = tInfo.Damage or 0
 	local vDir = tInfo.Dir and tInfo.Dir:GetNormal() or owner:GetAimVector()
 	local flDistance = tInfo.Distance or MAX_TRACE_LENGTH
+	local flRangeModifier = tInfo.RangeModifier or 1
+	local flDecayRate = tInfo.DecayRate or 1 / 500
 	local Filter = tInfo.Filter or owner
 	
 	//table.Add(Filter, hg.vehicles)
@@ -801,7 +803,10 @@ function ENTITY:FireLuaBullets(tInfo)
 				break // we didn't hit anything, stop tracing shoot
 			end
 			
-			Damage(bDoDebugHit, bStartedWater, bEndNotWater, iFlags, iDamage, iPlayerDamage, iNPCDamage, iAmmoDamage, pAttacker, pInflictor, iAmmoDamageType,
+			local flCurrentDistance = vSrc:Distance(tr.HitPos)
+			local flDecay = flRangeModifier ^ (flCurrentDistance * flDecayRate)
+
+			Damage(bDoDebugHit, bStartedWater, bEndNotWater, iFlags, iDamage * flDecay, iPlayerDamage, iNPCDamage, iAmmoDamage, pAttacker, pInflictor, iAmmoDamageType,
 				tr, bWeaponValid and pWeapon, vShotDir, flAmmoForce, flForce, flPhysPush, iAmmoType, vSrc, fCallback, bFirstTimePredicted, bDrop, sImpactEffect, sRagdollImpactEffect, tInfo)
 			// do damage, paint decals
 			-- https://github.com/Facepunch/garrysmod-issues/issues/2741

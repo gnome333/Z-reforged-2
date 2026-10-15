@@ -73,7 +73,7 @@ function SWEP:PrimarySpread()
 
 		local angRand = AngleRand(0.03, 0.05)
 		angRand[1] = -math.abs(angRand[1])
-		angRand[2] = (math.random(2) == 1 and 1 or -1) * angRand[2]
+		angRand[2] = (math.random(2) == 1 and 1 or -1) * angRand[2] * 0.4
 		angRand[3] = 0
 		local spray
 
@@ -114,9 +114,10 @@ function SWEP:PrimarySpread()
 		//ViewPunch2(angleprikol)
 
 		local mul = mul * self.Primary.Force2 / 100 * (self:IsPistolHoldType() and 2 or 1) * (self.NumBullet and self.NumBullet * 3 or 1)
-		ViewPunch2(Angle(-1 * math.Rand(1,2),-1 * math.Rand(-1,1),0) * mul)
-		ViewPunch(Angle(-1 * math.Rand(1,2),-1 * math.Rand(-1,1),0) * mul / -2)
-		timer.Simple(0.01, function() ViewPunch2(Angle(-1 * math.Rand(1,2),1 * math.Rand(-1,1),0) * mul) end)
+		local yawKick = math.Rand(-0.35, 0.35) * math.min(sprayI / 8, 1)
+		ViewPunch2(Angle(-1 * math.Rand(1.2,1.8), yawKick, 0) * mul)
+		ViewPunch(Angle(-1 * math.Rand(1,1.6), 0, 0) * mul / -2)
+		timer.Simple(0.01, function() ViewPunch2(Angle(-1 * math.Rand(0.6,1.2), yawKick * 0.5, 0) * mul) end)
 		timer.Simple(0.02, function() ViewPunch2(Angle(1 * math.Rand(1,2.4),0,0) * mul) end)
 
 		local eyeang = owner:EyeAngles()
@@ -129,8 +130,8 @@ function SWEP:PrimarySpread()
 		owner:SetEyeAngles(eyeang + sprayAng * 3 * (organism.recoilmul or 1) * (owner.posture == 1 and not self:IsZoom() and 0.1 or 1) * 0.25)
 		
 		local rnd1, rnd2 = math.Rand(1,2), math.Rand(-1,1)
-		ViewPunch2(Angle(2 * rnd1,2 * rnd2,0) * mul * 0.5)
-		ViewPunch(Angle(-2 * rnd1,-2 *rnd2,0) * mul)
+		ViewPunch2(Angle(2 * rnd1,2 * rnd2 * 0.4,0) * mul * 0.5)
+		ViewPunch(Angle(-2 * rnd1,-2 * rnd2 * 0.4,0) * mul)
 
 		local max_clip1 = self:GetMaxClip1()
 		

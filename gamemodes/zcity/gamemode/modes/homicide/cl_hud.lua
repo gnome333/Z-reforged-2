@@ -69,6 +69,35 @@ local function GetNeckBreakBindText()
 	return neckbreak_key
 end
 
+local disarm_key
+local disarm_key_next = 0
+
+local function GetDisarmBindText()
+	if CurTime() >= disarm_key_next then
+		local code = tonumber(cookie.GetString("hg_bind_disarm", "0")) or 0
+		local bind
+
+		if code > 0 then
+			bind = input.GetKeyName(code)
+		end
+
+		if not bind or bind == "" then
+			bind = input.LookupBinding("+hg_disarm", true)
+		end
+
+		if bind and bind != "" then
+			bind = string.lower(bind)
+			disarm_key = string.StartWith(bind, "mouse") and ("Mouse " .. string.sub(bind, 6)) or string.upper(bind)
+		else
+			disarm_key = "NOT BOUND"
+		end
+
+		disarm_key_next = CurTime() + 0.5
+	end
+
+	return disarm_key
+end
+
 hook.Add("HUDPaint", "HMCD_SubRoles_Abilities", function()
 	local ply = LocalPlayer()
 	local aim_ent, other_ply, trace = MODE.GetPlayerTraceToOther(ply)
@@ -114,7 +143,7 @@ hook.Add("HUDPaint", "HMCD_SubRoles_Abilities", function()
 			
 			if(ply.SubRole == "traitor_assasin" or ply.SubRole == "traitor_assasin_soe" or ply.PlayerClassName == "sc_infiltrator")then
 				local aim_ent, other_ply, trace = MODE.GetPlayerTraceToOther(ply, nil, MODE.DisarmReach)
-				local text = "(HOLD)[ALT + E] Disarm"
+				local text = "(HOLD)[" .. GetDisarmBindText() .. "] Disarm"
 				local tw, th = surface.GetTextSize(text)
 				local cx, cy = trace.HitPos:ToScreen().x, trace.HitPos:ToScreen().y
 				cy = cy + y_offset

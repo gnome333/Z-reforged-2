@@ -130,6 +130,11 @@ module[2] = function(owner, org, mulTime)
 		org.arteriaDisorient = math.min((org.arteriaDisorient or 0) + mulTime * 4, 10)
 		org.disorientation = math.max(org.disorientation or 0, org.arteriaDisorient)
 		instant_disorientation(org)
+
+		if org.isPly and IsValid(owner) and owner:IsPlayer() and owner:Alive() and not owner:InVehicle() and not owner.GrabbedBy and not IsValid(owner.FakeRagdoll) and (owner.arteryCollapseCd or 0) < CurTime() then
+			owner.arteryCollapseCd = CurTime() + 1
+			hg.Fake(owner)
+		end
 	else
 		if org.o2ArteriaSuppressed then
 			org.o2ArteriaSuppressed = nil

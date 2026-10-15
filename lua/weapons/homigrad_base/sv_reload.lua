@@ -1,5 +1,14 @@
 --
 local CurTime = CurTime
+
+local function ReloadTimeMul(ent)
+	if ent:IsPistolHoldType() or ent.weaponInvCategory == 2 or ent.Category == "Weapons - Pistols" then
+		return 1.125
+	end
+
+	return 1
+end
+
 util.AddNetworkString("hgwep reload")
 function SWEP:Reload(time)
 	if self.reload then return end
@@ -12,7 +21,7 @@ function SWEP:Reload(time)
 	self.StaminaReloadMul = (org and ((2 - (self:GetOwner().organism.stamina[1] / 180)) + ((org.pain / 40) + (org.larm / 3) + (org.rarm / 5)) - (1 - math.Clamp(org.recoilmul or 1,0.45,1.4))) or 1)
 	self.StaminaReloadMul = math.Clamp(self.StaminaReloadMul,0.65,1.5)
 	self.StaminaReloadTime = self.ReloadTime * self.StaminaReloadMul
-	self.StaminaReloadTime = (self.StaminaReloadTime + (self:Clip1() > 0 and -self.StaminaReloadTime/3 or 0 ))
+	self.StaminaReloadTime = (self.StaminaReloadTime + (self:Clip1() > 0 and -self.StaminaReloadTime/3 or 0 )) * ReloadTimeMul(self)
 	self.reload = self.LastReload + self.StaminaReloadTime
 	self.dwr_reverbDisable = true
 	net.Start("hgwep reload")
@@ -124,7 +133,7 @@ concommand.Add("hg_reloadfloorweapon", function(ply, cmd, args)
 			end
 		end
 
-		timer.Create("FloorReload_"..ply:SteamID64(), (ent.ReloadTime + mRand(0.8, 1.8) * ((isshotgun and ammocount <= 0 and not ent.drawBullet) and 0.5 or 1)) or 5, 1, function()
+		timer.Create("FloorReload_"..ply:SteamID64(), (ent.ReloadTime * ReloadTimeMul(ent) + mRand(0.8, 1.8) * ((isshotgun and ammocount <= 0 and not ent.drawBullet) and 0.5 or 1)) or 5, 1, function()
 			if not SafeCheck(ply, ent, dist) then FailSafe(ply) return end
 
 			ply:EmitSound("physics/body/body_medium_impact_soft"..mRandom(7)..".wav", 55)
