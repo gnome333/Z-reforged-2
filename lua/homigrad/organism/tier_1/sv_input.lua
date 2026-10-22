@@ -992,7 +992,7 @@ hook.Add("EntityTakeDamage", "homigrad-damage", function(ent, dmgInfo)
 
 			should = org.dmgstack[hitgroup][1] > hitgroup_max
 			--print(rag, should, hitgroup == HITGROUP_HEAD, bonename, hitgroup, HITGROUP_HEAD)
-			if should and hitgroup == HITGROUP_HEAD then
+			if should and hitgroup == HITGROUP_HEAD and bit.band(dmgtype, DMG_SLASH + DMG_CLUB) == 0 then
 				hg.ExplodeHead(ent)
 
 				org.dmgstack[hitgroup][1] = nil
@@ -1383,6 +1383,15 @@ local function velocityDamage(ent, data)
 	dmg = dmg * 1.5
 
 	dmg = math.min(dmg, 5)
+
+	local suitOwner = hg.RagdollOwner(ent)
+	if IsValid(suitOwner) and suitOwner.ns_suit and suitOwner.ns_suit.Mode == 1 and suitOwner.ns_suit.Energy > 0 then
+		local suit = suitOwner.ns_suit
+		local cost = math.min(dmg * 20 * hg.NanoSuit.ArmorFallEnergyMul, hg.NanoSuit.ArmorFallMaxHitCost, suit.Energy)
+		dmg = dmg * (1 - math.Clamp(hg.NanoSuit.ArmorAbsorb, 0, 1))
+		suit.Energy = suit.Energy - cost
+		suit.LastDrain = CurTime()
+	end
 
 	local bone
 	for i = 0, ent:GetPhysicsObjectCount() do

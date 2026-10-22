@@ -2,6 +2,25 @@ function hg.GetCurrentArmor(ply)
 	return ply:GetNetVar("Armor",{})
 end
 
+local emptyArmorTbl = {}
+
+function hg.HasFaceNightVision(ply)
+	if not IsValid(ply) or not ply:IsPlayer() then return false end
+	local armors = ply:GetNetVar("Armor", emptyArmorTbl)
+	local face = istable(armors) and armors["face"] or nil
+	if not face then return false end
+	if not hg.armor or not hg.armor.face then return false end
+	local data = hg.armor.face[face]
+	return data != nil and data.NVGRender != nil
+end
+
+function hg.HasNightVision(ply)
+	if not IsValid(ply) or not ply:IsPlayer() then return false end
+	if hg.HasFaceNightVision(ply) then return true end
+	local NS = hg.NanoSuit
+	return NS != nil and NS.HasSuit != nil and NS.HasSuit(ply) == true
+end
+
 if CLIENT then
 	local whitelist = {
 		weapon_physgun = true,
@@ -251,22 +270,77 @@ if CLIENT then
 		Dynamic2 = math.Clamp(Dynamic2 + (1 / FrameRate) * 7, 0, 1)
 	end
 
+	local suitColormodify01 = {
+		["$pp_colour_addr"] = 0,
+		["$pp_colour_addg"] = 0.15,
+		["$pp_colour_addb"] = 0.17,
+		["$pp_colour_brightness"] = 0.01,
+		["$pp_colour_contrast"] = 1,
+		["$pp_colour_colour"] = 0,
+		["$pp_colour_mulr"] = 0,
+		["$pp_colour_mulg"] = 0,
+		["$pp_colour_mulb"] = 0
+	}
+
+	local suitColormodify02 = {
+		["$pp_colour_addr"] = 0,
+		["$pp_colour_addg"] = 0.15,
+		["$pp_colour_addb"] = 0.17,
+		["$pp_colour_brightness"] = -0.1,
+		["$pp_colour_contrast"] = 1,
+		["$pp_colour_colour"] = 1,
+		["$pp_colour_mulr"] = 0,
+		["$pp_colour_mulg"] = 0,
+		["$pp_colour_mulb"] = 0
+	}
+
+	local function DrawNVGNoise(amt, alpha)
+		local W, H = ScrW(), ScrH()
+
+		for i = 0, amt do
+			local Bright = math.random(0, 255)
+			surface.SetDrawColor(Bright, Bright, Bright, alpha)
+			local X, Y = math.random(0, W), math.random(0, H)
+			surface.DrawRect(X, Y, 1, 1)
+		end
+	end
+
+	local function SuitNVGRender()
+		if not IsValid(lply.EZNVGlamp) then
+			lply.EZNVGlamp = ProjectedTexture()
+			lply.EZNVGlamp:SetTexture("effects/flashlight001")
+			lply.EZNVGlamp:SetBrightness(.06)
+			lply.EZNVGlamp:SetEnableShadows(false)
+			local FoV = lply:GetFOV()
+			lply.EZNVGlamp:SetFOV(FoV + 45)
+			lply.EZNVGlamp:SetFarZ(500000 / FoV)
+			lply.EZNVGlamp:SetConstantAttenuation(.1)
+		else
+			lply.EZNVGlamp:SetPos(lply:EyePos())
+			lply.EZNVGlamp:SetAngles(EyeAngles())
+			lply.EZNVGlamp:Update()
+		end
+
+		BlurScreen(0.2, 65)
+
+		DrawColorModify(suitColormodify01)
+		DrawColorModify(suitColormodify02)
+
+		DrawBloom(0.4, 1, 4, 4, 1, 0, 12, 12, 6)
+		DrawNVGNoise(500, 25)
+	end
+
 	local BlurAfterNVG = 5
 	local CustomSndPlayed = false
 	local NVGEnabled = false
 	local cd = 0
 
 	hook.Add( "Think", "NVGEnabling", function( )
-		--print(lply:GetNWBool("NVG_Enabled", false))
-		if lply:GetNWBool("NVG_Enabled", false) != NVGEnabled then
-			--if cd > CurTime() then return end
-			--cd = CurTime() + 1
-			local armors = LocalPlayer().armors
-			if armors and armors["face"] and hg.armor.face[armors["face"]].NVGRender then
-				BlurAfterNVG = 5
-				NVGEnabled = lply:GetNWBool("NVG_Enabled", false)
-			end
-		end
+		local enabled = lply:GetNWBool("NVG_Enabled", false)
+		if enabled and !hg.HasNightVision(lply) then enabled = false end
+		if enabled == NVGEnabled then return end
+		BlurAfterNVG = 5
+		NVGEnabled = enabled
 	end )
 
 	local white = Material("color/white")
@@ -336,7 +410,19 @@ if CLIENT then
 				end
 			end
 		end
-		
+
+		if NVGEnabled and hg.HasNightVision(lply) and !hg.HasFaceNightVision(lply) then
+			SuitNVGRender()
+
+			if BlurAfterNVG > 0.01 then
+				BlurScreen(BlurAfterNVG,BlurAfterNVG*125)
+				local color = color_black
+				color.a = BlurAfterNVG*75
+				draw.RoundedBox(0,-1,-1,ScrW()+2, ScrH()+2,color)
+				BlurAfterNVG = Lerp(0.5*FrameTime(),BlurAfterNVG,0)
+			end
+		end
+
 		//local shouldplaysnd = lply.organism and lply.organism.pulse > 80 and "scp cb/breath1gas.wav" or hg.armor.face[armors["face"]].loopsound
 		if lply.soundhuy and ((not (armors["face"] and hg.armor.face[armors["face"]].loopsound)) or (lply.organism and lply.organism.pulse > 85)) then// or shouldplaysnd != lply.soundhuy) then
 			lply:StopSound(lply.soundhuy)
@@ -358,13 +444,16 @@ if CLIENT then
 			end
 		end
 
-		if IsValid(lply.EZNVGlamp) and armors and ((not armors["face"]) or (armors["face"] and !NVGEnabled)) then
+		local faceNightVision = hg.HasFaceNightVision(lply)
+		if IsValid(lply.EZNVGlamp) and (!NVGEnabled or !hg.HasNightVision(lply)) then
 			CustomSndPlayed = false
 			lply.EZNVGlamp:Remove()
-			surface.PlaySound("snds_jack_gmod/equip1.wav")
+			if faceNightVision then
+				surface.PlaySound("snds_jack_gmod/equip1.wav")
+				ViewPunch2(Angle(-2,-1,2))
+			end
 			BlurAfterNVG = 5
 			NVGEnabled = false
-			ViewPunch2(Angle(-2,-1,2))
 			hook.Add("RenderScreenspaceEffects","renderblur",function()
 				BlurScreen(BlurAfterNVG,BlurAfterNVG*55)
 				local color = color_black
@@ -602,8 +691,7 @@ if CLIENT then
 	hook.Add("radialOptions", "9NVG", function()
 		local ply = LocalPlayer()
 		local organism = ply.organism or {}
-		local armors = ply.armors
-		if !armors or !armors["face"] or !hg.armor.face[armors["face"]].NVGRender then return end
+		if !hg.HasNightVision(ply) then return end
 		if ply:Alive() and not organism.otrub then
 			local tbl = {function(mouseClick)
 				RunConsoleCommand("hg_enable_nvg")
@@ -616,15 +704,25 @@ end
 if SERVER then
 	concommand.Add("hg_enable_nvg", function( ply, cmd, args )
 		if ply.NVG_CD and ply.NVG_CD > CurTime() then return end
-		local armors = ply.armors
-		if !armors or !armors["face"] or !hg.armor.face[armors["face"]].NVGRender then return end
+		if !IsValid(ply) or !ply:Alive() then return end
+		if !hg.HasNightVision(ply) then return end
 
 		ply.NVG_CD = CurTime() + 1
-		hg.RunZManipAnim( ply, "visordown", ply:GetNWBool("NVG_Enabled", false), ply:GetNWBool("NVG_Enabled", false) and 1 or 1.5 )
+		if hg.HasFaceNightVision(ply) then
+			hg.RunZManipAnim( ply, "visordown", ply:GetNWBool("NVG_Enabled", false), ply:GetNWBool("NVG_Enabled", false) and 1 or 1.5 )
+		end
 		timer.Simple(0.5,function()
 			if not IsValid(ply) then return end
 			ply:SetNWBool("NVG_Enabled", !ply:GetNWBool("NVG_Enabled", false))
 		end)
+	end)
+
+	hook.Add("Think","NVG_DisableWithoutNightVision",function()
+		for _, ply in ipairs(player.GetAll()) do
+			if !ply:GetNWBool("NVG_Enabled", false) then continue end
+			if hg.HasNightVision(ply) then continue end
+			ply:SetNWBool("NVG_Enabled", false)
+		end
 	end)
 
 	hook.Add("PlayerDeath","NVG_DisableAfterDeath",function(ply)

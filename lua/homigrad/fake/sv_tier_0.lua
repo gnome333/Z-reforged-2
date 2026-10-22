@@ -100,6 +100,12 @@ function hg.Ragdoll_Create(ply)
 	ragdoll:SetAngles(ply:GetAngles())
 	--ragdoll:SetVelocity(ply:GetVelocity())
 	ragdoll:SetModel(ply:GetModel())
+	if hg.NanoSuit and hg.NanoSuit.IsSuitModel and hg.NanoSuit.IsSuitModel(ragdoll:GetModel()) then
+		ragdoll:SetSubMaterial()
+		ragdoll:SetMaterial("")
+		ragdoll:SetColor(Color(255, 255, 255, 255))
+		ragdoll:SetRenderMode(RENDERMODE_NORMAL)
+	end
 	ragdoll.CurAppearance = table.Copy(ply.CurAppearance)
 
 	local bodygroups = ply:GetBodyGroups()

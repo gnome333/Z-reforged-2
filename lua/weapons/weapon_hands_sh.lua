@@ -816,7 +816,7 @@ function SWEP:SecondaryAttack()
 				owner:SetVelocity(owner:GetAimVector() * 20)
 				tr.Entity:SetVelocity((owner:KeyDown(IN_SPEED) and 1 or -1) * owner:GetAimVector() * 50)
 				self:SetNextSecondaryFire(CurTime() + .25)
-				if owner.organism.superfighter or owner.PlayerClassName == "sc_infiltrator" or (clawClasses[owner.PlayerClassName] and !(tr.Entity.IsBerserk and tr.Entity:IsBerserk())) or owner:IsBerserk() then
+				if owner.organism.superfighter or owner.PlayerClassName == "sc_infiltrator" or (clawClasses[owner.PlayerClassName] and !(tr.Entity.IsBerserk and tr.Entity:IsBerserk())) or owner:IsBerserk() or owner:GetNetVar("NS_Has", false) then
 					hg.LightStunPlayer(tr.Entity, 3)
 					timer.Simple(0,function()
 						local rag = hg.GetCurrentCharacter(tr.Entity)
@@ -887,7 +887,7 @@ function SWEP:ApplyForce()
 
 		vec:Normalize()
 
-		if (ply.organism and ply.organism.superfighter) then
+		if (ply.organism and ply.organism.superfighter) or ply:GetNetVar("NS_Has", false) then
 			mul = mul * 5
 		end
 
@@ -906,7 +906,7 @@ function SWEP:ApplyForce()
 
 		Force = Force:GetNormalized() * ForceMagnitude
 
-		local maxlen = self.ReachDistance * 2.5 * (ply.organism.superfighter and 2 or 1) * (1 + ply.organism.berserk) * (1 + ply.organism.noradrenaline)
+		local maxlen = self.ReachDistance * 2.5 * ((ply.organism.superfighter or ply:GetNetVar("NS_Has", false)) and 2 or 1) * (1 + ply.organism.berserk) * (1 + ply.organism.noradrenaline)
 		if len > maxlen then
 			self:SetCarrying()
 			return
@@ -1030,7 +1030,7 @@ function SWEP:ApplyForce()
 		if SERVER then
 			local ply2 = self.CarryEnt
 			local org = ply2.organism
-			if ply:KeyDown(IN_ATTACK) and !ply.organism.superfighter and !ply:IsBerserk() then
+			if ply:KeyDown(IN_ATTACK) and !ply.organism.superfighter and !ply:IsBerserk() and !ply:GetNetVar("NS_Has", false) then
 				local bone = self.CarryEnt:GetBoneName(self.CarryEnt:TranslatePhysBoneToBone(self.CarryBone))
 
 				local tr = {}
@@ -1087,7 +1087,7 @@ function SWEP:ApplyForce()
 				self.firstTimePrint2 = true
 			end
 
-			if ply:KeyDown(IN_ATTACK) and (ply.organism.superfighter or ply:IsBerserk()) then
+			if ply:KeyDown(IN_ATTACK) and (ply.organism.superfighter or ply:IsBerserk() or ply:GetNetVar("NS_Has", false)) then
 				phys:ApplyForceCenter(ply:GetAimVector() * 40000 * self.Penetration * (1 + ply.organism.berserk / 10))
 				self:SetCarrying()
 			end
@@ -1805,7 +1805,7 @@ if SERVER then
 
 			vec:Normalize()
 
-			if (ply.organism and ply.organism.superfighter) then
+			if (ply.organism and ply.organism.superfighter) or ply:GetNetVar("NS_Has", false) then
 				mul = mul * 5
 			end
 
@@ -1821,7 +1821,7 @@ if SERVER then
 			Force = Force:GetNormalized() * ForceMagnitude
 			phys:Wake()
 
-			local maxlen = 100 * (ply.organism.superfighter and 2 or 1) * (1 + ply.organism.berserk) * (1 + ply.organism.noradrenaline)
+			local maxlen = 100 * ((ply.organism.superfighter or ply:GetNetVar("NS_Has", false)) and 2 or 1) * (1 + ply.organism.berserk) * (1 + ply.organism.noradrenaline)
 			if len > maxlen then
 				hg.SetCarryEnt2(ply)
 				heldents[i] = nil

@@ -126,7 +126,8 @@ surface.CreateFont("ZB_HomicideMediumLarge", {
 	font = font(),
 	size = ScreenScale(25),
 	weight = 400,
-	antialias = true
+	antialias = true,
+	extended = true
 })
 
 surface.CreateFont("ZB_HomicideLarge", {

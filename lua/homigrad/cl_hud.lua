@@ -127,7 +127,8 @@ surface.CreateFont("HomigradFontGigantoNormous", {
 	size = ScreenScale(25),
 	weight = 1100,
 	outline = false,
-	shadow = false
+	shadow = false,
+	extended = true
 })
 
 surface.CreateFont("HomigradFontSmall", {

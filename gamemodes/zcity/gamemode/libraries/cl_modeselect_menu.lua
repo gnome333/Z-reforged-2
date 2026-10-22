@@ -494,7 +494,7 @@ if CLIENT then
         local allowedModes = {
             ["tdm"] = true, ["cstrike"] = true, ["hmcd"] = true,
             ["hl2dm"] = true, ["riot"] = true, ["gwars"] = true,
-            ["criresp"] = true,
+            ["criresp"] = true, ["nswar"] = true,
         }
 
         function frame:RebuildModes()

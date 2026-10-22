@@ -890,6 +890,8 @@ local IsValid = IsValid
 --//
 --\\ Calculate Weight 
 	function hg.CalculateWeight(ply,maxweight)
+		if IsValid(ply) and ply.GetNetVar and ply:GetNetVar("NS_Has", false) then return 1 end
+
 		local weight = 0
 
 		local weps = ply:GetWeapons()
