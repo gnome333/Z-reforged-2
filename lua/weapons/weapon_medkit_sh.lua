@@ -113,6 +113,11 @@ if SERVER then
 			org.analgesiaAdd = math.min(org.analgesiaAdd + self.modeValues[2] * 0.3, 4)
 			self.modeValues[2] = 0
 			entOwner:EmitSound("snds_jack_gmod/ez_medical/15.wav", 60, math.random(95, 105))
+
+			if owner.Karma != nil and org.owner != owner then
+				owner.Karma = math.Clamp(owner.Karma + 0.25, 0, zb.MaxKarma)
+				owner:SetNetVar("Karma", owner.Karma)
+			end
 		elseif self.mode == 3 then
 			if self.modeValues[3] == 0 then return end
 			/*local val = org.lungsL[1]
@@ -136,6 +141,13 @@ if SERVER then
 				self.modeValues[3] = self.modeValues[3] - (internalBleed - healed) * (owner.Profession == "doctor" and 0.5 or 1)
 				org.internalBleedHeal = org.internalBleedHeal + (internalBleed - healed)
 				entOwner:EmitSound("snds_jack_gmod/ez_medical/" .. math.random(16, 18) .. ".wav", 60, math.random(95, 105))
+
+				self.karmaTXA = self.karmaTXA or {}
+				if owner.Karma != nil and org.owner != owner and not self.karmaTXA[org.owner] then
+					self.karmaTXA[org.owner] = true
+					owner.Karma = math.Clamp(owner.Karma + 0.25, 0, zb.MaxKarma)
+					owner:SetNetVar("Karma", owner.Karma)
+				end
 			end
 		elseif self.mode == 1 then
 			self:Bandage(ent, bone)
