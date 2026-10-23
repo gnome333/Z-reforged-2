@@ -151,6 +151,11 @@ SWEP.ReloadSoundes = {
 	"none",
 	"none"
 }
+
+SWEP.holsteredBone = "ValveBiped.Bip01_Spine2"
+SWEP.holsteredPos = Vector(10, -5, -6)
+SWEP.holsteredAng = Angle(210, 0, 180)
+
 SWEP.DeploySnd = {"homigrad/weapons/draw_hmg.mp3", 55, 100, 110}
 SWEP.HolsterSnd = {"homigrad/weapons/hmg_holster.mp3", 55, 100, 110}
 SWEP.HoldType = "rpg"

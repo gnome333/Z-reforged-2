@@ -22,6 +22,10 @@ SWEP.ZoomPos = Vector(0, -0.0027, 4.6866)
 SWEP.GunCamPos = Vector(4,-15,-6)
 SWEP.GunCamAng = Angle(190,-5,-100)
 
+SWEP.holsteredBone = "ValveBiped.Bip01_Spine2"
+SWEP.holsteredPos = Vector(8, -4, -6)
+SWEP.holsteredAng = Angle(210, 0, 180)
+
 SWEP.FakeEjectBrassATT = "2"
 
 SWEP.FakeViewBobBone = "CAM_Homefield"

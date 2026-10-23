@@ -143,8 +143,8 @@ function SWEP:AnimationPost()
 end
 
 SWEP.holsteredBone = "ValveBiped.Bip01_Spine2"
-SWEP.holsteredPos = Vector(5, 9.8, -4)
-SWEP.holsteredAng = Angle(-30, 180, 0)
+SWEP.holsteredPos = Vector(10, -4, -4)
+SWEP.holsteredAng = Angle(210, 0, 180)
 
 SWEP.DistSound = "mosin/mosin_dist.wav"
 SWEP.bipodAvailable = true

@@ -170,7 +170,7 @@ SWEP.attAng = Angle(-0.03, -0.3, 0)
 SWEP.lengthSub = 10
 SWEP.SetSupressor = false
 SWEP.holsteredBone = "ValveBiped.Bip01_Spine2"
-SWEP.holsteredPos = Vector(0, 9, -7)
+SWEP.holsteredPos = Vector(0, -4, -10)
 SWEP.holsteredAng = Angle(210, -5, 180)
 SWEP.handsAng = Angle(-10, 5, 0)
 

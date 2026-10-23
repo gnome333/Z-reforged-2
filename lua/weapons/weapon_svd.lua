@@ -209,6 +209,10 @@ function SWEP:AnimHoldPost()
 
 end
 
+SWEP.holsteredBone = "ValveBiped.Bip01_Spine2"
+SWEP.holsteredPos = Vector(10, -4, -6)
+SWEP.holsteredAng = Angle(210, 0, 180)
+
 
 function SWEP:DrawPost()
 	local wep = self:GetWeaponEntity()

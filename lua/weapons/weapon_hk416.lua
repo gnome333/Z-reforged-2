@@ -19,6 +19,10 @@ SWEP.AttachmentAng = Angle(0,0,0)
 SWEP.CanEpicRun = false
 SWEP.EpicRunPos = Vector(2,12,5)
 
+SWEP.holsteredBone = "ValveBiped.Bip01_Spine2"
+SWEP.holsteredPos = Vector(8, -5, -6)
+SWEP.holsteredAng = Angle(210, 0, 180)
+
 SWEP.FakeReloadSounds = {
 	[0.25] = "weapons/m4a1/m4a1_magrelease.wav",
 	[0.27] = "weapons/m4a1/m4a1_magout.wav",

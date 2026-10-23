@@ -86,7 +86,7 @@ SWEP.bipodAvailable = true
 SWEP.bipodsub = 15
 
 SWEP.holsteredBone = "ValveBiped.Bip01_Spine2"
-SWEP.holsteredPos = Vector(-24, 18, -25)
+SWEP.holsteredPos = Vector(-24, 0.5, -25)
 SWEP.holsteredAng = Angle(30, 0, 0)
 
 --local to head

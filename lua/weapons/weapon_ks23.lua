@@ -104,8 +104,9 @@ SWEP.lengthSub = 20
 SWEP.OpenBolt = false
 
 SWEP.holsteredBone = "ValveBiped.Bip01_Spine2"
-SWEP.holsteredPos = Vector(4, 8, -6)
+SWEP.holsteredPos = Vector(8, -4, -12)
 SWEP.holsteredAng = Angle(210, 0, 180)
+
 
 
 

@@ -75,7 +75,7 @@ SWEP.AnimShootMul = 0.5
 SWEP.AnimShootHandMul = 0.01
 
 SWEP.holsteredBone = "ValveBiped.Bip01_Spine2"
-SWEP.holsteredPos = Vector(4, 8, -4)
+SWEP.holsteredPos = Vector(4, -5, -4)
 SWEP.holsteredAng = Angle(210, 0, 180)
 
 --local to head

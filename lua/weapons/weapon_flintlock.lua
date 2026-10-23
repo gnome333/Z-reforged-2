@@ -70,8 +70,9 @@ SWEP.ShockMultiplier = 2
 
 SWEP.DistSound = "snds_jack_gmod/ez_weapons/rifle_far.wav"
 SWEP.holsteredBone = "ValveBiped.Bip01_Spine2"
-SWEP.holsteredPos = Vector(5, 7, -4)
-SWEP.holsteredAng = Angle(-150, -10, 180)
+SWEP.holsteredPos = Vector(10, -4, -1)
+SWEP.holsteredAng = Angle(210, 0, 180)
+
 
 SWEP.shouldntDrawHolstered = false
 SWEP.punchmul = 12

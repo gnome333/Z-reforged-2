@@ -56,6 +56,10 @@ SWEP.CanSuicide = false
 
 SWEP.PPSMuzzleEffect = "muzzleflash_MINIMI" -- shared in sh_effects.lua
 
+SWEP.holsteredBone = "ValveBiped.Bip01_Spine2"
+SWEP.holsteredPos = Vector(8, -4, -6)
+SWEP.holsteredAng = Angle(210, 0, 180)
+
 SWEP.DeploySnd = {"homigrad/weapons/draw_hmg.mp3", 55, 100, 110}
 SWEP.HolsterSnd = {"homigrad/weapons/hmg_holster.mp3", 55, 100, 110}
 SWEP.Slot = 2

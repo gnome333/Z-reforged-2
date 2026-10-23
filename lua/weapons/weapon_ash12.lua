@@ -20,6 +20,10 @@ SWEP.CustomShell = "50cal"
 SWEP.EjectPos = Vector(9,0,3.5)
 SWEP.EjectAng = Angle(0,0,0)
 
+SWEP.holsteredBone = "ValveBiped.Bip01_Spine2"
+SWEP.holsteredPos = Vector(4, -4, -6)
+SWEP.holsteredAng = Angle(210, 0, 180)
+
 SWEP.ScrappersSlot = "Primary"
 SWEP.Primary.Cone = 0
 SWEP.Primary.Damage = 70

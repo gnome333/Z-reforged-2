@@ -42,7 +42,7 @@ SWEP.attAng = Angle(-90,0,0)
 SWEP.DistSound = "weapons/tfa_ins2/m40a1/m40a1_fire.wav"
 
 SWEP.holsteredBone = "ValveBiped.Bip01_Spine2"
-SWEP.holsteredPos = Vector(8,8,-3)
+SWEP.holsteredPos = Vector(8,-5,-3)
 SWEP.holsteredAng = Angle(-150, -5, 180)
 
 SWEP.mat = Material("combine_sniper/huyhuy")

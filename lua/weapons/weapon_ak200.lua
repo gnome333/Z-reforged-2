@@ -163,6 +163,10 @@ SWEP.WepSelectIcon2 = Material("vgui/icons/ico_ak200.png")
 SWEP.WepSelectIcon2box = false
 SWEP.IconOverride = "vgui/icons/ico_ak200.png"
 
+SWEP.holsteredBone = "ValveBiped.Bip01_Spine2"
+SWEP.holsteredPos = Vector(8, -4, -6)
+SWEP.holsteredAng = Angle(210, 0, 180)
+
 SWEP.Ergonomics = 1
 SWEP.WorldPos = Vector(5, -0.8, -1.1)
 SWEP.WorldAng = Angle(0, 0, 0)

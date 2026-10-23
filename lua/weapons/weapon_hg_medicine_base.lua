@@ -332,9 +332,8 @@ if SERVER then
 					end
 
 					local owner = self:GetOwner()
-					if owner.Karma != nil and org.owner != owner and (biggestWound - healedWound) > 0.1 then
-						owner.Karma = math.Clamp(owner.Karma + 0.25,0,zb.MaxKarma)
-						owner:SetNetVar("Karma", owner.Karma)
+					if owner.Karma then
+						--owner.Karma = math.Clamp(owner.Karma + 0.25,0,zb.MaxKarma)
 					end
 					ent.bandaged_limbs = ent.bandaged_limbs or {}
 					local bone_name = org.wounds[1][4]

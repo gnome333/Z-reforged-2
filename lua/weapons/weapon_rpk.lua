@@ -170,6 +170,10 @@ SWEP.WeaponEyeAngles = Angle(0,0,0)
 
 SWEP.HoldType = "rpg"
 
+SWEP.holsteredBone = "ValveBiped.Bip01_Spine2"
+SWEP.holsteredPos = Vector(8, -4, -6)
+SWEP.holsteredAng = Angle(210, 0, 180)
+
 SWEP.RHandPos = Vector(-12, -1, 4)
 SWEP.LHandPos = Vector(7, -2, -2)
 SWEP.Penetration = 11

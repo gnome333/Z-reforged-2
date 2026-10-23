@@ -116,7 +116,7 @@ SWEP.lengthSub = 20
 SWEP.DistSound = "toz_shotgun/toz_dist.wav"
 
 SWEP.holsteredBone = "ValveBiped.Bip01_Spine2"
-SWEP.holsteredPos = Vector(3, 8, -12)
+SWEP.holsteredPos = Vector(3, -4, -12)
 SWEP.holsteredAng = Angle(210, 0, 180)
 
 SWEP.LocalMuzzlePos = Vector(13,0.5,7.5)

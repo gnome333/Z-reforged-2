@@ -16,6 +16,9 @@ SWEP.FakeAng = Angle(0, 0, 0)
 SWEP.AttachmentPos = Vector(1,0,0.5)
 SWEP.AttachmentAng = Angle(0,0,0)
 
+SWEP.holsteredBone = "ValveBiped.Bip01_Spine2"
+SWEP.holsteredPos = Vector(8, -4, -8)
+SWEP.holsteredAng = Angle(210, 0, 180)
 
 SWEP.FakeAttachment = "muzzle"
 

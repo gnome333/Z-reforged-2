@@ -192,7 +192,8 @@ end
 
 SWEP.lengthSub = 5
 SWEP.DistSound = "m9/m9_dist.wav"
-SWEP.holsteredPos = Vector(5, 8, -6)
+SWEP.holsteredBone = "ValveBiped.Bip01_Spine2"
+SWEP.holsteredPos = Vector(7, -5, -6)
 SWEP.holsteredAng = Angle(-150, -10, 180)
 
 --local to head

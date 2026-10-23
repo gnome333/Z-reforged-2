@@ -73,7 +73,7 @@ SWEP.availableAttachments = {
 }
 
 SWEP.holsteredBone = "ValveBiped.Bip01_Spine2"
-SWEP.holsteredPos = Vector(6, 9, -1)
+SWEP.holsteredPos = Vector(6, -4, -1)
 SWEP.holsteredAng = Angle(210, 0, 180)
 
 SWEP.LocalMuzzlePos = Vector(27.415,0.388,1.061)

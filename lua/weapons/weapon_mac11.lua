@@ -179,7 +179,7 @@ SWEP.UseCustomWorldModel = true
 SWEP.lengthSub = 25
 SWEP.DistSound = "m9/m9_dist.wav"
 SWEP.holsteredBone = "ValveBiped.Bip01_Pelvis"
-SWEP.holsteredPos = Vector(-4, 5, 3)
+SWEP.holsteredPos = Vector(-4, 6, 3)
 SWEP.holsteredAng = Angle(25, -65, -90)
 SWEP.shouldntDrawHolstered = true
 

@@ -49,6 +49,7 @@ if CLIENT then
 end
 
 local clawClasses = {
+	["furry"] = 0.5,
 	["headcrabzombie"] = 1.5
 }
 
@@ -816,7 +817,7 @@ function SWEP:SecondaryAttack()
 				owner:SetVelocity(owner:GetAimVector() * 20)
 				tr.Entity:SetVelocity((owner:KeyDown(IN_SPEED) and 1 or -1) * owner:GetAimVector() * 50)
 				self:SetNextSecondaryFire(CurTime() + .25)
-				if owner.organism.superfighter or owner.PlayerClassName == "sc_infiltrator" or (clawClasses[owner.PlayerClassName] and !(tr.Entity.IsBerserk and tr.Entity:IsBerserk())) or owner:IsBerserk() or owner:GetNetVar("NS_Has", false) then
+				if owner.organism.superfighter or owner.PlayerClassName == "sc_infiltrator" or (clawClasses[owner.PlayerClassName] and !(tr.Entity.PlayerClassName == "furry" or (tr.Entity.IsBerserk and tr.Entity:IsBerserk()))) or owner:IsBerserk() then
 					hg.LightStunPlayer(tr.Entity, 3)
 					timer.Simple(0,function()
 						local rag = hg.GetCurrentCharacter(tr.Entity)
@@ -887,7 +888,7 @@ function SWEP:ApplyForce()
 
 		vec:Normalize()
 
-		if (ply.organism and ply.organism.superfighter) or ply:GetNetVar("NS_Has", false) then
+		if (ply.organism and ply.organism.superfighter) then
 			mul = mul * 5
 		end
 
@@ -906,7 +907,7 @@ function SWEP:ApplyForce()
 
 		Force = Force:GetNormalized() * ForceMagnitude
 
-		local maxlen = self.ReachDistance * 2.5 * ((ply.organism.superfighter or ply:GetNetVar("NS_Has", false)) and 2 or 1) * (1 + ply.organism.berserk) * (1 + ply.organism.noradrenaline)
+		local maxlen = self.ReachDistance * 2.5 * (ply.organism.superfighter and 2 or 1) * (1 + ply.organism.berserk) * (1 + ply.organism.noradrenaline)
 		if len > maxlen then
 			self:SetCarrying()
 			return
@@ -1030,7 +1031,7 @@ function SWEP:ApplyForce()
 		if SERVER then
 			local ply2 = self.CarryEnt
 			local org = ply2.organism
-			if ply:KeyDown(IN_ATTACK) and !ply.organism.superfighter and !ply:IsBerserk() and !ply:GetNetVar("NS_Has", false) then
+			if ply:KeyDown(IN_ATTACK) and !ply.organism.superfighter and !(org and ply.PlayerClassName == "furry" and org.owner.PlayerClassName != "furry") and !ply:IsBerserk() then
 				local bone = self.CarryEnt:GetBoneName(self.CarryEnt:TranslatePhysBoneToBone(self.CarryBone))
 
 				local tr = {}
@@ -1087,7 +1088,17 @@ function SWEP:ApplyForce()
 				self.firstTimePrint2 = true
 			end
 
-			if ply:KeyDown(IN_ATTACK) and (ply.organism.superfighter or ply:IsBerserk() or ply:GetNetVar("NS_Has", false)) then
+			if ply:KeyDown(IN_ATTACK) and ply.PlayerClassName == "furry" and org ~= nil and org.alive and org.owner.PlayerClassName != "furry" and !(org.owner.IsBerserk and org.owner:IsBerserk()) then
+				org.assimilated = math.Approach(org.assimilated, 1, FrameTime() / 6)
+				ply:SetLocalVar("assimilation", org.assimilated)
+
+				hg.LightStunPlayer(org.owner, 1)
+
+				//phys:ApplyForceCenter(ply:GetAimVector() * 40000 * self.Penetration)
+				//self:SetCarrying()
+			end
+
+			if ply:KeyDown(IN_ATTACK) and (ply.organism.superfighter or ply:IsBerserk()) then
 				phys:ApplyForceCenter(ply:GetAimVector() * 40000 * self.Penetration * (1 + ply.organism.berserk / 10))
 				self:SetCarrying()
 			end
@@ -1246,6 +1257,12 @@ local customClassInfo = {
 		handsDesc = "infiltrator",
 		Instructions = "beta test test beta"
 	},
+	["furry"] = {
+		PrintName = "Paws",
+		WepSelectIcon = Material("zbattle/paw_hmcd.png"),
+		handsDesc = "furry",
+		Instructions = "LMB - raise paws\nRELOAD - lower paws\n\nIn the raised state:\nLMB - strike\nRMB - block\n\n<color=91,121,229>As a bearer of a pathowogen infection, you have new abilities.\n\nIn lowered state, hold RMB to grab uninfected prey, then hold LMB to assimilate them.\n\nYou can press LMB to lick your fellow mates, doing so helps them alleviate their pain.\n\n:3<color=180,180,180>"
+	},
 	["headcrabzombie"] = {
 		PrintName = "Claws",
 		WepSelectIcon = Material("vgui/wep_jack_hmcd_zombhands"),
@@ -1343,7 +1360,7 @@ function SWEP:Think()
 		end
 
 		//if (self:GetNextDown() < Time) or owner:KeyDown(IN_SPEED) then
-		if owner:KeyDown(IN_SPEED) and owner.PlayerClassName ~= "headcrabzombie" then
+		if owner:KeyDown(IN_SPEED) and (owner.PlayerClassName != "furry" or owner:KeyDown(IN_WALK)) and owner.PlayerClassName ~= "headcrabzombie" then
 			self:SetNextDown(Time + 1)
 			self:SetFists(false)
 			self:SetBlocking(false)
@@ -1355,7 +1372,7 @@ function SWEP:Think()
 	if IsValid(self.CarryEnt) or self.CarryEnt then
 		HoldType = "normal"
 	end
-	if owner:KeyDown(IN_SPEED) then
+	if owner:KeyDown(IN_SPEED) and ((owner.PlayerClassName != "furry" or !owner:IsBerserk()) or owner:KeyDown(IN_WALK)) then
 		HoldType = "normal"
 	end
 	if SERVER then self:SetHoldType(HoldType) end
@@ -1446,8 +1463,32 @@ function SWEP:PrimaryAttack(forcespecial)
 	if owner.PlayerClassName == "headcrabzombie" then
 		snd, pitch = "npc/zombie/claw_miss"..math.random(2)..".wav", math.random(95, 110)
 	end
+	if owner.PlayerClassName == "furry" then
+		local Ent = WhomILookinAt(owner, .3, 45)
+		if IsValid(Ent) then
+			local ent_org = Ent.organism -- ServerLog: Mr. Point: я люблю плывиски mrrrph~~
+			if ent_org and ent_org.owner.PlayerClassName == "furry" then
+				if (owner.cooldownlick or 0) < CurTime() and SERVER then
+					owner.cooldownlick = CurTime() + 1
 
-	if SERVER then sound.Play(snd, self:GetPos(), 65, pitch) end
+					ent_org.avgpain = math.Approach(ent_org.avgpain, 0, 15)
+					ent_org.painadd = math.Approach(ent_org.painadd, 0, 15)
+
+					owner:EmitSound("zbattle/furry/lick"..math.random(3)..".wav")
+					self:SetNextPrimaryFire(CurTime() + .5)
+				end
+
+				//self:SetFists(false)
+				return
+			else
+				if SERVER then sound.Play(snd, self:GetPos(), 65, pitch) end
+			end
+		else
+			if SERVER then sound.Play(snd, self:GetPos(), 65, pitch) end
+		end
+	else
+		if SERVER then sound.Play(snd, self:GetPos(), 65, pitch) end
+	end
 
 	if SERVER then
 		self:AttackFront(special_attack, rand) -- this OwO
@@ -1524,6 +1565,8 @@ function SWEP:AttackFront(special_attack, rand)
 				local snd = "Flesh.ImpactSoft"
 				if isZomb then
 					snd = "npc/zombie/claw_strike"..math.random(3)..".wav"
+				elseif owner.PlayerClassName == "furry" then
+					snd = "pwb/weapons/knife/hit"..math.random(4)..".wav"
 				end
 				sound.Play(snd, HitPos, 65, math.random(90, 110))
 				if owner:IsBerserk() then
@@ -1533,6 +1576,8 @@ function SWEP:AttackFront(special_attack, rand)
 				local snd = "Flesh.ImpactHard"
 				if isZomb then
 					snd = "npc/zombie/claw_strike"..math.random(3)..".wav"
+				elseif owner.PlayerClassName == "furry" then
+					snd = "pwb/weapons/knife/hit"..math.random(4)..".wav"
 				end
 				sound.Play(snd, HitPos, 65, math.random(90, 110))
 				if owner:IsBerserk() then
@@ -1554,6 +1599,8 @@ function SWEP:AttackFront(special_attack, rand)
 			local snd = "Flesh.ImpactSoft"
 			if isZomb then
 				snd = "npc/zombie/claw_strike"..math.random(3)..".wav"
+			elseif owner.PlayerClassName == "furry" then
+				snd = "pwb/weapons/knife/hitwall.wav"
 			end
 			sound.Play(snd, HitPos, 65, math.random(90, 110))
 			if owner:IsBerserk() then
@@ -1805,7 +1852,7 @@ if SERVER then
 
 			vec:Normalize()
 
-			if (ply.organism and ply.organism.superfighter) or ply:GetNetVar("NS_Has", false) then
+			if (ply.organism and ply.organism.superfighter) then
 				mul = mul * 5
 			end
 
@@ -1821,7 +1868,7 @@ if SERVER then
 			Force = Force:GetNormalized() * ForceMagnitude
 			phys:Wake()
 
-			local maxlen = 100 * ((ply.organism.superfighter or ply:GetNetVar("NS_Has", false)) and 2 or 1) * (1 + ply.organism.berserk) * (1 + ply.organism.noradrenaline)
+			local maxlen = 100 * (ply.organism.superfighter and 2 or 1) * (1 + ply.organism.berserk) * (1 + ply.organism.noradrenaline)
 			if len > maxlen then
 				hg.SetCarryEnt2(ply)
 				heldents[i] = nil

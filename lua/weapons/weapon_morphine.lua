@@ -100,13 +100,6 @@ if SERVER then
 		org.analgesiaAdd = math.min(org.analgesiaAdd + injected, 4)
 		self.modeValues[1] = math.max(self.modeValues[1] - injected, 0)
 
-		self.karmaGiven = self.karmaGiven or {}
-		if owner.Karma != nil and org.owner != owner and not self.karmaGiven[org.owner] then
-			self.karmaGiven[org.owner] = true
-			owner.Karma = math.Clamp(owner.Karma + 0.25, 0, zb.MaxKarma)
-			owner:SetNetVar("Karma", owner.Karma)
-		end
-
 		owner.injectedinto = owner.injectedinto or {}
 		owner.injectedinto[org.owner] = owner.injectedinto[org.owner] or 0
 		owner.injectedinto[org.owner] = owner.injectedinto[org.owner] + injected

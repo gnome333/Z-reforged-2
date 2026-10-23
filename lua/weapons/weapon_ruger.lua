@@ -212,6 +212,11 @@ local ang_zero = Angle(0,0,0)
 function SWEP:AnimHoldPost()
 
 end
+
+SWEP.holsteredBone = "ValveBiped.Bip01_Spine2"
+SWEP.holsteredPos = Vector(8, -4, -6)
+SWEP.holsteredAng = Angle(210, 0, 180)
+
 -- RELOAD ANIM AKM
 SWEP.ReloadAnimLH = {
 	Vector(0,0,0),

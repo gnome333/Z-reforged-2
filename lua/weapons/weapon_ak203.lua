@@ -18,6 +18,10 @@ SWEP.AttachmentAng = Angle(0,-1.5,0)
 SWEP.FakeAttachment = "1"
 SWEP.FakeBodyGroups = "07C000401210000"
 
+SWEP.holsteredBone = "ValveBiped.Bip01_Spine2"
+SWEP.holsteredPos = Vector(8, -4, -6)
+SWEP.holsteredAng = Angle(210, 0, 180)
+
 SWEP.FakeEjectBrassATT = "2"
 
 SWEP.FakeViewBobBone = "CAM_Homefield"

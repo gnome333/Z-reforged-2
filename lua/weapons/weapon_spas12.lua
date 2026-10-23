@@ -58,6 +58,10 @@ SWEP.IconOverride = "vgui/hud/tfa_ins2_spas12"
 SWEP.ScrappersSlot = "Primary"
 SWEP.CustomShell = "12x70"
 
+SWEP.holsteredBone = "ValveBiped.Bip01_Spine2"
+SWEP.holsteredPos = Vector(12, -4, -4)
+SWEP.holsteredAng = Angle(210, 0, 180)
+
 SWEP.weight = 4
 SWEP.weaponInvCategory = 1
 SWEP.ShellEject = "ShotgunShellEject"

@@ -81,7 +81,7 @@ SWEP.attAng = Angle(0, 0.2, 0)
 SWEP.lengthSub = 20
 
 SWEP.holsteredBone = "ValveBiped.Bip01_Spine2"
-SWEP.holsteredPos = Vector(9, 8, -8)
+SWEP.holsteredPos = Vector(9, -5, -8)
 SWEP.holsteredAng = Angle(210, 0, 180)
 SWEP.PPSMuzzleEffect = "pcf_jack_mf_mshotgun" -- shared in sh_effects.lua
 

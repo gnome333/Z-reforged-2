@@ -174,6 +174,11 @@ SWEP.ReloadSoundes = {
 	"none",
 	"none"
 }
+
+SWEP.holsteredBone = "ValveBiped.Bip01_Spine2"
+SWEP.holsteredPos = Vector(8, -4, -6)
+SWEP.holsteredAng = Angle(210, 0, 180)
+
 SWEP.ReloadSound = "weapons/ar2/ar2_reload.wav"
 SWEP.HoldType = "rpg"
 SWEP.ZoomPos = Vector(-3, 0.2448, 5.6292)

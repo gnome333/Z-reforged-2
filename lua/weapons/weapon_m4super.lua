@@ -40,6 +40,10 @@ SWEP.addSprayMul = 1
 
 SWEP.weight = 4
 
+SWEP.holsteredBone = "ValveBiped.Bip01_Spine2"
+SWEP.holsteredPos = Vector(8, -4, -6)
+SWEP.holsteredAng = Angle(210, 0, 180)
+
 SWEP.HoldType = "rpg"
 SWEP.ReloadHold = "ar2"
 SWEP.ZoomPos = Vector(-1.45, 0.36, 33)

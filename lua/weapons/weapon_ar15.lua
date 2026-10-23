@@ -220,8 +220,9 @@ function SWEP:DrawPost()
 end
 
 SWEP.lengthSub = 5
-SWEP.holsteredPos = Vector(5, 8, -4)
-SWEP.holsteredAng = Angle(-150, -10, 180)
+SWEP.holsteredBone = "ValveBiped.Bip01_Spine2"
+SWEP.holsteredPos = Vector(8, -4, -4)
+SWEP.holsteredAng = Angle(210, 0, 180)
 
 --local to head
 SWEP.RHPos = Vector(3,-6,3.5)

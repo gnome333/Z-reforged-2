@@ -24,6 +24,10 @@ SWEP.FakeEjectBrassATT = "2"
 
 SWEP.FakeViewBobBone = "CAM_Homefield"
 
+SWEP.holsteredBone = "ValveBiped.Bip01_Spine2"
+SWEP.holsteredPos = Vector(8, -4, -6)
+SWEP.holsteredAng = Angle(210, 0, 180)
+
 SWEP.FakeReloadSounds = {
 	[0.22] = "weapons/universal/uni_crawl_l_03.wav",
 	[0.34] = "weapons/newakm/akmm_magout.wav",

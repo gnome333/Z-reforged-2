@@ -157,10 +157,15 @@ SWEP.LocalMuzzlePos = Vector(18.893,0.388,1.648)
 SWEP.LocalMuzzleAng = Angle(0,0,0)
 SWEP.WeaponEyeAngles = Angle(0,0,0)
 
-SWEP.Chocking = false 
+SWEP.Chocking = false
 
 SWEP.punchmul = 1
 SWEP.punchspeed = 0.1
+
+SWEP.holsteredBone = "ValveBiped.Bip01_Spine2"
+SWEP.holsteredPos = Vector(12, -4, -4)
+SWEP.holsteredAng = Angle(210, 0, 180)
+
 
 SWEP.NumBullet = 8
 SWEP.AnimShootMul = 2

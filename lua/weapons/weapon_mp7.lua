@@ -95,7 +95,7 @@ SWEP.EjectAng = Angle(0,40,-15)
 SWEP.ShockMultiplier = 2
 
 SWEP.holsteredBone = "ValveBiped.Bip01_Spine2"
-SWEP.holsteredPos = Vector(4, 9, 0)
+SWEP.holsteredPos = Vector(4, -4, 0)
 SWEP.holsteredAng = Angle(210, -5, 180)
 
 SWEP.LocalMuzzlePos = Vector(15.528,0.013,1.613)

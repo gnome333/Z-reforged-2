@@ -200,7 +200,7 @@ SWEP.LHAng = Angle(-15,-10,-90)
 SWEP.ShootAnimMul = 3
 
 SWEP.holsteredBone = "ValveBiped.Bip01_Spine2"
-SWEP.holsteredPos = Vector(2, 8, -4)
+SWEP.holsteredPos = Vector(2, -4, -4)
 SWEP.holsteredAng = Angle(210, 0, 180)
 
 function SWEP:OnReloaded()

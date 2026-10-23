@@ -135,7 +135,7 @@ SWEP.ReloadSoundes = {
 }
 
 SWEP.holsteredBone = "ValveBiped.Bip01_Spine2"
-SWEP.holsteredPos = Vector(3, 8, -6)
+SWEP.holsteredPos = Vector(8, -4, -6)
 SWEP.holsteredAng = Angle(210, 0, 180)
 
 SWEP.HoldType = "rpg"

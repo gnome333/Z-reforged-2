@@ -10,6 +10,10 @@ SWEP.SlotPos = 10
 SWEP.ViewModel = ""
 SWEP.WorldModel = "models/weapons/w_shot_xm1014.mdl"
 
+SWEP.holsteredBone = "ValveBiped.Bip01_Spine2"
+SWEP.holsteredPos = Vector(12, -4, -6)
+SWEP.holsteredAng = Angle(210, 0, 180)
+
 SWEP.WepSelectIcon2 = Material("entities/tfa_ins2_doublebarrel.png")
 SWEP.WepSelectIcon2box = true
 SWEP.IconOverride = "entities/tfa_ins2_doublebarrel.png"

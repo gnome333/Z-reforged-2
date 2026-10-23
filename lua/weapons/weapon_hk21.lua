@@ -83,7 +83,7 @@ SWEP.bipodAvailable = true
 SWEP.bipodsub = 20
 
 SWEP.holsteredBone = "ValveBiped.Bip01_Spine2"
-SWEP.holsteredPos = Vector(-5, 8, -14)
+SWEP.holsteredPos = Vector(5, -5, -14)
 SWEP.holsteredAng = Angle(220, 0, 180)
 
 SWEP.RestPosition = Vector(20, -1, 2)

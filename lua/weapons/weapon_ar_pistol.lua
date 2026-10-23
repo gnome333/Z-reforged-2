@@ -205,7 +205,7 @@ function SWEP:DrawPost()
 end
 
 SWEP.lengthSub = 5
-SWEP.holsteredPos = Vector(5, 8, -4)
+SWEP.holsteredPos = Vector(5, -5, -4)
 SWEP.holsteredAng = Angle(-150, -10, 180)
 
 --local to head

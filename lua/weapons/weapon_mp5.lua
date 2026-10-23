@@ -131,6 +131,9 @@ SWEP.GunCamAng = Angle(190,-5,-100)
 
 SWEP.ReloadHold = nil
 SWEP.FakeVPShouldUseHand = false
+SWEP.holsteredBone = "ValveBiped.Bip01_Spine2"
+SWEP.holsteredPos = Vector(8, -5, -6)
+SWEP.holsteredAng = Angle(210, 0, 180)
 
 
 SWEP.WepSelectIcon2 = Material("vgui/hud/tfa_ins2_mp5a4.png")

@@ -38,7 +38,6 @@ SWEP.EjectAng = Angle(0,0,0)
 SWEP.weight = 1
 SWEP.punchmul = 1.5
 SWEP.punchspeed = 3
-SWEP.RecoilMul = 0.55
 SWEP.ScrappersSlot = "Secondary"
 
 SWEP.LocalMuzzlePos = Vector(-1,0.5,7.5)
@@ -56,7 +55,7 @@ SWEP.Primary.Damage = 35
 SWEP.Primary.Sound = {"weapons/easternfront/tt33/tt33_fp - copy (2).wav", 75, 90, 100}
 SWEP.SupressedSound = {"m9/m9_suppressed_fp.wav", 65, 90, 100}
 SWEP.Primary.SoundEmpty = {"zcitysnd/sound/weapons/m1911/handling/m1911_empty.wav", 75, 100, 105, CHAN_WEAPON, 2}
-SWEP.Primary.Force = 30
+SWEP.Primary.Force = 35
 SWEP.Primary.Wait = PISTOLS_WAIT
 SWEP.ReloadTime = 2.8
 SWEP.FakeReloadSounds = {

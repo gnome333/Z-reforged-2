@@ -44,6 +44,10 @@ SWEP.availableAttachments = {
 	grip = {},
 }
 
+SWEP.holsteredBone = "ValveBiped.Bip01_Spine2"
+SWEP.holsteredPos = Vector(10, -4, -4)
+SWEP.holsteredAng = Angle(210, 0, 180)
+
 SWEP.IsPistol = false
 SWEP.PistolKinda = true
 SWEP.bigNoDrop = true
