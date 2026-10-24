@@ -227,6 +227,25 @@ hook.Add("Think", "NanoSuit", function()
 end)
 
 hook.Add("PreHomigradDamage", "NanoSuit", function(target, dmgInfo, hitgroup, ent, harm)
+	local suitOwner = target
+	if IsValid(suitOwner) and not suitOwner:IsPlayer() then
+		if hg.RagdollOwner then
+			local resolved = hg.RagdollOwner(suitOwner)
+			if IsValid(resolved) and resolved:IsPlayer() then suitOwner = resolved end
+		end
+		if not (IsValid(suitOwner) and suitOwner:IsPlayer()) and istable(suitOwner.organism) and IsValid(suitOwner.organism.owner) and suitOwner.organism.owner:IsPlayer() then
+			suitOwner = suitOwner.organism.owner
+		end
+	end
+	if IsValid(suitOwner) and suitOwner:IsPlayer() and suitOwner.ns_suit then
+		local dtype = dmgInfo:GetDamageType()
+		if bit.band(dtype, DMG_POISON + DMG_NERVEGAS + 131072 + DMG_ACID) != 0 then
+			dmgInfo:SetDamage(0)
+			dmgInfo:SetDamageType(0)
+			return
+		end
+	end
+
 	local attacker = dmgInfo:GetAttacker()
 	if IsValid(attacker) and attacker != target and attacker.ns_suit then
 		local dtype = dmgInfo:GetDamageType()
@@ -299,11 +318,16 @@ hook.Add("Org Think", "NanoSuitRegen", function(owner, org, timeValue)
 	local suit = ply.ns_suit
 	if not suit then return end
 	if org then
+		org.poison3 = nil
+		org.poison3notificate = nil
 		org.poison4 = nil
 		org.poison4notificate = nil
+		org.Poison_KCN = nil
 		org.CO = 0
 		org.COregen = 0
+		org.COConcentration = 0
 		org.is_sprayed_at = nil
+		ply.PassiveAbility_ChemicalAccumulation = nil
 	end
 	if org and org.o2 and org.o2.range and IsValid(org.owner) and org.owner:WaterLevel() >= 3 then
 		org.o2[1] = org.o2.range

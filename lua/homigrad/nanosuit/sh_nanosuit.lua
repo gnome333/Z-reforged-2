@@ -33,6 +33,7 @@ NS.SpeedGlowFadeOut = 0.5
 NS.ArmorMaxHitCost = 12
 NS.RunShimmerSpeed = 300
 NS.RegenOrganRate = 0.04
+NS.GasFilterCost = 3
 NS.RegenWoundRate = 10
 NS.RegenPneumoRate = 0.5
 NS.AnesthThreshold = 25
