@@ -708,11 +708,12 @@ local concrete = {
 function SWEP:AttackFront(special_attack, rand)
 	if CLIENT then return end
 	local owner = self:GetOwner()
-	--self.PenetrationCopy = -(-self.Penetration) -- это как
-	owner:LagCompensation(true)
+	if not IsValid(owner) then return end
+	-- unified Damage Protocol: single compensated trace, auto-release
+	local function CompTrace(tbl) return hg.DamageCompensatedTrace and hg.DamageCompensatedTrace(owner, function() return util.TraceHull(tbl) end) or util.TraceHull(tbl) end
 	local Ent, HitPos, _, physbone, trace = WhomILookinAt(owner, .3, special_attack and 35 or 45)
 	local pos = hg.eye(owner)
-	trace = util.TraceHull({
+	trace = CompTrace({
 		start = pos,
 		endpos = pos + owner:GetAimVector() * self.ReachDistance,
 		filter = {owner, hg.GetCurrentCharacter(owner)},
@@ -733,7 +734,6 @@ function SWEP:AttackFront(special_attack, rand)
 				//Ent.Broken = true
 			//end
 
-			//owner:LagCompensation(false) // idiot
 
 			//return
 		end
@@ -830,8 +830,6 @@ function SWEP:AttackFront(special_attack, rand)
 	if SERVER then
 		owner.organism.stamina.subadd = owner.organism.stamina.subadd + 6
 	end
-
-	owner:LagCompensation(false)
 end
 
 function SWEP:Reload()

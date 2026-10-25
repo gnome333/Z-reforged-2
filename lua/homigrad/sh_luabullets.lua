@@ -508,8 +508,16 @@ function ENTITY:FireLuaBullets(tInfo)
     local owner = tInfo.Attacker and tInfo.Attacker:IsValid() and tInfo.Attacker or IsValid(self) and self:GetOwner() and self:GetOwner():IsValid() and self:GetOwner() or self
 	local bIsPlayer = owner:IsPlayer()
 	
-	if (bIsPlayer and !tInfo.DisableLagComp) then
+	local bNeedComp = bIsPlayer and not tInfo.DisableLagComp
+	-- B3: LagComp scope narrowed to single traces via CompTrace; penetration/ents.GetAll stay OUTSIDE
+	local function CompTrace(isHull, tbl)
+		if hg.DamageCompensatedTrace and bNeedComp then return hg.DamageCompensatedTrace(owner, function() return isHull and util.TraceHull(tbl) or util.TraceLine(tbl) end) end
+		if not bNeedComp then return isHull and util.TraceHull(tbl) or util.TraceLine(tbl) end
 		owner:LagCompensation(true)
+		local ok, res = pcall(isHull and util.TraceHull or util.TraceLine, tbl)
+		if IsValid(owner) then owner:LagCompensation(false) end
+		if not ok then ErrorNoHalt('[FireLuaBullets] trace error: '..tostring(res)..'\n') return nil end
+		return res
 	end
 	
 	local pWeapon = tInfo.Inflictor and tInfo.Inflictor:IsValid() and tInfo.Inflictor or IsValid(owner) and owner.GetActiveWeapon and owner:GetActiveWeapon()
@@ -702,7 +710,7 @@ function ENTITY:FireLuaBullets(tInfo)
 		repeat
 			local tr = bHullTrace and iShot % 2 == 0 and
 				// Half of the shotgun pellets are hulls that make it easier to hit targets with the shotgun.
-				util.TraceHull({
+				CompTrace(true, {
 					start = vNewSrc,
 					endpos = vEnd,
 					mins = vFireBulletMin,
@@ -711,7 +719,7 @@ function ENTITY:FireLuaBullets(tInfo)
 					filter = Filter
 				})
 			or
-				util.TraceLine({
+				CompTrace(false, {
 					start = vNewSrc,
 					endpos = vEnd,
 					mask = iMask,
@@ -732,7 +740,7 @@ function ENTITY:FireLuaBullets(tInfo)
 
 				tr = bHullTrace and iShot % 2 == 0 and
 					// Half of the shotgun pellets are hulls that make it easier to hit targets with the shotgun.
-					util.TraceHull({
+					CompTrace(true, {
 						start = tr.HitPos + vShotDir * 1,
 						endpos = vEnd,
 						mins = vFireBulletMin,
@@ -741,7 +749,7 @@ function ENTITY:FireLuaBullets(tInfo)
 						filter = Filter
 					})
 				or
-					util.TraceLine({
+					CompTrace(false, {
 						start = tr.HitPos + vShotDir * 1,
 						endpos = vEnd,
 						mask = iMask,
@@ -867,9 +875,6 @@ function ENTITY:FireLuaBullets(tInfo)
 		end
 	end
 	
-	if (bIsPlayer and !tInfo.DisableLagComp) then
-		owner:LagCompensation(false)
-	end
 end
 
 local tMaterialParameters = {

@@ -147,29 +147,17 @@ function SWEP:Shoot(override)
 	if SERVER then
 		local dir = ang:Forward()
 		
-		local tr
-		if owner:IsPlayer() then
-			owner:LagCompensation(true)
-
-			tr = util.TraceLine({
-				start = pos,
-				endpos = pos + dir * 220,
-				filter = {self},
-				mask = MASK_SHOT
-			})
-		else
-			self.Primary.Wait = 0.5
-
-			tr = util.TraceLine({
-				start = pos,
-				endpos = pos + dir * 220,
-				filter = {self, owner},
-				mask = MASK_SHOT
-			})
-		end
-
-		if owner:IsPlayer() then
-			owner:LagCompensation(true)
+		local trTbl = {
+			start = pos,
+			endpos = pos + dir * 220,
+			filter = owner:IsPlayer() and {self} or {self, owner},
+			mask = MASK_SHOT
+		}
+		if not owner:IsPlayer() then self.Primary.Wait = 0.5 end
+		-- unified Damage Protocol: single compensated trace, auto-release
+		local tr = hg.DamageCompensatedTrace and hg.DamageCompensatedTrace(owner, function() return util.TraceLine(trTbl) end)
+		if tr == nil then
+			tr = util.TraceLine(trTbl)
 		end
 
 		if tr.Entity then

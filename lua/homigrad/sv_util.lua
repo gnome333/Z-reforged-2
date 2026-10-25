@@ -24,8 +24,19 @@ local bloodColors = {
 }
 
 local vecbloodpos = Vector( 0, 0, 75 )
+-- B5 dedup state (file-local, server)
+local hg_lastVFXKey, hg_lastVFXt = nil, 0
 local function playEffects( ent, data )
     if not IsValid( ent ) or not data then return end
+    -- B5: dedup VFX on Player->FakeRagdoll redirect (same CTakeDamageInfo fires twice)
+    do
+        local atk = data:GetAttacker()
+        local hp = data:GetDamagePosition()
+        local key = tostring(atk) .. "|" .. tostring(data:GetDamage()) .. "|" .. tostring(math.Round(hp.x)) .. "," .. tostring(math.Round(hp.y)) .. "," .. tostring(math.Round(hp.z))
+        local now = CurTime()
+        if key == hg_lastVFXKey and now - hg_lastVFXt < 0.1 then return end
+        hg_lastVFXKey, hg_lastVFXt = key, now
+    end
 
     if not ( ent:IsPlayer() or ent:IsNPC() or ent:IsNextBot() ) or not isBulletDamage( data ) then return end
 
@@ -1351,7 +1362,18 @@ end
 		end
 	end)
 
+-- B5 dedup state for glass shards
+local hg_lastGlassKey, hg_lastGlasst = nil, 0
 	hook.Add("PostEntityTakeDamage", "GlassShards", function(ent, dmginfo)
+		do -- B5: redirect fires twice; dedup by attacker+pos in 100ms
+			local atk = dmginfo:GetAttacker()
+			if not IsValid(atk) then return end
+			local hp = dmginfo:GetDamagePosition()
+			local key = tostring(atk) .. "|" .. tostring(math.Round(hp.x)) .. "," .. tostring(math.Round(hp.y)) .. "," .. tostring(math.Round(hp.z))
+			local now = CurTime()
+			if key == hg_lastGlassKey and now - hg_lastGlasst < 0.1 then return end
+			hg_lastGlassKey, hg_lastGlasst = key, now
+		end
 		if IsValid(ent) and math.random(4) == 2 then
 			if ent:GetClass() == "func_breakable_surf" or (ent:GetClass() == "func_breakable" and ent:GetMaterialType() == MAT_GLASS) then
 				local glass = ents.Create("weapon_hg_glassshard")
