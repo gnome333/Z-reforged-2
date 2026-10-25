@@ -7,8 +7,18 @@ local IsValid = IsValid
 --- @param fn function executed while compensated; return its results
 --- @return results of fn (or nil + err if invalid)
 function hg.DamageCompensatedTrace(ply, fn)
+    -- CLIENT (prediction): no lag-comp available, run trace directly so callers never get nil
+    if CLIENT then
+        local ok, a, b, c = pcall(fn)
+        if not ok then ErrorNoHalt("[DamageProtocol] trace error: " .. tostring(a) .. "\n") return nil end
+        return a, b, c
+    end
     if SERVER then
-        if not IsValid(ply) or not ply:IsPlayer() then return nil end
+        if not IsValid(ply) or not ply:IsPlayer() then
+            local ok, a, b, c = pcall(fn)
+            if not ok then ErrorNoHalt("[DamageProtocol] trace error: " .. tostring(a) .. "\n") return nil end
+            return a, b, c
+        end
         ply:LagCompensation(true)
         local ok, a, b, c = pcall(fn)
         if IsValid(ply) then ply:LagCompensation(false) end

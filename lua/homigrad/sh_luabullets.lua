@@ -726,6 +726,7 @@ function ENTITY:FireLuaBullets(tInfo)
 					filter = Filter
 				})
 			
+			if tr == nil then break end -- trace fn failed; skip pellet
 			local tries = 50
 			while (tries > 0 and IsValid(tr.Entity) and tr.Entity.organism) do
 				local ent = tr.Entity
@@ -755,6 +756,7 @@ function ENTITY:FireLuaBullets(tInfo)
 						mask = iMask,
 						filter = Filter
 					})
+				if tr == nil then break end -- re-trace failed
 				--print(tr.FractionLeftSolid)
 				--print(tr.Entity, tr.HitGroup, hitgroup, tr.PhysicsBone, tr.StartSolid)
 			end
