@@ -947,11 +947,13 @@ if SERVER then
 				v[3] = self:GetOwner()
 			end
 
-			if self.NextParticle < CurTime() and vFireLifeToState(self.life) > 4 then
-				self.NextParticle = CurTime() + 2
-				if (self.gasparticles < self.totalparticles) then
-					table.insert(hg.particles, {self:GetPos(), VectorRand(-15, 15), CurTime() + 120})
-					
+			if self.NextParticle < CurTime() and vFireLifeToState(self.life) > 2 then
+				local state = vFireLifeToState(self.life)
+				self.NextParticle = CurTime() + math.Rand(0.8, 1.1) + (7 - state) * 0.4
+				self.totalparticles = math.ceil(state * 2.4)
+				if self.gasparticles < self.totalparticles and hg.COGasAdd then
+					hg.COGasAdd(self:GetPos(), 0.25 * (state - 2))
+
 					self.gasparticles = self.gasparticles + 1
 				end
 		

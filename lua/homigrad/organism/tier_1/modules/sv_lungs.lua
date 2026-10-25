@@ -217,7 +217,7 @@ module[2] = function(owner, org, timeValue)
 		local rag = IsValid(owner.FakeRagdoll) and owner.FakeRagdoll or nil
 		local best = 0
 
-		local function considersrc(epos, blocker)
+		local function considersrc(epos, blocker, k)
 			local dsqr = pos:DistToSqr(epos)
 			if dsqr > 200 * 200 then return end
 
@@ -235,7 +235,7 @@ module[2] = function(owner, org, timeValue)
 				if tr.Hit then return end
 			end
 
-			local s = 0.6 + 1.4 * (1 - math.sqrt(dsqr) / 200)
+			local s = (0.6 + 1.4 * (1 - math.sqrt(dsqr) / 200)) * (k or 1)
 			if s > best then best = s end
 		end
 
@@ -243,25 +243,78 @@ module[2] = function(owner, org, timeValue)
 
 		for _, e in ipairs(ents.FindInSphere(pos, 200)) do
 			local cls = e:GetClass()
-			if (cls == "env_fire" and !e:GetNoDraw()) or (cls == "vfire" and e.GetFireState and (e:GetFireState() or 0) > 0) then
-				considersrc(e:GetPos(), e)
-			end
-		end
+			if cls == "env_fire" and !e:GetNoDraw() then
+				if not e.NextCOSky or e.NextCOSky < CurTime() then
+					e.NextCOSky = CurTime() + 5
 
-		local gpos
-		local gd = 200 * 200
-		for _, tbl in ipairs(hg.gasolinePath) do
-			if tbl[2] and isnumber(tbl[2]) then
-				local d = pos:DistToSqr(tbl[1])
-				if d < gd then
-					gd = d
-					gpos = tbl[1]
+					local ftr = util.TraceLine({
+						start = e:GetPos(),
+						endpos = e:GetPos() + Vector(0, 0, 2400),
+						mask = MASK_SOLID_BRUSHONLY
+					})
+					e.COOpenSky = ftr.HitSky or not ftr.Hit
+				end
+
+				if not e.COOpenSky then
+					considersrc(e:GetPos(), e)
+				end
+			elseif cls == "vfire" and e.GetFireState then
+				local st = e:GetFireState() or 0
+				if st > 2 then
+					if not e.NextCOSky or e.NextCOSky < CurTime() then
+						e.NextCOSky = CurTime() + 5
+
+						local ftr = util.TraceLine({
+							start = e:GetPos(),
+							endpos = e:GetPos() + Vector(0, 0, 2400),
+							mask = MASK_SOLID_BRUSHONLY
+						})
+						e.COOpenSky = ftr.HitSky or not ftr.Hit
+					end
+
+					if not e.COOpenSky then
+						considersrc(e:GetPos(), e, (st - 2) / 5)
+					end
 				end
 			end
 		end
-		if gpos then considersrc(gpos) end
 
-		org.COConcentration = 0
+		local parts = hg.particles
+		if parts and #parts > 0 then
+			local pfilter = {owner}
+			if rag then pfilter[#pfilter + 1] = rag end
+			if ent != owner then pfilter[#pfilter + 1] = ent end
+
+			for i = 1, #parts do
+				local part = parts[i]
+				local inten = part[6]
+				if inten and inten > 0.05 then
+					local dsqr = head:DistToSqr(part[1])
+					if dsqr < 240 * 240 then
+						local tr = util.TraceLine({
+							start = part[1],
+							endpos = head,
+							mask = MASK_SHOT,
+							filter = pfilter
+						})
+						if not tr.Hit then
+							local s = (0.9 + 0.9 * (1 - math.sqrt(dsqr) / 240)) * inten
+							best = math.min(best + s, 2.2)
+						end
+					end
+				end
+			end
+		end
+
+		org.COConcentration = best
+
+		if not org.holdingbreath then
+			org.breathCOConc = best
+		end
+
+		if best > 0.3 and not org.holdingbreath then
+			org.lastCOBreathe = CurTime()
+		end
 	end
 
 	if org.lastCOBreathe and org.lastCOBreathe + 1 > CurTime() then
@@ -270,13 +323,23 @@ module[2] = function(owner, org, timeValue)
 		org.COregen = math.Approach(org.COregen, 0, timeValue * 0.5)
 	end
 
-	org.CO = max(org.CO - timeValue, 0)
+	if (org.COConcentration or 0) < 0.3 then
+		org.CO = max(org.CO - timeValue, 0)
+	end
 	if success then
 		local oxygenate = hg.organism.OxygenateBlood(org) * 0.5
 		local lerp = min(max(org.pulse - 20, 0) / 20, 1)
 		local regen = Lerp(lerp, 0, o2.regen * oxygenate * math.Rand(0.95, 1.05))
 
-		org.CO = min(org.CO + (not org.holdingbreath and org.COregen > 0 and timeValue * 1.5 * (org.COConcentration or 0) or 0), 30)
+		org.CO = min(org.CO + (not org.holdingbreath and org.COregen > 0 and timeValue * 0.6 * (org.COConcentration or 0) or 0), 30)
+
+		if org.holdingbreath then
+			local conc = min(org.breathCOConc or 0, org.COConcentration or 0)
+
+			if conc > 0.3 then
+				org.CO = min(org.CO + timeValue * 0.6 * conc + timeValue * 0.8, 30)
+			end
+		end
 
 		org.consciousness = math.min(org.consciousness, (30 - org.CO) / 30)
 

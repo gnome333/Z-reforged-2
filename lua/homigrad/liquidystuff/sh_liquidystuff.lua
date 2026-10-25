@@ -88,6 +88,10 @@ if SERVER then
 						tbl2[2] = CurTime()
 						tbl2[3] = tbl[3] or tbl2[3]
 						something_ignited = true
+
+						if hg.COGasAdd then
+							hg.COGasAdd(tbl2[1], 0.3)
+						end
 					end
 				end
 			
