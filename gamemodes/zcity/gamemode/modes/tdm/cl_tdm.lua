@@ -534,7 +534,7 @@ local function OpenBuyMenu()
 				local ItemIcon = math.ceil(ScrH()*0.06)
 				ItemAtt:Dock(RIGHT)
 				ItemAtt:DockMargin(0,5,0,0)
-				ItemAtt:SetCols( 4 )
+				ItemAtt:SetCols( 5 )
 				ItemAtt:SetColWide(ItemIcon)
 				ItemAtt:SetRowHeight(ItemIcon)
 				ItemAtt.Paint = function() end

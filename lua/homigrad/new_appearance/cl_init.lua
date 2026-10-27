@@ -363,7 +363,7 @@ function DrawAppearance(ent, ply, setup)
 
 		if deg < 0 and not chekvisible.Hit then
 			render.SetMaterial(mat2)
-			render.DrawSprite(ply.flmodel:GetPos() + ply.flmodel:GetAngles():Forward() * 5 + ply.flmodel:GetAngles():Right() * -0.5, 50 * math.min(deg, 0), 50 * math.min(deg, 0), color_white)
+			render.DrawSprite(ply.flmodel:GetPos() + ply.flmodel:GetAngles():Forward() * 5 + ply.flmodel:GetAngles():Right() * -0.5, 125 * math.min(deg, 0), 125 * math.min(deg, 0), color_white)
 		end
 	else
 		if ply.flashlight and IsValid(ply.flashlight) then

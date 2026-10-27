@@ -377,7 +377,7 @@ hook.Add("Post Post Processing", "ItHurts", function()
 	if !org or !org.o2 or !isnumber(org.o2[1]) or !org.analgesia then stopthings() return end
 
 	local o2 = org.o2[1] or 0
-	o2 = o2 + (org.CO or 0)
+	o2 = o2 + math.max((org.CO or 0) - 10, 0)
 	local brain = org.brain or 0
 	O2Lerp = LerpFT(0.01, O2Lerp, (30 - o2) * (org.otrub and 2 or 10) + (brain * 100) * (org.otrub and 1 or 5))
 
