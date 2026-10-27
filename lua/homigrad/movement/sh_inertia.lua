@@ -238,12 +238,12 @@ local Angle, Vector, AngleRand, VectorRand, math, hook, util, game = Angle, Vect
 			mul = mul * 0.3
 		end
 
-		if((runnin or crouchrunnin) and velLen >= 10)then
+		if(runnin and velLen >= 10)then
 			ply.CurrentSpeed = math.Approach(ply.CurrentSpeed, (ply.move or ply:GetRunSpeed()) * mul, delta_time * ply.SpeedGainMul)
-		else
-			if(crouchrunnin)then
+		elseif(crouchrunnin and velLen >= 10)then
 			ply.CurrentSpeed = math.Approach(ply.CurrentSpeed, math.min(crouch_walk_speed * 2.1, 135) * mul, delta_time * ply.SpeedGainMul)
-		elseif(ply:Crouching())then
+		else
+			if(ply:Crouching())then
 				ply.CurrentSpeed = math.Approach(ply.CurrentSpeed, crouch_walk_speed * mul, delta_time * ply.SpeedLoseMul)
 			elseif(slow_walking)then
 				ply.CurrentSpeed = math.Approach(ply.CurrentSpeed, slow_walk_speed * mul, delta_time * ply.SpeedLoseMul)
