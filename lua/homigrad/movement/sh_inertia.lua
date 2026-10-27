@@ -103,7 +103,9 @@ local Angle, Vector, AngleRand, VectorRand, math, hook, util, game = Angle, Vect
 			return
 		end
 
-		local runnin = ply:KeyDown(IN_SPEED) and not ply:Crouching() and ply:KeyDown(IN_FORWARD)
+		local wantCrouchRun = ply:Crouching() and ply:KeyDown(IN_SPEED) and ply:KeyDown(IN_FORWARD)
+	local runnin = ply:KeyDown(IN_SPEED) and not ply:Crouching() and ply:KeyDown(IN_FORWARD)
+	local crouchrunnin = wantCrouchRun and ply:OnGround() and not IsValid(ply.FakeRagdoll)
 
 		--[[if runnin then
 			mv:SetSideSpeed(0) --meh
@@ -111,7 +113,7 @@ local Angle, Vector, AngleRand, VectorRand, math, hook, util, game = Angle, Vect
 			cmd:RemoveKey(IN_BACK)
 		end]]
 
-		if not IsValid(ply.FakeRagdoll) and ply:KeyDown(IN_SPEED) and not ply:Crouching() and ply:KeyDown(IN_BACK) then
+		if not IsValid(ply.FakeRagdoll) and ply:KeyDown(IN_SPEED) and not ply:Crouching() and (ply:KeyDown(IN_BACK) or (org.stamina and org.stamina[1] and org.stamina[1] < 30 and velLen > 200)) then
 			cmd:RemoveKey(IN_SPEED)
 		end
 
@@ -187,14 +189,14 @@ local Angle, Vector, AngleRand, VectorRand, math, hook, util, game = Angle, Vect
 		ply.FrictionGainMul = 0.01
 		ply.FrictionLoseMul = 0.2
 
-		ply.SpeedGainMul = 240 * weightmul * (ply.organism.superfighter and 5 or 1) * (ply:GetNWInt("SpeedGainClassMul", 1) or 1)
+		ply.SpeedGainMul = 135 * weightmul * (ply.organism.superfighter and 5 or 1) * (ply:GetNWInt("SpeedGainClassMul", 1) or 1)
 		ply.SpeedGainMul = ply.SpeedGainMul * hg_movement_speed_gain_mul:GetFloat()
 
-		ply.SpeedLoseMul = 10000
+		ply.SpeedLoseMul = 420
 		ply.SpeedLoseMul = ply.SpeedLoseMul * hg_movement_speed_lose_mul:GetFloat()
 
-		ply.SpeedSharpLoseMul = 0.007
-		ply.InertiaBlend = 2000 * weightmul * (ply.organism.superfighter and 100 or 1)
+		ply.SpeedSharpLoseMul = 0.009
+		ply.InertiaBlend = 650 * weightmul * (ply.organism.superfighter and 100 or 1)
 		ply.DuckingSlowdown = ply.DuckingSlowdown or 0
 		-- ply.InertiaBlend = 15 * weightmul * ply.CurrentFrictionMul
 		local inertia_blend_mul = 1
@@ -236,10 +238,12 @@ local Angle, Vector, AngleRand, VectorRand, math, hook, util, game = Angle, Vect
 			mul = mul * 0.3
 		end
 
-		if(runnin and velLen >= 10)then
+		if((runnin or crouchrunnin) and velLen >= 10)then
 			ply.CurrentSpeed = math.Approach(ply.CurrentSpeed, (ply.move or ply:GetRunSpeed()) * mul, delta_time * ply.SpeedGainMul)
 		else
-			if(ply:Crouching())then
+			if(crouchrunnin)then
+			ply.CurrentSpeed = math.Approach(ply.CurrentSpeed, math.min(crouch_walk_speed * 2.1, 135) * mul, delta_time * ply.SpeedGainMul)
+		elseif(ply:Crouching())then
 				ply.CurrentSpeed = math.Approach(ply.CurrentSpeed, crouch_walk_speed * mul, delta_time * ply.SpeedLoseMul)
 			elseif(slow_walking)then
 				ply.CurrentSpeed = math.Approach(ply.CurrentSpeed, slow_walk_speed * mul, delta_time * ply.SpeedLoseMul)
@@ -295,7 +299,9 @@ local Angle, Vector, AngleRand, VectorRand, math, hook, util, game = Angle, Vect
 			end
 
 			if(fm < 0)then
-				movement_penalty = math.max(movement_penalty, 1.3)
+				movement_penalty = math.max(movement_penalty, runnin and 1.9 or 1.5)
+			elseif(sm ~= 0 and runnin)then
+				movement_penalty = math.max(movement_penalty, 1.7)
 			end
 
 			--if(CLIENT)then
@@ -371,7 +377,7 @@ local Angle, Vector, AngleRand, VectorRand, math, hook, util, game = Angle, Vect
 
 			local forward_move, side_move = calc_forward_side_moves(ply.MovementInertia, ply_angles)
 
-			if(CLIENT and hg_inertiaenabled:GetBool())then
+			if(CLIENT)then
 				ply.MovementInertiaAddView = ply.MovementInertiaAddView or Angle(0,0,0)
 				ply.MovementInertiaAddView.r = ply.MovementInertiaAddView.r + side_move * delta_time * inertia_len * 0.03
 				ply.MovementInertiaAddView.p = ply.MovementInertiaAddView.p + math.abs(side_move) * delta_time * inertia_len * 0.01
@@ -411,7 +417,7 @@ local Angle, Vector, AngleRand, VectorRand, math, hook, util, game = Angle, Vect
 
 		local ent = IsValid(ply:GetNetVar("carryent")) and ply:GetNetVar("carryent") or IsValid(ply:GetNetVar("carryent2")) and ply:GetNetVar("carryent2")
 
-		if SERVER and inertia_len > 5 and runnin then
+		if SERVER and inertia_len > 5 and (runnin or crouchrunnin) then
 			local mul = math.Clamp(inertia_len / 200, 0.5, 1) * 5 * (ply:Crouching() and 0.01 or 1)
 			if ply == rag then
 				if org.pelvis == 1 then
@@ -522,7 +528,14 @@ local Angle, Vector, AngleRand, VectorRand, math, hook, util, game = Angle, Vect
 			end
 		elseif ply.HgWasAirborne then
 			if (ply.HgAirSpeed or 0) > 200 then
-				ply.HgLandSlowUntil = CurTime() + 1.5
+				local hard = math.Clamp((ply.HgAirSpeed - 200) / 400, 0, 1)
+				ply.HgLandSlowDur = 0.6 + hard * 1.2 + (1 - weightmul) * 0.5
+				ply.HgLandSlowUntil = CurTime() + ply.HgLandSlowDur
+				ply.HgLandSlowHard = hard
+				if SERVER and hard > 0.5 and rag == ply then
+					ply:SetNetVar("slowDown", math.min((ply:GetNetVar("slowDown", 0) or 0) + 60 * hard, 250))
+				end
+				if CLIENT and ply == lply and hard > 0.3 then ViewPunch(Angle(2 + hard * 3, 0, 0)) end
 			end
 
 			ply.HgAirSpeed = 0
@@ -539,10 +552,17 @@ local Angle, Vector, AngleRand, VectorRand, math, hook, util, game = Angle, Vect
 		end
 		
 		if (ply.HgLandSlowUntil or 0) > CurTime() then
-			inertia_len = inertia_len * 0.6
+			local landMin = (org.adrenaline or 0) > 15 and 0.85 or 0.4
+			local dur = math.max(ply.HgLandSlowDur or 1, 0.01)
+			local t = math.Clamp((ply.HgLandSlowUntil - CurTime()) / dur, 0, 1)
+			t = t * t * (3 - 2 * t)
+			local landMul = 1 - (1 - landMin) * t
+			inertia_len = inertia_len * landMul
+			ply.CurrentSpeed = math.min(ply.CurrentSpeed or inertia_len, inertia_len)
 		end
 
-		mv:SetMaxSpeed(inertia_len)
+		if ply:Crouching() then inertia_len = math.min(inertia_len, 140 * k) end
+mv:SetMaxSpeed(inertia_len)
 		mv:SetMaxClientSpeed(inertia_len)
 		ply:SetMaxSpeed(math.max(100, inertia_len))
 		ply:SetJumpPower(DEFAULT_JUMP_POWER * math.min(k, 1.1) * (not ply:GetNWBool("TauntStopMoving", false) and 1 or 0) * (ply.organism.superfighter and 1.5 or 1) * (ply.JumpPowerMul or 1))
