@@ -191,7 +191,7 @@ local function OpenBuyMenu()
 			local ent = scripted_ents.GetStored(Item.ItemClass)
 
 			local ItemPanel = vgui.Create("DPanel", CategoryPanel)
-			ItemPanel:SetSize(0, ScrH() * 0.1)
+			ItemPanel:SetSize(0, ScrH() * 0.12)
 			ItemPanel:Dock(TOP)
 			ItemPanel:DockMargin(0, 8, 0, 0)
 			ItemPanel.Paint = PaintPanel1
@@ -204,6 +204,42 @@ local function OpenBuyMenu()
 				local boxed = ScrH() * 0.07 / 2
 				ItemButton:DockMargin(5 + (bBox and boxed or 0), 5, 5 + (bBox and boxed or 0), 5)
 				ItemButton:SetImage((weapon ~= nil and ((weapon.WepSelectIcon2 and weapon.WepSelectIcon2:GetName() .. ".png") or weapon.IconOverride)) or ((ent and ent.t.IconOverride) or "none"))
+			end
+
+			local AttCount = Item.Attachments and #Item.Attachments or 0
+			if AttCount > 0 then
+				local cols = math.min(5, AttCount)
+				local rows = math.ceil(AttCount / cols)
+				local pitch = math.floor(math.min((ScrH() * 0.12 - 12) / rows, ScrH() * 0.06, ScrW() * 0.35 * 0.42 / cols))
+				if pitch < 22 then pitch = 22 end
+				local cell = pitch - 4
+
+				local ItemAtt = vgui.Create("DGrid", ItemPanel)
+				ItemAtt:Dock(RIGHT)
+				ItemAtt:DockMargin(4, 6, 8, 6)
+				ItemAtt:SetCols(cols)
+				ItemAtt:SetColWide(pitch)
+				ItemAtt:SetRowHeight(pitch)
+				ItemAtt:SetSize(cols * pitch, rows * pitch)
+				ItemAtt.Paint = function() end
+
+				for id, AttachN in pairs(Item.Attachments) do
+					local ico = hg.attachmentsIcons[AttachN]
+					local Attach = vgui.Create("DImageButton")
+					Attach:SetImage(ico)
+					Attach:SetSize(cell, cell)
+
+					Attach.Attachment = {k, n, AttachN}
+
+					function Attach:DoClick()
+						net.Start("tdm_buyitem")
+							net.WriteTable(self.Attachment)
+						net.SendToServer()
+					end
+
+					Attach.Paint = PaintPanel2
+					ItemAtt:AddItem(Attach)
+				end
 			end
 
 			local ItemButton = vgui.Create("DPanel", ItemPanel)
@@ -279,34 +315,6 @@ local function OpenBuyMenu()
 					end
 
 					amm.Paint = PaintPanel
-				end
-			end
-
-			if Item.Attachments and #Item.Attachments > 0 then
-				local ItemAtt = vgui.Create("DGrid", ItemPanel)
-				local ItemIcon = math.ceil(ScrH() * 0.06)
-				ItemAtt:Dock(RIGHT)
-				ItemAtt:DockMargin(0, 5, 0, 0)
-				ItemAtt:SetCols(4)
-				ItemAtt:SetColWide(ItemIcon)
-				ItemAtt:SetRowHeight(ItemIcon)
-				ItemAtt.Paint = function() end
-				for id, AttachN in pairs(Item.Attachments) do
-					local ico = hg.attachmentsIcons[AttachN]
-					local Attach = vgui.Create("DImageButton")
-					Attach:SetImage(ico)
-					Attach:SetSize(ItemIcon - 5, ItemIcon - 5)
-
-					Attach.Attachment = {k, n, AttachN}
-
-					function Attach:DoClick()
-						net.Start("tdm_buyitem")
-							net.WriteTable(self.Attachment)
-						net.SendToServer()
-					end
-
-					Attach.Paint = PaintPanel2
-					ItemAtt:AddItem(Attach)
 				end
 			end
 		end
