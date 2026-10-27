@@ -87,22 +87,24 @@ if CLIENT then
 	function zb.PlayRoundMusic(paths)
 		zb.StopRoundMusic()
 
-		for _, path in ipairs(paths) do
-			local snd = CreateSound(LocalPlayer(), path)
+		local path = istable(paths) and table.Random(paths) or paths
 
-			if snd then
-				snd:Play()
-				table.insert(activeMusic, snd)
+		if not path then return end
 
-				timer.Simple(7, function()
-					snd:ChangeVolume(0, 1.5)
-				end)
+		local snd = CreateSound(LocalPlayer(), path)
 
-				timer.Simple(8.6, function()
-					snd:Stop()
-				end)
-			end
-		end
+		if not snd then return end
+
+		snd:Play()
+		table.insert(activeMusic, snd)
+
+		timer.Simple(7, function()
+			snd:ChangeVolume(0, 1.5)
+		end)
+
+		timer.Simple(8.6, function()
+			snd:Stop()
+		end)
 	end
 end
 
