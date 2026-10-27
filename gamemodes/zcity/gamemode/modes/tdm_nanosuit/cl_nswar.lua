@@ -213,10 +213,12 @@ local function OpenBuyMenu()
 				local pitch = math.floor(math.min((ScrH() * 0.12 - 12) / rows, ScrH() * 0.06, ScrW() * 0.35 * 0.42 / cols))
 				if pitch < 22 then pitch = 22 end
 				local cell = pitch - 4
+				local top = math.floor((ScrH() * 0.12 - rows * pitch) / 2)
+				if top < 3 then top = 3 end
 
 				local ItemAtt = vgui.Create("DGrid", ItemPanel)
 				ItemAtt:Dock(RIGHT)
-				ItemAtt:DockMargin(4, 6, 8, 6)
+				ItemAtt:DockMargin(4, top, 8, top)
 				ItemAtt:SetCols(cols)
 				ItemAtt:SetColWide(pitch)
 				ItemAtt:SetRowHeight(pitch)
@@ -283,26 +285,35 @@ local function OpenBuyMenu()
 				local ammo = weapon.Primary.Ammo != "none" and weapon.Primary.Ammo or weapon.Ammo or (weapons.GetStored(weapon.Base) and weapons.GetStored(weapon.Base).Primary.Ammo)
 
 				if hg.ammotypeshuy[ammo] then
+					local ammoName = ammo
+					local short = string.match(ammoName, "^%S+") or ammoName
+
+					surface.SetFont("ZB_TDM_DESCSMALL")
+					local w = surface.GetTextSize(short)
+
 					local amm = vgui.Create("DButton", ItemButton)
 					amm:DockMargin(10, 5, 10, 10)
 					amm:Dock(LEFT)
-					amm:SetText(ammo)
-					amm:SetTextColor(Color(200, 200, 200))
+					amm:SetText("")
 					amm:SetFont("ZB_TDM_DESCSMALL")
+					amm:SetHeight(ScrH() * 0.021)
+					amm:SetWidth(math.max(w + 10, ScrH() * 0.03))
+					amm:SetTooltip("Buy ammo: " .. ammoName)
 
-					surface.SetFont("ZB_TDM_DESCSMALL")
-					local w, h = surface.GetTextSize(ammo)
-
-					amm:SetHeight(ScrH() * 0.025)
-					amm:SetWidth(w + 7)
-					local ammo2 = "ent_ammo_" .. hg.ammotypeshuy[ammo].name
+					local ammoClass = "ent_ammo_" .. hg.ammotypeshuy[ammoName].name
 					local name
 					for name2, ammoEntry in pairs(MODE.BuyItems["Ammo"] or {}) do
 						if not istable(ammoEntry) then continue end
-						if ammoEntry.ItemClass == ammo2 then
+						if ammoEntry.ItemClass == ammoClass then
 							name = name2
 						end
 					end
+
+					if not name then
+						amm:SetMouseInputEnabled(false)
+					end
+
+					local col = name and Color(200, 200, 200) or Color(110, 110, 110)
 
 					amm.huy = {"Ammo", name}
 
@@ -314,7 +325,13 @@ local function OpenBuyMenu()
 						net.SendToServer()
 					end
 
-					amm.Paint = PaintPanel
+					amm.Paint = function(self, ww, hh)
+						surface.SetDrawColor(0, 0, 0, 170)
+						surface.DrawRect(0, 0, ww, hh)
+						surface.SetDrawColor(255, 0, 0, 128)
+						surface.DrawOutlinedRect(0, 0, ww, hh, 1)
+						draw.SimpleText(short, "ZB_TDM_DESCSMALL", ww * 0.5, hh * 0.5, col, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
+					end
 				end
 			end
 		end
