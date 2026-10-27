@@ -562,6 +562,15 @@ local Angle, Vector, AngleRand, VectorRand, math, hook, util, game = Angle, Vect
 		end
 
 		if ply:Crouching() then inertia_len = math.min(inertia_len, 140 * k) end
+
+		-- uncrouch kick: CurrentSpeed was pinned low by crouch clamp, pop it up so stand-up does not feel stuck
+		local wasCrouch = ply.HgWasCrouching and true or false
+		local isCrouch = ply:Crouching() and true or false
+		if wasCrouch and not isCrouch and not IsValid(ply.FakeRagdoll) then
+			ply.CurrentSpeed = math.max(ply.CurrentSpeed or 0, math.min((ply.move or walk_speed) * mul, inertia_len))
+		end
+		ply.HgWasCrouching = isCrouch
+
 mv:SetMaxSpeed(inertia_len)
 		mv:SetMaxClientSpeed(inertia_len)
 		ply:SetMaxSpeed(math.max(100, inertia_len))
