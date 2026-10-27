@@ -107,7 +107,7 @@ function MODE:HUDPaint()
     local Rolename = slugcat.name
 	local ColorRole = slugcat.color1
     ColorRole.a = 255 * fade
-    draw.SimpleText("You are a "..Rolename , "ZB_HomicideMediumLarge", sw * 0.5, sh * 0.5, ColorRole, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
+    zb.SwayText("You are a "..Rolename , "ZB_HomicideMediumLarge", sw * 0.5, sh * 0.5, ColorRole, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER, 0)
 
     local Objective = slugcat.objective
     local ColorObj = slugcat.color1

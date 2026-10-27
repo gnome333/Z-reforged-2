@@ -14,6 +14,7 @@ if SERVER then
 
 		local snd = FirstPickupSounds[wep:GetClass()]
 		if not snd then return end
+		if not hg.NanoSuit or not hg.NanoSuit.HasSuit(ply) then return end
 		if ply:HasWeapon(wep:GetClass()) then return end
 		if ply.HG_FirstPicked and ply.HG_FirstPicked[wep:GetClass()] then return end
 

@@ -46,7 +46,7 @@ function MODE:HUDPaint()
 
 	if not info then return end
 
-	draw.SimpleText("You are " .. info.name, "ZB_HomicideMediumLarge", sw * 0.5, sh * 0.5, Color(info.color1.r, info.color1.g, info.color1.b, 255 * fade), TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
+	zb.SwayText("You are " .. info.name, "ZB_HomicideMediumLarge", sw * 0.5, sh * 0.5, Color(info.color1.r, info.color1.g, info.color1.b, 255 * fade), TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER, 0, StartTime)
 	draw.SimpleText(info.objective, "ZB_HomicideMedium", sw * 0.5, sh * 0.9, Color(info.color2.r, info.color2.g, info.color2.b, 255 * fade), TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
 end
 
