@@ -3,14 +3,14 @@ local Angle, Vector, AngleRand, VectorRand, math, hook, util, game = Angle, Vect
 	hook.Add("UpdateAnimation", "NormAnimki", function(ply, vel, maxSeqGroundSpeed)
 	if not IsValid(ply) or not ply:Alive() or not ply:OnGround() then return end
 	local ground = vel:Length2D()
-	if ground < 30 or (maxSeqGroundSpeed or 0) < 1 then ply.AnimRateSmooth = nil return end
+	if ground < 30 or (maxSeqGroundSpeed or 0) < 1 then ply.AnimRateSmooth = nil; return end
 	local target = math.Clamp(ground / maxSeqGroundSpeed, 0.7, 1.6)
 	ply.AnimRateSmooth = ply.AnimRateSmooth or target
 	local spd = target > ply.AnimRateSmooth and 8 or 3
 	local rate = math.Approach(ply.AnimRateSmooth, target, FrameTime() * spd)
 	ply.AnimRateSmooth = rate
 	ply:SetPlaybackRate(rate)
-	return true
+	return ply, vel, maxSeqGroundSpeed
 end)
 --//
 

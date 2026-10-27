@@ -103,9 +103,17 @@ local Angle, Vector, AngleRand, VectorRand, math, hook, util, game = Angle, Vect
 			return
 		end
 
-		local wantCrouchRun = ply:Crouching() and ply:KeyDown(IN_SPEED) and ply:KeyDown(IN_FORWARD)
-	local runnin = ply:KeyDown(IN_SPEED) and not ply:Crouching() and ply:KeyDown(IN_FORWARD)
-	local crouchrunnin = wantCrouchRun and ply:OnGround() and not IsValid(ply.FakeRagdoll)
+			local vel0 = ply:GetVelocity()
+		local velLen0 = vel0:Length()
+
+		if not IsValid(ply.FakeRagdoll) and ply:KeyDown(IN_SPEED) and not ply:Crouching() and (ply:KeyDown(IN_BACK) or (org.stamina and org.stamina[1] and org.stamina[1] < 30 and velLen0 > 200)) then
+			cmd:RemoveKey(IN_SPEED)
+			mv:RemoveKey(IN_SPEED)
+		end
+
+		local wantCrouchRun = ply:Crouching() and cmd:KeyDown(IN_SPEED) and ply:KeyDown(IN_FORWARD)
+		local runnin = cmd:KeyDown(IN_SPEED) and not ply:Crouching() and ply:KeyDown(IN_FORWARD)
+		local crouchrunnin = wantCrouchRun and ply:OnGround() and not IsValid(ply.FakeRagdoll)
 
 		--[[if runnin then
 			mv:SetSideSpeed(0) --meh
@@ -113,9 +121,6 @@ local Angle, Vector, AngleRand, VectorRand, math, hook, util, game = Angle, Vect
 			cmd:RemoveKey(IN_BACK)
 		end]]
 
-		if not IsValid(ply.FakeRagdoll) and ply:KeyDown(IN_SPEED) and not ply:Crouching() and (ply:KeyDown(IN_BACK) or (org.stamina and org.stamina[1] and org.stamina[1] < 30 and velLen > 200)) then
-			cmd:RemoveKey(IN_SPEED)
-		end
 
 		local wep = ply:GetActiveWeapon()
 		local vel = ply:GetVelocity()

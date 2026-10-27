@@ -18,7 +18,7 @@ local hg_coolcamera = ConVarExists("hg_coolcamera") and GetConVar("hg_coolcamera
 		local ent = hg.GetCurrentCharacter(ply)
 		
 		local sprint = hg.KeyDown(ply, IN_SPEED)
-		ply.lastStepTime = CurTime() + 0.7 * (sprint and 1.5 or 1) * (1 / math_max(len, sprint and 200 or 150)) * 100
+		ply.lastStepTime = CurTime() + math.Clamp(70 / math_max(len, 60), 0.28, 0.7) * (sprint and 0.85 or 1)
 
 		hook_Run("HG_PlayerFootstep_Notify", ply, pos, foot, sound, volume, rf)	--; Do not return anything from this _Notify hook
 
