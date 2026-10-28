@@ -1,11 +1,30 @@
-local mats = {}
-for i = 1, 6 do
-	mats[i] = CreateMaterial( "blood_particle0"..i, "Sprite", {
-		["$translucent"] = 1,
-		["$vertexalpha"] = 1,
-		["$vertexcolor"] = 1
-	} )
-	mats[i]:SetTexture("$basetexture",Material("decals/blood" .. i):GetTexture("$basetexture"))
+-- sprite pools use the SAME textures as world decals (see autorun/shitdecals.lua)
+-- plain Material() calls never produce error-materials, unlike CreateMaterial+SetTexture at load time
+local bloodmats_normal, bloodmats_artery, bloodmats_old, bloodmats_old_art = {}, {}, {}, {}
+local function init_bloodmats()
+	for n = 1, 11 do
+		if n ~= 5 then
+			local m = Material("effects/droplets/drop" .. n .. "_1")
+			if not m:IsError() then bloodmats_normal[#bloodmats_normal + 1] = m end
+		end
+	end
+	local ma = Material("effects/droplets/drop12_1")
+	if not ma:IsError() then bloodmats_artery[1] = ma end
+	for n = 1, 10 do
+		local m1 = Material("decals/z_blood" .. n)
+		if not m1:IsError() then bloodmats_old[#bloodmats_old + 1] = m1 end
+		local m2 = Material("decals/arterial_blood" .. n)
+		if not m2:IsError() then bloodmats_old_art[#bloodmats_old_art + 1] = m2 end
+	end
+end
+init_bloodmats()
+hook.Add("InitPostEntity", "hg_bloodmats_init", init_bloodmats)
+local hg_old_blood_cv = ConVarExists("hg_old_blood") and GetConVar("hg_old_blood") or CreateClientConVar("hg_old_blood", 0, true, false, "new decals, or old", 0, 1)
+local function pick_bloodmat(artery)
+	local old = hg_old_blood_cv:GetBool()
+	local pool = artery and (old and bloodmats_old_art or bloodmats_artery) or (old and bloodmats_old or bloodmats_normal)
+	if #pool == 0 then return nil end
+	return pool[math.random(1, #pool)]
 end
 
 --local mat_huy = Material("sprites/mat_jack_irregularcircle")
@@ -19,7 +38,6 @@ local cloudmat = Material("effects/smoke_b")
 --[[for i = 4, 6 do
 	mats[i-3] = Material("homigrad/decals/bld" .. i)
 end]]
-local countmats = #mats
 hg.bloodparticles1 = hg.bloodparticles1 or {}
 hg.bloodparticles2 = hg.bloodparticles2 or {}
 local vecZero = Vector(0, 0, 0)
@@ -31,15 +49,19 @@ local function addBloodPart(pos, vel, mat, w, h, artery, kishki, owner)
 	--lastplaced = SysTime()
 	if LocalPlayer():GetNetVar("disappearance", nil) or (IsValid(owner) and owner:GetNetVar("disappearance", nil)) then return end
 
-	pos = pos + vecZero
-	vel = vel + vecZero
-
-	local pos2 = Vector()
-	pos2:Set(pos)
+	local pos2 = Vector(pos)
 
 	if #hg.bloodparticles1 > 200 then table.remove(hg.bloodparticles1, 1) end
 	
-	hg.bloodparticles1[#hg.bloodparticles1 + 1] = {pos, pos2, vel, mat or mat_huy, w or 2, h or 2, CurTime(), artery = artery, kishki = kishki, owner = owner, start_velocity = IsValid(owner) and owner:GetVelocity() or vector_origin}
+	local basecol
+	if not kishki then
+		local vary = math.random(-15, 15)
+		basecol = artery and {180 + vary, 15, 10} or {135 + vary, 8, 8}
+		mat = mat or pick_bloodmat(artery) or mat_huy
+		if not w or w < 2 then w = math.Rand(3.5, 5.5) end
+		if not h or h < 2 then h = w end
+	end
+	hg.bloodparticles1[#hg.bloodparticles1 + 1] = {pos, pos2, vel, mat or mat_huy, w or 2, h or 2, CurTime(), artery = artery, kishki = kishki, owner = owner, start_velocity = IsValid(owner) and owner:GetVelocity() or vector_origin, lightcache = render.GetLightColor(pos), basecol = basecol}
 end
 
 local function addBloodPart2(pos, vel, mat, w, h, time, water, owner)
@@ -65,14 +87,14 @@ hg.addBloodPart2 = addBloodPart2
 
 local Rand = math.Rand
 
-local hg_bloodimpacts = ConVarExists("hg_bloodimpacts") and GetConVar("hg_bloodimpacts") or CreateConVar("hg_bloodimpacts", 0, FCVAR_ARCHIVE + FCVAR_REPLICATED, "Enable custom blood impact effects spray cool kill death", 0, 1)
+local hg_bloodimpacts_cl = ConVarExists("hg_blood_impacts") and GetConVar("hg_blood_impacts") or CreateClientConVar("hg_blood_impacts", 0, true, false, "client-side blood impact clouds", 0, 1)
 
 local function impact(pos,vel,mul)
 	local max = math.min(mul,8)
 	local iters = math.ceil(math.random(1, max) * 2.5)
 	local velnorm = -vel:GetNormalized() * 5
 	
-	if hg_bloodimpacts:GetBool() then
+	if hg_bloodimpacts_cl:GetBool() then
 		addBloodPart2(pos + velnorm, -vel + Vector(Rand(-10, 10), Rand(-10, 10), Rand(-10, 10)) * 5, nil, 25, 25, 0.3)
 		addBloodPart2(pos + velnorm, -vel / 2 + Vector(Rand(-10, 10), Rand(-10, 10), Rand(-10, 10)) * 5, nil, 25, 25, 0.3)
 		addBloodPart2(pos + velnorm, -vel / 3 + Vector(Rand(-10, 10), Rand(-10, 10), Rand(-10, 10)) * 5, nil, 25, 25, 0.3)

@@ -90,10 +90,14 @@ hg.settings:AddOpt("Optimization","hg_attachment_draw_distance", "Attachment Dra
 hg.settings:AddOpt("Optimization","hg_maxsmoketrails", "Maximum Smoke Trails", nil, nil, "int")
 hg.settings:AddOpt("Optimization","hg_tpik_distance", "TPIK Render Distance", true, nil, "int")
 
-hg.settings:AddOpt("Blood","hg_blood_draw_distance", "Blood Draw Distance")
-hg.settings:AddOpt("Blood","hg_blood_fps", "Blood FPS")
-hg.settings:AddOpt("Blood","hg_blood_sprites", "Blood Sprites (DISABLED FOR EVERYONE)")
-hg.settings:AddOpt("Blood","hg_old_blood", "Old blood")
+hg.settings:AddOpt("Blood","hg_old_blood", "Old Blood Decals", nil, nil, "bool")
+hg.settings:AddOpt("Blood","hg_blood_sprites", "Sprite Mode (off = beams only)", nil, nil, "bool")
+hg.settings:AddOpt("Blood","hg_blood_trail", "Velocity Trails", nil, nil, "bool")
+hg.settings:AddOpt("Blood","hg_blood_impacts", "Blood Impact Clouds", nil, nil, "bool")
+hg.settings:AddOpt("Blood","hg_blood_light_min", "Min Brightness In Shadow", true, nil, "int")
+hg.settings:AddOpt("Blood","hg_blood_draw_distance", "Blood Draw Distance", nil, nil, "int")
+hg.settings:AddOpt("Blood","hg_blood_fps", "Blood Physics FPS", nil, nil, "int")
+hg.settings:AddOpt("Blood","hg_blood_lighting", "Cached Lighting (perf)", nil, nil, "bool")
 
 hg.settings:AddOpt("UI","hg_font", "Set Custom Font", false, true)
 
