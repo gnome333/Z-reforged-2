@@ -451,10 +451,38 @@ end
 
 			ply:SetSlowWalkSpeed(hg_movement_slowwalkspeed:GetInt())
 			ply:SetLadderClimbSpeed(hg_movement_ladderclimbspeed:GetInt())
-			ply:SetCrouchedWalkSpeed(hg_movement_crouchwalkspeed:GetInt())
+
+			-- Player:SetCrouchedWalkSpeed takes a *multiplier* -- values above 1 are ignored -- but
+			-- this convar holds an absolute speed in units/s, which the movement code also uses as an
+			-- absolute. Convert here so both agree, and so someone setting the "correct" 0.4 cannot
+			-- turn crouch walking into a 0.4 units/s crawl.
+			ply:SetCrouchedWalkSpeed(math.Clamp(hg_movement_crouchwalkspeed:GetFloat() / math.max(ply:GetWalkSpeed(), 1), 0, 1))
+
 			ply:SetDuckSpeed(0.4)
 			ply:SetUnDuckSpeed(0.4)
 			ply:AddEFlags(EFL_NO_DAMAGE_FORCES)
+
+			-- All of the movement state lives on the entity, so without this a player kept the speed,
+			-- the inertia vector and the slowDown penalty of their previous life and respawned
+			-- already crawling (or slid across the spawn point on a stale inertia vector).
+			ply.CurrentSpeed = nil
+			ply.MovementInertia = nil
+			ply.LastVelocity = nil
+			ply.LastVelocityLen = nil
+			ply.LastChangeVelocity = nil
+			ply.move = nil
+			ply.HgAirSpeed = 0
+			ply.HgWasAirborne = false
+			ply.HgLandSlowUntil = 0
+			ply.HgLandSlowDur = nil
+			ply.HgLandSlowHard = nil
+			ply.HgWasCrouching = false
+			ply.HgNextSlip = 0
+			ply.CrouchMinUntil = 0
+			ply.CrouchCdUntil = 0
+			ply.CrouchSlowUntil = 0
+			ply.OldCrouched = nil
+			ply.MovementInertiaAddView = nil
 		end)
 
 		if SERVER then
@@ -467,6 +495,9 @@ end
 			ply:SetNetVar("carrybone2", nil)
 			ply:SetNetVar("carrymass2", nil)
 			ply:SetNetVar("carrypos2", nil)
+
+			-- hard landing penalty, decayed per tick in sh_inertia.lua but never reset on spawn
+			ply:SetNetVar("slowDown", nil)
 		end
 
 		ply:SetNWEntity("spect", NULL)
@@ -909,7 +940,11 @@ local IsValid = IsValid
 
 		ply.armors = ply:GetNetVar("Armor",{})
 		for plc,arm in pairs(ply.armors) do
-			weight = weight + (hg.armor[plc][arm].mass or 1)
+			-- hg.armor[plc][arm] is nil for any armour name the table does not know, and this runs
+			-- inside SetupMove: a single unknown entry used to throw on every movement tick.
+			local armordef = hg.armor[plc] and hg.armor[plc][arm]
+
+			weight = weight + ((armordef and armordef.mass) or 1)
 		end
 
 		local weightmul = (1 / (weight / maxweight + 1))

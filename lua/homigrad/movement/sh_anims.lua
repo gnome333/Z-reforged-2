@@ -10,7 +10,7 @@ local Angle, Vector, AngleRand, VectorRand, math, hook, util, game = Angle, Vect
 	local rate = math.Approach(ply.AnimRateSmooth, target, FrameTime() * spd)
 	ply.AnimRateSmooth = rate
 	ply:SetPlaybackRate(rate)
-	return ply, vel, maxSeqGroundSpeed
+	-- UpdateAnimation has no return values, so this used to return into the void
 end)
 --//
 
