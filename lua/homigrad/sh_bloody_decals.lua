@@ -17,6 +17,7 @@ end
 local matRepl = Material("decals/decalsplash")
 local curmat
 local curmat2
+local decMaterials = {}
 function AddDecalToEnt(ent, id, --[[optional]] entIndex, tex, clear, x, y, rot, size, alpha)
 	local subm = ent:GetSubMaterial(id - 1) != "" and ent:GetSubMaterial(id - 1) or ent:GetMaterials()[id]
 	if !subm then
@@ -35,7 +36,12 @@ function AddDecalToEnt(ent, id, --[[optional]] entIndex, tex, clear, x, y, rot, 
 	local tabla = mata:GetKeyValues()
 	
 	-- you should set up entIndex for CSModels since their entIndex is -1
-	local mat = CreateMaterial(mata:GetName()..(entIndex or ent:EntIndex()).."228", mata:GetShader(), {})
+	local matName = mata:GetName() .. (entIndex or ent:EntIndex()) .. "228"
+	local mat = decMaterials[matName]
+	if not mat then
+		mat = CreateMaterial(matName, mata:GetShader(), {})
+		decMaterials[matName] = mat
+	end
 	
 	--[[for i, val in pairs(tabla) do
 		if type(val) == "ITexture" then

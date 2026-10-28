@@ -150,5 +150,4 @@ if CLIENT then
         func()
     end)
 
-    func()
 end
