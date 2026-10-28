@@ -1,247 +1,73 @@
 -- uzelezz smart UwU
+-- uzelezz smart UwU
+-- Canonical TPIK bone lists. All hg.TPIKBones* tables below are generated
+-- from these so external users (homigrad_base, zmanip) see identical content.
+local TPIK_FINGERS = {
+    "Finger4", "Finger41", "Finger42",
+    "Finger3", "Finger31", "Finger32",
+    "Finger2", "Finger21", "Finger22",
+    "Finger1", "Finger11", "Finger12",
+    "Finger0", "Finger01", "Finger02",
+}
+local TPIK_ALIAS_ORDER = {
+    "Hand", "Finger0", "Finger01", "Finger02",
+    "Finger1", "Finger11", "Finger12",
+    "Finger2", "Finger21", "Finger22",
+    "Finger3", "Finger31", "Finger32",
+    "Finger4", "Finger41", "Finger42",
+}
+local function TPIK_Full(side, part)
+    return "ValveBiped.Bip01_" .. side .. "_" .. part
+end
+local function TPIK_BuildSideList(side)
+    local t = { TPIK_Full(side, "Hand") }
+    for _, f in ipairs(TPIK_FINGERS) do t[#t + 1] = TPIK_Full(side, f) end
+    return t
+end
+local function TPIK_BuildIdentity(list)
+    local d = {}
+    for _, b in ipairs(list) do d[b] = b end
+    return d
+end
+local function TPIK_BuildDict(side)
+    local short = (side == "R") and "R " or "L "
+    local bip = (side == "R") and "Bip01 R " or "Bip01 L "
+    local d = TPIK_BuildIdentity(TPIK_BuildSideList(side))
+    for _, part in ipairs(TPIK_ALIAS_ORDER) do
+        d[short .. part] = TPIK_Full(side, part)
+        d[bip .. part] = TPIK_Full(side, part)
+    end
+    return d
+end
+local function TPIK_BuildMirrorDict()
+    local d = {}
+    for _, f in ipairs(TPIK_ALIAS_ORDER) do
+        d[TPIK_Full("R", f)] = TPIK_Full("L", f)
+    end
+    for _, part in ipairs(TPIK_ALIAS_ORDER) do
+        d["R " .. part] = TPIK_Full("L", part)
+        d["Bip01 R " .. part] = TPIK_Full("L", part)
+    end
+    return d
+end
+local TPIKBonesRH = TPIK_BuildSideList("R")
+local TPIKBonesLH = TPIK_BuildSideList("L")
 local TPIKBones = {
-    "ValveBiped.Bip01_L_Wrist",
-    "ValveBiped.Bip01_L_Ulna",
-    "ValveBiped.Bip01_L_Hand",
-    "ValveBiped.Bip01_L_Finger4",
-    "ValveBiped.Bip01_L_Finger41",
-    "ValveBiped.Bip01_L_Finger42",
-    "ValveBiped.Bip01_L_Finger3",
-    "ValveBiped.Bip01_L_Finger31",
-    "ValveBiped.Bip01_L_Finger32",
-    "ValveBiped.Bip01_L_Finger2",
-    "ValveBiped.Bip01_L_Finger21",
-    "ValveBiped.Bip01_L_Finger22",
-    "ValveBiped.Bip01_L_Finger1",
-    "ValveBiped.Bip01_L_Finger11",
-    "ValveBiped.Bip01_L_Finger12",
-    "ValveBiped.Bip01_L_Finger0",
-    "ValveBiped.Bip01_L_Finger01",
-    "ValveBiped.Bip01_L_Finger02",
-    "ValveBiped.Bip01_R_Wrist",
-    "ValveBiped.Bip01_R_Ulna",
-    "ValveBiped.Bip01_R_Hand",
-    "ValveBiped.Bip01_R_Finger4",
-    "ValveBiped.Bip01_R_Finger41",
-    "ValveBiped.Bip01_R_Finger42",
-    "ValveBiped.Bip01_R_Finger3",
-    "ValveBiped.Bip01_R_Finger31",
-    "ValveBiped.Bip01_R_Finger32",
-    "ValveBiped.Bip01_R_Finger2",
-    "ValveBiped.Bip01_R_Finger21",
-    "ValveBiped.Bip01_R_Finger22",
-    "ValveBiped.Bip01_R_Finger1",
-    "ValveBiped.Bip01_R_Finger11",
-    "ValveBiped.Bip01_R_Finger12",
-    "ValveBiped.Bip01_R_Finger0",
-    "ValveBiped.Bip01_R_Finger01",
-    "ValveBiped.Bip01_R_Finger02",
+    TPIK_Full("L", "Wrist"), TPIK_Full("L", "Ulna"),
+    unpack(TPIKBonesLH),
+    TPIK_Full("R", "Wrist"), TPIK_Full("R", "Ulna"),
+    unpack(TPIKBonesRH),
 }
-
-local TPIKBonesTranslate = {
-    --["ValveBiped.Bip01_L_UpperArm"] = "ValveBiped.Bip01_L_UpperArm",
-    --["ValveBiped.Bip01_L_Forearm"] = "ValveBiped.Bip01_L_Forearm",
-    --["ValveBiped.Bip01_L_Ulna"] = "ValveBiped.Bip01_L_Ulna",
-    --["ValveBiped.Bip01_L_Wrist"] = "ValveBiped.Bip01_L_Wrist",
-    ["ValveBiped.Bip01_L_Hand"] = "ValveBiped.Bip01_L_Hand",
-    ["ValveBiped.Bip01_L_Finger4"] = "ValveBiped.Bip01_L_Finger4",
-    ["ValveBiped.Bip01_L_Finger41"] = "ValveBiped.Bip01_L_Finger41",
-    ["ValveBiped.Bip01_L_Finger42"] = "ValveBiped.Bip01_L_Finger42",
-    ["ValveBiped.Bip01_L_Finger3"] = "ValveBiped.Bip01_L_Finger3",
-    ["ValveBiped.Bip01_L_Finger31"] = "ValveBiped.Bip01_L_Finger31",
-    ["ValveBiped.Bip01_L_Finger32"] = "ValveBiped.Bip01_L_Finger32",
-    ["ValveBiped.Bip01_L_Finger2"] = "ValveBiped.Bip01_L_Finger2",
-    ["ValveBiped.Bip01_L_Finger21"] = "ValveBiped.Bip01_L_Finger21",
-    ["ValveBiped.Bip01_L_Finger22"] = "ValveBiped.Bip01_L_Finger22",
-    ["ValveBiped.Bip01_L_Finger1"] = "ValveBiped.Bip01_L_Finger1",
-    ["ValveBiped.Bip01_L_Finger11"] = "ValveBiped.Bip01_L_Finger11",
-    ["ValveBiped.Bip01_L_Finger12"] = "ValveBiped.Bip01_L_Finger12",
-    ["ValveBiped.Bip01_L_Finger0"] = "ValveBiped.Bip01_L_Finger0",
-    ["ValveBiped.Bip01_L_Finger01"] = "ValveBiped.Bip01_L_Finger01",
-    ["ValveBiped.Bip01_L_Finger02"] = "ValveBiped.Bip01_L_Finger02",
-
-    --["ValveBiped.Bip01_R_UpperArm"] = "ValveBiped.Bip01_R_UpperArm",
-    --["ValveBiped.Bip01_R_Forearm"] = "ValveBiped.Bip01_R_Forearm",
-    --["ValveBiped.Bip01_R_Ulna"] = "ValveBiped.Bip01_R_Ulna",
-    --["ValveBiped.Bip01_R_Wrist"] = "ValveBiped.Bip01_R_Wrist",
-    ["ValveBiped.Bip01_R_Hand"] = "ValveBiped.Bip01_R_Hand",
-    ["ValveBiped.Bip01_R_Finger4"] = "ValveBiped.Bip01_R_Finger4",
-    ["ValveBiped.Bip01_R_Finger41"] = "ValveBiped.Bip01_R_Finger41",
-    ["ValveBiped.Bip01_R_Finger42"] = "ValveBiped.Bip01_R_Finger42",
-    ["ValveBiped.Bip01_R_Finger3"] = "ValveBiped.Bip01_R_Finger3",
-    ["ValveBiped.Bip01_R_Finger31"] = "ValveBiped.Bip01_R_Finger31",
-    ["ValveBiped.Bip01_R_Finger32"] = "ValveBiped.Bip01_R_Finger32",
-    ["ValveBiped.Bip01_R_Finger2"] = "ValveBiped.Bip01_R_Finger2",
-    ["ValveBiped.Bip01_R_Finger21"] = "ValveBiped.Bip01_R_Finger21",
-    ["ValveBiped.Bip01_R_Finger22"] = "ValveBiped.Bip01_R_Finger22",
-    ["ValveBiped.Bip01_R_Finger1"] = "ValveBiped.Bip01_R_Finger1",
-    ["ValveBiped.Bip01_R_Finger11"] = "ValveBiped.Bip01_R_Finger11",
-    ["ValveBiped.Bip01_R_Finger12"] = "ValveBiped.Bip01_R_Finger12",
-    ["ValveBiped.Bip01_R_Finger0"] = "ValveBiped.Bip01_R_Finger0",
-    ["ValveBiped.Bip01_R_Finger01"] = "ValveBiped.Bip01_R_Finger01",
-    ["ValveBiped.Bip01_R_Finger02"] = "ValveBiped.Bip01_R_Finger02",
-}
-
-local TPIKBonesRHDict = {
-    ["ValveBiped.Bip01_R_Hand"] = "ValveBiped.Bip01_R_Hand",
-    ["ValveBiped.Bip01_R_Finger4"] = "ValveBiped.Bip01_R_Finger4",
-    ["ValveBiped.Bip01_R_Finger41"] = "ValveBiped.Bip01_R_Finger41",
-    ["ValveBiped.Bip01_R_Finger42"] = "ValveBiped.Bip01_R_Finger42",
-    ["ValveBiped.Bip01_R_Finger3"] = "ValveBiped.Bip01_R_Finger3",
-    ["ValveBiped.Bip01_R_Finger31"] = "ValveBiped.Bip01_R_Finger31",
-    ["ValveBiped.Bip01_R_Finger32"] = "ValveBiped.Bip01_R_Finger32",
-    ["ValveBiped.Bip01_R_Finger2"] = "ValveBiped.Bip01_R_Finger2",
-    ["ValveBiped.Bip01_R_Finger21"] = "ValveBiped.Bip01_R_Finger21",
-    ["ValveBiped.Bip01_R_Finger22"] = "ValveBiped.Bip01_R_Finger22",
-    ["ValveBiped.Bip01_R_Finger1"] = "ValveBiped.Bip01_R_Finger1",
-    ["ValveBiped.Bip01_R_Finger11"] = "ValveBiped.Bip01_R_Finger11",
-    ["ValveBiped.Bip01_R_Finger12"] = "ValveBiped.Bip01_R_Finger12",
-    ["ValveBiped.Bip01_R_Finger0"] = "ValveBiped.Bip01_R_Finger0",
-    ["ValveBiped.Bip01_R_Finger01"] = "ValveBiped.Bip01_R_Finger01",
-    ["ValveBiped.Bip01_R_Finger02"] = "ValveBiped.Bip01_R_Finger02",
-    ["R Hand"] = "ValveBiped.Bip01_R_Hand",
-    ["R Finger0"] = "ValveBiped.Bip01_R_Finger0",
-    ["R Finger01"] = "ValveBiped.Bip01_R_Finger01",
-    ["R Finger02"] = "ValveBiped.Bip01_R_Finger02",
-    ["R Finger1"] = "ValveBiped.Bip01_R_Finger1",
-    ["R Finger11"] = "ValveBiped.Bip01_R_Finger11",
-    ["R Finger12"] = "ValveBiped.Bip01_R_Finger12",
-    ["R Finger2"] = "ValveBiped.Bip01_R_Finger2",
-    ["R Finger21"] = "ValveBiped.Bip01_R_Finger21",
-    ["R Finger22"] = "ValveBiped.Bip01_R_Finger22",
-    ["R Finger3"] = "ValveBiped.Bip01_R_Finger3",
-    ["R Finger31"] = "ValveBiped.Bip01_R_Finger31",
-    ["R Finger32"] = "ValveBiped.Bip01_R_Finger32",
-    ["R Finger4"] = "ValveBiped.Bip01_R_Finger4",
-    ["R Finger41"] = "ValveBiped.Bip01_R_Finger41",
-    ["R Finger42"] = "ValveBiped.Bip01_R_Finger42",
-    ["Bip01 R Hand"] = "ValveBiped.Bip01_R_Hand",
-    ["Bip01 R Finger0"] = "ValveBiped.Bip01_R_Finger0",
-    ["Bip01 R Finger01"] = "ValveBiped.Bip01_R_Finger01",
-    ["Bip01 R Finger02"] = "ValveBiped.Bip01_R_Finger02",
-    ["Bip01 R Finger1"] = "ValveBiped.Bip01_R_Finger1",
-    ["Bip01 R Finger11"] = "ValveBiped.Bip01_R_Finger11",
-    ["Bip01 R Finger12"] = "ValveBiped.Bip01_R_Finger12",
-    ["Bip01 R Finger2"] = "ValveBiped.Bip01_R_Finger2",
-    ["Bip01 R Finger21"] = "ValveBiped.Bip01_R_Finger21",
-    ["Bip01 R Finger22"] = "ValveBiped.Bip01_R_Finger22",
-    ["Bip01 R Finger3"] = "ValveBiped.Bip01_R_Finger3",
-    ["Bip01 R Finger31"] = "ValveBiped.Bip01_R_Finger31",
-    ["Bip01 R Finger32"] = "ValveBiped.Bip01_R_Finger32",
-    ["Bip01 R Finger4"] = "ValveBiped.Bip01_R_Finger4",
-    ["Bip01 R Finger41"] = "ValveBiped.Bip01_R_Finger41",
-    ["Bip01 R Finger42"] = "ValveBiped.Bip01_R_Finger42",
-}
-
-local TPIKBonesLHDict = {
-    ["ValveBiped.Bip01_L_Hand"] = "ValveBiped.Bip01_L_Hand",
-    ["ValveBiped.Bip01_L_Finger4"] = "ValveBiped.Bip01_L_Finger4",
-    ["ValveBiped.Bip01_L_Finger41"] = "ValveBiped.Bip01_L_Finger41",
-    ["ValveBiped.Bip01_L_Finger42"] = "ValveBiped.Bip01_L_Finger42",
-    ["ValveBiped.Bip01_L_Finger3"] = "ValveBiped.Bip01_L_Finger3",
-    ["ValveBiped.Bip01_L_Finger31"] = "ValveBiped.Bip01_L_Finger31",
-    ["ValveBiped.Bip01_L_Finger32"] = "ValveBiped.Bip01_L_Finger32",
-    ["ValveBiped.Bip01_L_Finger2"] = "ValveBiped.Bip01_L_Finger2",
-    ["ValveBiped.Bip01_L_Finger21"] = "ValveBiped.Bip01_L_Finger21",
-    ["ValveBiped.Bip01_L_Finger22"] = "ValveBiped.Bip01_L_Finger22",
-    ["ValveBiped.Bip01_L_Finger1"] = "ValveBiped.Bip01_L_Finger1",
-    ["ValveBiped.Bip01_L_Finger11"] = "ValveBiped.Bip01_L_Finger11",
-    ["ValveBiped.Bip01_L_Finger12"] = "ValveBiped.Bip01_L_Finger12",
-    ["ValveBiped.Bip01_L_Finger0"] = "ValveBiped.Bip01_L_Finger0",
-    ["ValveBiped.Bip01_L_Finger01"] = "ValveBiped.Bip01_L_Finger01",
-    ["ValveBiped.Bip01_L_Finger02"] = "ValveBiped.Bip01_L_Finger02",
-    ["L Hand"] = "ValveBiped.Bip01_L_Hand",
-    ["L Finger0"] = "ValveBiped.Bip01_L_Finger0",
-    ["L Finger01"] = "ValveBiped.Bip01_L_Finger01",
-    ["L Finger02"] = "ValveBiped.Bip01_L_Finger02",
-    ["L Finger1"] = "ValveBiped.Bip01_L_Finger1",
-    ["L Finger11"] = "ValveBiped.Bip01_L_Finger11",
-    ["L Finger12"] = "ValveBiped.Bip01_L_Finger12",
-    ["L Finger2"] = "ValveBiped.Bip01_L_Finger2",
-    ["L Finger21"] = "ValveBiped.Bip01_L_Finger21",
-    ["L Finger22"] = "ValveBiped.Bip01_L_Finger22",
-    ["L Finger3"] = "ValveBiped.Bip01_L_Finger3",
-    ["L Finger31"] = "ValveBiped.Bip01_L_Finger31",
-    ["L Finger32"] = "ValveBiped.Bip01_L_Finger32",
-    ["L Finger4"] = "ValveBiped.Bip01_L_Finger4",
-    ["L Finger41"] = "ValveBiped.Bip01_L_Finger41",
-    ["L Finger42"] = "ValveBiped.Bip01_L_Finger42",
-    ["Bip01 L Hand"] = "ValveBiped.Bip01_L_Hand",
-    ["Bip01 L Finger0"] = "ValveBiped.Bip01_L_Finger0",
-    ["Bip01 L Finger01"] = "ValveBiped.Bip01_L_Finger01",
-    ["Bip01 L Finger02"] = "ValveBiped.Bip01_L_Finger02",
-    ["Bip01 L Finger1"] = "ValveBiped.Bip01_L_Finger1",
-    ["Bip01 L Finger11"] = "ValveBiped.Bip01_L_Finger11",
-    ["Bip01 L Finger12"] = "ValveBiped.Bip01_L_Finger12",
-    ["Bip01 L Finger2"] = "ValveBiped.Bip01_L_Finger2",
-    ["Bip01 L Finger21"] = "ValveBiped.Bip01_L_Finger21",
-    ["Bip01 L Finger22"] = "ValveBiped.Bip01_L_Finger22",
-    ["Bip01 L Finger3"] = "ValveBiped.Bip01_L_Finger3",
-    ["Bip01 L Finger31"] = "ValveBiped.Bip01_L_Finger31",
-    ["Bip01 L Finger32"] = "ValveBiped.Bip01_L_Finger32",
-    ["Bip01 L Finger4"] = "ValveBiped.Bip01_L_Finger4",
-    ["Bip01 L Finger41"] = "ValveBiped.Bip01_L_Finger41",
-    ["Bip01 L Finger42"] = "ValveBiped.Bip01_L_Finger42",
-}
-
-local TPIKBonesRHDictTranslate = {
-    ["ValveBiped.Bip01_R_Hand"] = "ValveBiped.Bip01_L_Hand",
-    ["ValveBiped.Bip01_R_Finger4"] = "ValveBiped.Bip01_L_Finger4",
-    ["ValveBiped.Bip01_R_Finger41"] = "ValveBiped.Bip01_L_Finger41",
-    ["ValveBiped.Bip01_R_Finger42"] = "ValveBiped.Bip01_L_Finger42",
-    ["ValveBiped.Bip01_R_Finger3"] = "ValveBiped.Bip01_L_Finger3",
-    ["ValveBiped.Bip01_R_Finger31"] = "ValveBiped.Bip01_L_Finger31",
-    ["ValveBiped.Bip01_R_Finger32"] = "ValveBiped.Bip01_L_Finger32",
-    ["ValveBiped.Bip01_R_Finger2"] = "ValveBiped.Bip01_L_Finger2",
-    ["ValveBiped.Bip01_R_Finger21"] = "ValveBiped.Bip01_L_Finger21",
-    ["ValveBiped.Bip01_R_Finger22"] = "ValveBiped.Bip01_L_Finger22",
-    ["ValveBiped.Bip01_R_Finger1"] = "ValveBiped.Bip01_L_Finger1",
-    ["ValveBiped.Bip01_R_Finger11"] = "ValveBiped.Bip01_L_Finger11",
-    ["ValveBiped.Bip01_R_Finger12"] = "ValveBiped.Bip01_L_Finger12",
-    ["ValveBiped.Bip01_R_Finger0"] = "ValveBiped.Bip01_L_Finger0",
-    ["ValveBiped.Bip01_R_Finger01"] = "ValveBiped.Bip01_L_Finger01",
-    ["ValveBiped.Bip01_R_Finger02"] = "ValveBiped.Bip01_L_Finger02",
-    ["R Hand"] = "ValveBiped.Bip01_L_Hand",
-    ["R Finger0"] = "ValveBiped.Bip01_L_Finger0",
-    ["R Finger01"] = "ValveBiped.Bip01_L_Finger01",
-    ["R Finger02"] = "ValveBiped.Bip01_L_Finger02",
-    ["R Finger1"] = "ValveBiped.Bip01_L_Finger1",
-    ["R Finger11"] = "ValveBiped.Bip01_L_Finger11",
-    ["R Finger12"] = "ValveBiped.Bip01_L_Finger12",
-    ["R Finger2"] = "ValveBiped.Bip01_L_Finger2",
-    ["R Finger21"] = "ValveBiped.Bip01_L_Finger21",
-    ["R Finger22"] = "ValveBiped.Bip01_L_Finger22",
-    ["R Finger3"] = "ValveBiped.Bip01_L_Finger3",
-    ["R Finger31"] = "ValveBiped.Bip01_L_Finger31",
-    ["R Finger32"] = "ValveBiped.Bip01_L_Finger32",
-    ["R Finger4"] = "ValveBiped.Bip01_L_Finger4",
-    ["R Finger41"] = "ValveBiped.Bip01_L_Finger41",
-    ["R Finger42"] = "ValveBiped.Bip01_L_Finger42",
-    ["Bip01 R Hand"] = "ValveBiped.Bip01_L_Hand",
-    ["Bip01 R Finger0"] = "ValveBiped.Bip01_L_Finger0",
-    ["Bip01 R Finger01"] = "ValveBiped.Bip01_L_Finger01",
-    ["Bip01 R Finger02"] = "ValveBiped.Bip01_L_Finger02",
-    ["Bip01 R Finger1"] = "ValveBiped.Bip01_L_Finger1",
-    ["Bip01 R Finger11"] = "ValveBiped.Bip01_L_Finger11",
-    ["Bip01 R Finger12"] = "ValveBiped.Bip01_L_Finger12",
-    ["Bip01 R Finger2"] = "ValveBiped.Bip01_L_Finger2",
-    ["Bip01 R Finger21"] = "ValveBiped.Bip01_L_Finger21",
-    ["Bip01 R Finger22"] = "ValveBiped.Bip01_L_Finger22",
-    ["Bip01 R Finger3"] = "ValveBiped.Bip01_L_Finger3",
-    ["Bip01 R Finger31"] = "ValveBiped.Bip01_L_Finger31",
-    ["Bip01 R Finger32"] = "ValveBiped.Bip01_L_Finger32",
-    ["Bip01 R Finger4"] = "ValveBiped.Bip01_L_Finger4",
-    ["Bip01 R Finger41"] = "ValveBiped.Bip01_L_Finger41",
-    ["Bip01 R Finger42"] = "ValveBiped.Bip01_L_Finger42",
-}
-
+local TPIKBonesTranslate = TPIK_BuildIdentity(TPIKBonesLH)
+for k, v in pairs(TPIK_BuildIdentity(TPIKBonesRH)) do TPIKBonesTranslate[k] = v end
+local TPIKBonesRHDict = TPIK_BuildDict("R")
+local TPIKBonesLHDict = TPIK_BuildDict("L")
+local TPIKBonesRHDictTranslate = TPIK_BuildMirrorDict()
 hg.TPIKBonesRHDict = TPIKBonesRHDict
 hg.TPIKBonesLHDict = TPIKBonesLHDict
 hg.TPIKBonesRHDictTranslate = TPIKBonesRHDictTranslate
-
 hg.TPIKBones = TPIKBones
 hg.TPIKBonesTranslate = TPIKBonesTranslate
-
 hg.TPIKBonesOther = {
     "ValveBiped.Bip01_R_Clavicle",
     "ValveBiped.Bip01_R_UpperArm",
@@ -250,47 +76,7 @@ hg.TPIKBonesOther = {
     "ValveBiped.Bip01_L_UpperArm",
     "ValveBiped.Bip01_L_Forearm"
 }
-
-local TPIKBonesRH = {
-    "ValveBiped.Bip01_R_Hand",
-    "ValveBiped.Bip01_R_Finger4",
-    "ValveBiped.Bip01_R_Finger41",
-    "ValveBiped.Bip01_R_Finger42",
-    "ValveBiped.Bip01_R_Finger3",
-    "ValveBiped.Bip01_R_Finger31",
-    "ValveBiped.Bip01_R_Finger32",
-    "ValveBiped.Bip01_R_Finger2",
-    "ValveBiped.Bip01_R_Finger21",
-    "ValveBiped.Bip01_R_Finger22",
-    "ValveBiped.Bip01_R_Finger1",
-    "ValveBiped.Bip01_R_Finger11",
-    "ValveBiped.Bip01_R_Finger12",
-    "ValveBiped.Bip01_R_Finger0",
-    "ValveBiped.Bip01_R_Finger01",
-    "ValveBiped.Bip01_R_Finger02",
-}
-
 hg.TPIKBonesRH = TPIKBonesRH
-
-local TPIKBonesLH = {
-    "ValveBiped.Bip01_L_Hand",
-    "ValveBiped.Bip01_L_Finger4",
-    "ValveBiped.Bip01_L_Finger41",
-    "ValveBiped.Bip01_L_Finger42",
-    "ValveBiped.Bip01_L_Finger3",
-    "ValveBiped.Bip01_L_Finger31",
-    "ValveBiped.Bip01_L_Finger32",
-    "ValveBiped.Bip01_L_Finger2",
-    "ValveBiped.Bip01_L_Finger21",
-    "ValveBiped.Bip01_L_Finger22",
-    "ValveBiped.Bip01_L_Finger1",
-    "ValveBiped.Bip01_L_Finger11",
-    "ValveBiped.Bip01_L_Finger12",
-    "ValveBiped.Bip01_L_Finger0",
-    "ValveBiped.Bip01_L_Finger01",
-    "ValveBiped.Bip01_L_Finger02",
-}
-
 hg.TPIKBonesLH = TPIKBonesLH
 
 local math, Vector, Angle, util, IsValid, CurTime, game, FrameTime, LerpAngle = math, Vector, Angle, util, IsValid, CurTime, game, FrameTime, LerpAngle
@@ -298,293 +84,8 @@ local math_Clamp = math.Clamp
 
 local developer = GetConVar("developer")
 
-local PrikolModel = {
-    ["models/male_09.mdl"] = true,
-    ["models/player/zcity/male_04.mdl"] = true
-}
 
 local vecUpX, vecUpZ, vecUpY, vecZero, angZero = Vector(1, 0, 0), Vector(0, 0, 1), Vector(0, 1, 0), Vector(0, 0, 0), Angle(0, 0, 0)
-function hg._DeprecatedDoTPIK(ply, ent, rhmat, lhmat)
-    local ent = IsValid(ent) and ent or ply
-    ply.lastTPIK = ply.lastTPIK or SysTime()
-    local dt = SysTime() - ply.lastTPIK
-    
-    local shouldfullupdate = true
-    if dt > 0.01 then
-        ply.lastTPIK = SysTime()
-
-        shouldfullupdate = true
-    end
-
-    local ply_spine_index = ply:LookupBone("ValveBiped.Bip01_Spine4")
-    if !ply_spine_index then return end
-    local ply_spine_matrix = ent:GetBoneMatrix(ply_spine_index)
-
-    local ply_head_index = ply:LookupBone("ValveBiped.Bip01_Head1")
-    if !ply_head_index then return end
-    local ply_head_matrix = ent:GetBoneMatrix(ply_head_index)
-
-	local self = ply:GetActiveWeapon()
-    local lhik2 = ((IsValid(self) and self.lhandik) or ply:InVehicle()) and hg.CanUseLeftHand(ply)
-    local rhik2 = ((IsValid(self) and self.rhandik) or ply:InVehicle()) and hg.CanUseRightHand(ply)
-    
-    ply.lerp_lh = LerpFT(0.1, ply.lerp_lh or 1, lhik2 and 1 or 0.001)
-    ply.lerp_rh = LerpFT(0.1, ply.lerp_rh or 1, rhik2 and 1 or 0.001)
-    
-    local rhik = ply.lerp_rh > 0.01
-    local lhik = ply.lerp_lh > 0.01
-    
-    if not rhik and not lhik then return end
-
-    local ply_l_upperarm_index = ply:LookupBone("ValveBiped.Bip01_L_UpperArm")
-    local ply_r_upperarm_index = ply:LookupBone("ValveBiped.Bip01_R_UpperArm")
-    local ply_l_forearm_index = ply:LookupBone("ValveBiped.Bip01_L_Forearm")
-    local ply_r_forearm_index = ply:LookupBone("ValveBiped.Bip01_R_Forearm")
-    local ply_l_hand_index = ply:LookupBone("ValveBiped.Bip01_L_Hand")
-    local ply_r_hand_index = ply:LookupBone("ValveBiped.Bip01_R_Hand")
-
-    if !ply_l_upperarm_index then return end
-    if !ply_r_upperarm_index then return end
-    if !ply_l_forearm_index then return end
-    if !ply_r_forearm_index then return end
-    if !ply_l_hand_index then return end
-    if !ply_r_hand_index then return end
-
-    local eyepos, eyeang = ply:EyePos(), ply:GetAimVector():Angle()
-    local headpos = ply_head_matrix:GetTranslation()
-
-    local ply_r_upperarm_matrix = ent:GetBoneMatrix(ply_r_upperarm_index)
-    local ply_r_forearm_matrix = ent:GetBoneMatrix(ply_r_forearm_index)
-    local ply_r_hand_matrix = ent:GetBoneMatrix(ply_r_hand_index)
-    
-    local ply_l_upperarm_matrix = ent:GetBoneMatrix(ply_l_upperarm_index)
-    local ply_l_forearm_matrix = ent:GetBoneMatrix(ply_l_forearm_index)
-    local ply_l_hand_matrix = ent:GetBoneMatrix(ply_l_hand_index)
-
-    if not ply_r_hand_matrix or not ply_l_hand_matrix then return end
-
-    local limblength = ply:BoneLength(ply_l_forearm_index)
-    local limblength2 = ply:BoneLength(ply_l_upperarm_index)
-    if !limblength or limblength == 0 then limblength = 12 end
-
-    local r_upperarm_length = limblength
-    local r_forearm_length = limblength
-    local l_upperarm_length = limblength
-    local l_forearm_length = limblength
-
-    local ply_r_upperarm_pos, ply_r_forearm_pos, ply_r_upperarm_angle, ply_r_forearm_angle
-
-    if not rhik2 then
-        local lpos, _ = WorldToLocal(ply_r_hand_matrix:GetTranslation(), angle_zero, eyepos, eyeang)
-        ply.last_rh_pos = lpos
-
-        if ply.last_rh_pos2 then
-            local pos, _ = LocalToWorld(ply.last_rh_pos2, angle_zero, eyepos, eyeang)
-            ply_r_hand_matrix:SetTranslation(Lerp(ply.lerp_rh, ply_r_hand_matrix:GetTranslation(), pos))
-        end
-    else
-        local lpos, _ = WorldToLocal(ply_r_hand_matrix:GetTranslation(), angle_zero, eyepos, eyeang)
-        ply.last_rh_pos2 = lpos
-        
-        if ply.last_rh_pos then
-            local pos, _ = LocalToWorld(ply.last_rh_pos, angle_zero, eyepos, eyeang)
-            ply_r_hand_matrix:SetTranslation(Lerp(ply.lerp_rh, pos, ply_r_hand_matrix:GetTranslation()))
-        end
-    end
-
-    local r_arm_startingpos = ply_r_upperarm_matrix:GetTranslation()
-    local offset = vector_origin
-    local r_arm_endpos = ply_r_hand_matrix:GetTranslation() + offset
-    
-    local angasd = ent:GetBoneMatrix(ent:LookupBone("ValveBiped.Bip01_Head1")):GetAngles()
-    angasd:RotateAroundAxis(angasd:Up(), -90)
-    angasd:RotateAroundAxis(angasd:Forward(), -90)
-    --debugoverlay.Line(r_arm_startingpos + vector_up * 10, r_arm_startingpos + vector_up * 10 + angasd:Right() * 10, 1, color_white)
-    //local _, angasd = LocalToWorld(vector_origin, Angle(180, 90, 90), vector_origin, angasd)
-    if shouldfullupdate or !ply.ply_r_upperarm_pos then
-        ply_r_upperarm_pos, ply_r_forearm_pos, ply_r_upperarm_angle, ply_r_forearm_angle = hg.Solve2PartIK(r_arm_startingpos, r_arm_endpos, r_upperarm_length, r_forearm_length, ply_r_upperarm_matrix, ply_r_hand_matrix, -1, ply_spine_matrix, angasd, ply_r_hand_matrix:GetAngles())
-
-        ply.ply_r_upperarm_pos, ply.ply_r_upperarm_angle = WorldToLocal(ply_r_upperarm_pos, ply_r_upperarm_angle, headpos, eyeang)
-        ply.ply_r_forearm_pos, ply.ply_r_forearm_angle = WorldToLocal(ply_r_forearm_pos, ply_r_forearm_angle, headpos, eyeang)
-    else
-        ply_r_upperarm_pos, ply_r_upperarm_angle = LocalToWorld(ply.ply_r_upperarm_pos, ply.ply_r_upperarm_angle, headpos, eyeang)
-        ply_r_forearm_pos, ply_r_forearm_angle = LocalToWorld(ply.ply_r_forearm_pos, ply.ply_r_forearm_angle, headpos, eyeang)
-    end
-    ply_r_forearm_angle:RotateAroundAxis(ply_r_forearm_angle:Forward(), -45)
-
-    ply_r_upperarm_matrix:SetAngles(LerpAngle(ply.lerp_rh, ply_r_upperarm_matrix:GetAngles(), ply_r_upperarm_angle))
-    ply_r_forearm_matrix:SetAngles(LerpAngle(ply.lerp_rh, ply_r_forearm_matrix:GetAngles(), ply_r_forearm_angle))
-    ply_r_forearm_matrix:SetTranslation(LerpVector(ply.lerp_rh, ply_r_forearm_matrix:GetTranslation(), ply_r_upperarm_pos))
-
-    if rhik then
-        hg.bone_apply_matrix(ent, ply_r_upperarm_index, ply_r_upperarm_matrix, ply_r_forearm_index)
-        hg.bone_apply_matrix(ent, ply_r_forearm_index, ply_r_forearm_matrix, ply_r_hand_index)
-        ply_r_hand_matrix:SetTranslation(ply_r_forearm_pos - offset)
-        hg.bone_apply_matrix(ent, ply_r_hand_index, ply_r_hand_matrix)
-
-        if IsValid(ply.OldRagdoll) then
-            hg.bone_apply_matrix(ply, ply_r_upperarm_index, ply_r_upperarm_matrix, ply_r_forearm_index)
-            hg.bone_apply_matrix(ply, ply_r_forearm_index, ply_r_forearm_matrix, ply_r_hand_index)
-            hg.bone_apply_matrix(ply, ply_r_hand_index, ply_r_hand_matrix)
-        end
-
-        local wrst = ent:LookupBone("ValveBiped.Bip01_R_Wrist")
-        local wmat = wrst and ent:GetBoneMatrix(wrst)
-        if wrst and wmat then
-            wmat:SetAngles(ply_r_forearm_angle)
-            ent:SetBoneMatrix(wrst, wmat)
-        end
- 
-        local wrst = ent:LookupBone("ValveBiped.Bip01_R_Ulna")
-        local wmat = wrst and ent:GetBoneMatrix(wrst)
-        if wrst and wmat then
-            wmat:SetAngles(ply_r_forearm_angle)
-            ent:SetBoneMatrix(wrst, wmat)
-        end
-    end
-
-    local ply_l_upperarm_pos, ply_l_forearm_pos, ply_l_upperarm_angle, ply_l_forearm_angle
-
-    if not lhik2 or ply.pullingTowards then
-        local lpos, _ = WorldToLocal(ply_l_hand_matrix:GetTranslation(), angle_zero, eyepos, eyeang)
-        ply.last_lh_pos = lpos
-        
-        if ply.last_lh_pos2 then
-            local pos, _ = LocalToWorld(ply.last_lh_pos2, angle_zero, eyepos, eyeang)
-            
-            local lerp = ply.lerp_lh
-            
-            if ply.pullingTowards then
-                if not IsValid(self) or not self.GetWM or not IsValid(self:GetWM()) || self != ply.pullingTowardsWeapon || (ply.pullingTowardsStart and ((ply.pullingTowardsStart + ply.pullingTowardsTime) < CurTime())) then
-                    if ply.pullingTowardsCallback and IsValid(self) and self.GetWM and IsValid(self:GetWM()) and self == ply.pullingTowardsWeapon then
-                        ply.pullingTowardsCallback(self)
-                        ply.pullingTowardsCallback = nil
-                    end
-
-                    ply.pullingTowards = nil
-                    ply.pullingTowardsStart = nil
-                    ply.pullingTowardsTime = nil
-                    ply.pullingTowardsWeapon = nil
-
-                    if IsValid(ply.pullingTowardsModel) then
-                        ply.pullingTowardsModel:Remove()
-                    end
-
-                    ply.pullingTowardsModel = nil
-                    ply.pullingTowardsOffsets = nil
-                else
-                    lerp = math.ease.InOutSine(1 - math.abs(((ply.pullingTowardsStart + ply.pullingTowardsTime - CurTime()) / ply.pullingTowardsTime) * 2 - 1))
-                    
-                    local ang = ent:GetBoneMatrix(ent:LookupBone("ValveBiped.Bip01_Spine2")):GetAngles()
-                    ang:RotateAroundAxis(ang:Right(), -90)
-                    ang:RotateAroundAxis(ang:Up(), 90)
-                    ang:RotateAroundAxis(ang:Right(), -30)
-
-                    ply_l_hand_matrix:SetTranslation(LerpVector(lerp, ply_l_hand_matrix:GetTranslation(), (ent:GetBoneMatrix(ent:LookupBone(ply.pullingTowards)):GetTranslation() + ent:GetBoneMatrix(ent:LookupBone(ply.pullingTowards)):GetAngles():Right() * -4 + ent:GetBoneMatrix(ent:LookupBone(ply.pullingTowards)):GetAngles():Up() * 5) or pos))
-                    ply_l_hand_matrix:SetAngles(LerpAngle(math.min(lerp * 2,1), ply_l_hand_matrix:GetAngles(), ang))
-
-                    if ((((ply.pullingTowardsStart + ply.pullingTowardsTime - CurTime()) / ply.pullingTowardsTime) * 2 - 1) < 0) then// || ply.pullingMagNow then
-                        if IsValid(ply.pullingTowardsModel) and ply.pullingTowardsOffsets then
-                            local pos2, ang2 = LocalToWorld(ply.pullingTowardsOffsets[1], ply.pullingTowardsOffsets[2], ply_l_hand_matrix:GetTranslation(), ply_l_hand_matrix:GetAngles())
-                            local lerp = math.max(((((1 - (ply.pullingTowardsStart + ply.pullingTowardsTime - CurTime()) / ply.pullingTowardsTime)) - 0.5) * 2 - 0.6) / 0.4,0)
-                            
-                            local pos1, ang1 = LocalToWorld(ply.pullingTowardsOffsets[4], ply.pullingTowardsOffsets[5], self:GetWM():GetBoneMatrix(ply.pullingTowardsOffsets[3]):GetTranslation(), self:GetWM():GetBoneMatrix(ply.pullingTowardsOffsets[3]):GetAngles())
-                            ang1:RotateAroundAxis(ang1:Up(),-90)
-                            
-                            local pos = LerpVector(lerp, pos2, pos1)
-                            local ang = LerpAngle(lerp, ang2, ang1)
-                            
-                            ply.pullingTowardsModel:SetPos(pos)
-                            ply.pullingTowardsModel:SetAngles(ang)
-                            ply.pullingTowardsModel:DrawModel()
-                        end
-                    end
-                end
-            else
-                local pos, _ = LocalToWorld(ply.last_lh_pos2, angle_zero, eyepos, eyeang)
-                ply_l_hand_matrix:SetTranslation(Lerp(ply.lerp_lh, ply_l_hand_matrix:GetTranslation(), pos))
-            end
-        end
-    else
-        local lpos, _ = WorldToLocal(ply_l_hand_matrix:GetTranslation(), angle_zero, eyepos, eyeang)
-        ply.last_lh_pos2 = lpos
-        
-        if ply.last_lh_pos then
-            local pos, _ = LocalToWorld(ply.last_lh_pos, angle_zero, eyepos, eyeang)
-            ply_l_hand_matrix:SetTranslation(LerpVector(ply.lerp_lh, pos, ply_l_hand_matrix:GetTranslation()))
-        end
-    end
-
-    if IsValid(self.OwOmodel) and developer:GetBool() and lply:IsSuperAdmin() and self.lmagpos3 then
-        local hand = ply_l_hand_matrix
-        local pos, ang = LocalToWorld(self.lmagpos3, self.lmagang3, hand:GetTranslation(), hand:GetAngles())
-        self.OwOmodel:SetPos(pos)
-        self.OwOmodel:SetAngles(ang)
-        self.OwOmodel:SetupBones()
-        self.OwOmodel:DrawModel()
-    end
-
-    local l_arm_startingpos = ply_l_upperarm_matrix:GetTranslation()
-    
-    local offset = vector_origin
-    local l_arm_endpos = ply_l_hand_matrix:GetTranslation() + offset
-    
-    if shouldfullupdate or !ply.ply_l_upperarm_pos then
-        ply_l_upperarm_pos, ply_l_forearm_pos, ply_l_upperarm_angle, ply_l_forearm_angle = hg.Solve2PartIK(l_arm_startingpos, l_arm_endpos, l_upperarm_length, l_forearm_length, ply_l_upperarm_matrix, ply_l_hand_matrix, 1, ply_spine_matrix, angasd, ply_l_hand_matrix:GetAngles())
-
-        ply.ply_l_upperarm_pos, ply.ply_l_upperarm_angle = WorldToLocal(ply_l_upperarm_pos, ply_l_upperarm_angle, headpos, eyeang)
-        ply.ply_l_forearm_pos, ply.ply_l_forearm_angle = WorldToLocal(ply_l_forearm_pos, ply_l_forearm_angle, headpos, eyeang)
-    else
-        ply_l_upperarm_pos, ply_l_upperarm_angle = LocalToWorld(ply.ply_l_upperarm_pos, ply.ply_l_upperarm_angle, headpos, eyeang)
-        ply_l_forearm_pos, ply_l_forearm_angle = LocalToWorld(ply.ply_l_forearm_pos, ply.ply_l_forearm_angle, headpos, eyeang)
-    end
-    ply_l_forearm_angle:RotateAroundAxis(ply_l_forearm_angle:Forward(), -45)
-    if PrikolModel[ply:GetModel()] and ply:GetBodygroup(4) == 1 then
-        local prikolAng = ply_l_hand_matrix:GetAngles()
-        prikolAng[1] = 0
-        prikolAng[2] = 0
-        prikolAng[3] =  math.max(prikolAng[3],0)  
-        ply_l_forearm_angle = ply_l_forearm_angle + prikolAng * 1.5
-        ply_l_upperarm_angle = ply_l_upperarm_angle + prikolAng * 1
-    end
-    
-    ply_l_upperarm_matrix:SetAngles(LerpAngle(ply.lerp_lh, ply_l_upperarm_matrix:GetAngles(), ply_l_upperarm_angle))
-    ply_l_forearm_matrix:SetAngles(LerpAngle(ply.lerp_lh, ply_l_forearm_matrix:GetAngles(), ply_l_forearm_angle))
-    ply_l_forearm_matrix:SetTranslation(LerpVector(ply.lerp_lh, ply_l_forearm_matrix:GetTranslation(), ply_l_upperarm_pos))
-
-    //debugoverlay.Line(l_arm_startingpos, ply_l_upperarm_pos, 1, color_white)
-    //debugoverlay.Line(ply_l_upperarm_pos, ply_l_forearm_pos, 1, color_white)
-
-    if lhik then
-        hg.bone_apply_matrix(ent, ply_l_upperarm_index, ply_l_upperarm_matrix, ply_l_forearm_index)
-        hg.bone_apply_matrix(ent, ply_l_forearm_index, ply_l_forearm_matrix, ply_l_hand_index)
-        ply_l_hand_matrix:SetTranslation(ply_l_forearm_pos - offset)
-        hg.bone_apply_matrix(ent, ply_l_hand_index, ply_l_hand_matrix)
-        
-        if IsValid(ply.OldRagdoll) then
-            hg.bone_apply_matrix(ply, ply_l_upperarm_index, ply_l_upperarm_matrix, ply_l_forearm_index)
-            hg.bone_apply_matrix(ply, ply_l_forearm_index, ply_l_forearm_matrix, ply_l_hand_index)
-            hg.bone_apply_matrix(ply, ply_l_hand_index, ply_l_hand_matrix)
-        end
-
-        local wrst = ent:LookupBone("ValveBiped.Bip01_L_Wrist")
-        local wmat = wrst and ent:GetBoneMatrix(wrst)
-        if wrst and wmat then
-            wmat:SetAngles(ply_l_forearm_angle)
-            ent:SetBoneMatrix(wrst, wmat)
-        end
-
-        local wrst = ent:LookupBone("ValveBiped.Bip01_L_Ulna")
-        local wmat = wrst and ent:GetBoneMatrix(wrst)
-        if wrst and wmat then
-           wmat:SetAngles(ply_l_forearm_angle)
-           ent:SetBoneMatrix(wrst, wmat)
-        end
-    end
-
-    self.lhandik = false
-    self.rhandik = false
-end
 
 local cached_huy = {}
 
@@ -663,7 +164,7 @@ function hg.MainTPIKFunction(ent, ply, wpn)
                     wpn.lhandik = true
 
                     hg.DragLeftHand_Ex(ent,wpn,pos,ang)
-                    if not IsValid(wpn) and adjust[3] then
+                    if IsValid(wpn) and adjust[3] then
                         pos, ang = Car:GetBoneMatrix(bone):GetTranslation(), Car:GetBoneMatrix(bone):GetAngles()
                         pos, ang = LocalToWorld(adjust[3], adjust[4], pos, ang)
                         ply.lerp_rh = 1
@@ -695,7 +196,6 @@ function hg.MainTPIKFunction(ent, ply, wpn)
         hg.DoZManip(ent, ply)
         //local systime = SysTime()
         hg.DoTPIK(ply, ent)
-        --hg._DeprecatedDoTPIK(ply, ent)
         //print("DoTPIK: ", SysTime() - systime)
     end
 
@@ -817,6 +317,46 @@ function hg.CoolGloves(ent, ply)
     mdl:DrawModel()
 end
 
+-- TPIK bone-index cache: LookupBone every frame is expensive.
+-- Cached per entity, invalidated when the model changes.
+local TPIK_INDEX_NAMES = {
+    "head", "pelvis", "l_clavicle", "r_clavicle",
+    "l_upperarm", "r_upperarm", "l_forearm", "r_forearm",
+    "l_hand", "r_hand", "l_ulna", "r_ulna", "l_wrist", "r_wrist",
+}
+local TPIK_INDEX_KEYS = {
+    head = "ValveBiped.Bip01_Head1",
+    pelvis = "ValveBiped.Bip01_Pelvis",
+    l_clavicle = "ValveBiped.Bip01_L_Clavicle",
+    r_clavicle = "ValveBiped.Bip01_R_Clavicle",
+    l_upperarm = "ValveBiped.Bip01_L_UpperArm",
+    r_upperarm = "ValveBiped.Bip01_R_UpperArm",
+    l_forearm = "ValveBiped.Bip01_L_Forearm",
+    r_forearm = "ValveBiped.Bip01_R_Forearm",
+    l_hand = "ValveBiped.Bip01_L_Hand",
+    r_hand = "ValveBiped.Bip01_R_Hand",
+    l_ulna = "ValveBiped.Bip01_L_Ulna",
+    r_ulna = "ValveBiped.Bip01_R_Ulna",
+    l_wrist = "ValveBiped.Bip01_L_Wrist",
+    r_wrist = "ValveBiped.Bip01_R_Wrist",
+}
+local function TPIK_GetIndices(ent)
+    local now = CurTime()
+    local c = ent._tpikIdx
+    -- Fast path: reuse cache without touching GetModel() (string alloc) every frame.
+    -- Revalidate the model at most once per second.
+    if c then
+        if now - (c.time or 0) < 1 then return c end
+        if ent:GetModel() == c.model then c.time = now return c end
+    end
+    local mdl = ent:GetModel()
+    c = { model = mdl, time = now }
+    for _, k in ipairs(TPIK_INDEX_NAMES) do
+        c[k] = ent:LookupBone(TPIK_INDEX_KEYS[k])
+    end
+    ent._tpikIdx = c
+    return c
+end
 local function backward(final, segments)
     local inverse = {}
 
@@ -867,30 +407,31 @@ local function solve(segments, iter, turn)
 end
 
 function hg.DoTPIK(ply, ent)
-    local ply_spine_index = ent:LookupBone("ValveBiped.Bip01_Head1")
-    if !ply_spine_index then return end
-    local ply_spine_matrix = ent:GetBoneMatrix(ply_spine_index)
-
-    local ply_pelvis_index = ent:LookupBone("ValveBiped.Bip01_Pelvis")
-    if !ply_pelvis_index then return end
-    local ply_pelvis_matrix = ent:GetBoneMatrix(ply_pelvis_index)
-
-    local ply_head_index = ent:LookupBone("ValveBiped.Bip01_Head1")
+    local idx = TPIK_GetIndices(ent)
+    local ply_head_index = idx.head
     if !ply_head_index then return end
     local ply_head_matrix = ent:GetBoneMatrix(ply_head_index)
+    if not ply_head_matrix then return end
 
-    local ply_l_clavicle_index = ent:LookupBone("ValveBiped.Bip01_L_Clavicle")
-    local ply_r_clavicle_index = ent:LookupBone("ValveBiped.Bip01_R_Clavicle")
-    local ply_l_upperarm_index = ent:LookupBone("ValveBiped.Bip01_L_UpperArm")
-    local ply_r_upperarm_index = ent:LookupBone("ValveBiped.Bip01_R_UpperArm")
-    local ply_l_forearm_index = ent:LookupBone("ValveBiped.Bip01_L_Forearm")
-    local ply_r_forearm_index = ent:LookupBone("ValveBiped.Bip01_R_Forearm")
-    local ply_l_hand_index = ent:LookupBone("ValveBiped.Bip01_L_Hand")
-    local ply_r_hand_index = ent:LookupBone("ValveBiped.Bip01_R_Hand")
-    local ply_l_ulna_index = ent:LookupBone("ValveBiped.Bip01_L_Ulna")
-    local ply_r_ulna_index = ent:LookupBone("ValveBiped.Bip01_R_Ulna")
-    local ply_l_wrist_index = ent:LookupBone("ValveBiped.Bip01_L_Wrist")
-    local ply_r_wrist_index = ent:LookupBone("ValveBiped.Bip01_R_Wrist")
+    local ply_spine_index = idx.head
+    local ply_spine_matrix = ent:GetBoneMatrix(ply_spine_index)
+    if not ply_spine_matrix then return end
+
+    local ply_pelvis_index = idx.pelvis
+    if !ply_pelvis_index then return end
+
+    local ply_l_clavicle_index = idx.l_clavicle
+    local ply_r_clavicle_index = idx.r_clavicle
+    local ply_l_upperarm_index = idx.l_upperarm
+    local ply_r_upperarm_index = idx.r_upperarm
+    local ply_l_forearm_index = idx.l_forearm
+    local ply_r_forearm_index = idx.r_forearm
+    local ply_l_hand_index = idx.l_hand
+    local ply_r_hand_index = idx.r_hand
+    local ply_l_ulna_index = idx.l_ulna
+    local ply_r_ulna_index = idx.r_ulna
+    local ply_l_wrist_index = idx.l_wrist
+    local ply_r_wrist_index = idx.r_wrist
 
     if !ply_l_upperarm_index then return end
     if !ply_r_upperarm_index then return end
@@ -898,6 +439,20 @@ function hg.DoTPIK(ply, ent)
     if !ply_r_forearm_index then return end
     if !ply_l_hand_index then return end
     if !ply_r_hand_index then return end
+
+    local self = ply:GetActiveWeapon()
+
+    local lhik2 = ((IsValid(self) and self.lhandik) or ply:InVehicle()) and hg.CanUseLeftHand(ply)
+    local rhik2 = ((IsValid(self) and self.rhandik) or ply:InVehicle()) and hg.CanUseRightHand(ply)
+
+    -- Blend first: skip the whole solver when both hands are fully off.
+    ply.lerp_lh = math.Approach(ply.lerp_lh or 0, lhik2 and 1 or 0, FrameTime() * 2.0 * game.GetTimeScale())
+    ply.lerp_rh = math.Approach(ply.lerp_rh or 0, rhik2 and 1 or 0, FrameTime() * 2.0 * game.GetTimeScale())
+
+    local lerp_lh = math.ease.InOutSine(ply.lerp_lh)
+    local lerp_rh = math.ease.InOutSine(ply.lerp_rh)
+
+    if lerp_rh == 0 and lerp_lh == 0 and not ply:InVehicle() then return end
 
     local _, angarrws = LocalToWorld(vector_origin, ply:InVehicle() and LerpAngle(0.5, ply:EyeAngles(), angle_zero) or ply:EyeAngles(), vector_origin, (IsValid(ply:GetVehicle()) and hg.IsLocal(ply) and ply:GetVehicle():GetAngles() or angle_zero))
     local eyepos, eyeang = ply:EyePos(), angarrws//ply:GetAimVector():Angle()
@@ -910,8 +465,8 @@ function hg.DoTPIK(ply, ent)
     local ply_r_clavicle_matrix = ent:GetBoneMatrix(ply_r_clavicle_index)
     local ply_r_ulna_matrix 
     local ply_r_wrist_matrix
-    if ply_l_ulna_index and ply_r_wrist_matrixthen then
-        ply_r_ulna_matrix = ent:GetBoneMatrix(ply_l_ulna_index)
+    if ply_r_ulna_index and ply_r_wrist_index then
+        ply_r_ulna_matrix = ent:GetBoneMatrix(ply_r_ulna_index)
         ply_r_wrist_matrix = ent:GetBoneMatrix(ply_r_wrist_index)
     end
 
@@ -922,7 +477,7 @@ function hg.DoTPIK(ply, ent)
     local ply_l_clavicle_matrix = ent:GetBoneMatrix(ply_l_clavicle_index)
     local ply_l_ulna_matrix 
     local ply_l_wrist_matrix
-    if ply_l_ulna_index and ply_l_wrist_matrix then
+    if ply_l_ulna_index and ply_l_wrist_index then
         ply_l_ulna_matrix = ent:GetBoneMatrix(ply_l_ulna_index)
         ply_l_wrist_matrix = ent:GetBoneMatrix(ply_l_wrist_index)
     end
@@ -931,14 +486,10 @@ function hg.DoTPIK(ply, ent)
     ply.rhold = nil
     if not ply_r_hand_matrix or not ply_l_hand_matrix then return end
 
-	local self = ply:GetActiveWeapon()
-
-    local lhik2 = ((IsValid(self) and self.lhandik) or ply:InVehicle()) and hg.CanUseLeftHand(ply)
-    local rhik2 = ((IsValid(self) and self.rhandik) or ply:InVehicle()) and hg.CanUseRightHand(ply)
     
     local shouldrebuild = false
     if (ply.nextrebuild or 0) < CurTime() then
-        ply.nextrebuild = CurTime() + 0.0
+        ply.nextrebuild = CurTime()
 
         shouldrebuild = true
     end
@@ -951,34 +502,11 @@ function hg.DoTPIK(ply, ent)
         ply.last_lh = ply_l_hand_matrix
     end
 
-    /*if !lhik2 then
-        ply.last_lh = ply_l_hand_matrix
-
-        ent.dirtymatrixlh = nil
-    end
-
-    if !lhik2 then
-        ply.last_rh = ply_r_hand_matrix
-
-        ent.dirtymatrixrh = nil
-    end*/
-
-    ply.lerp_lh = math.Approach(ply.lerp_lh or 0, lhik2 and 1 or 0, FrameTime() * 2.0 * game.GetTimeScale())//LerpFT(0.1, ply.lerp_lh or 1, lhik2 and 1 or 0)
-    ply.lerp_rh = math.Approach(ply.lerp_rh or 0, rhik2 and 1 or 0, FrameTime() * 2.0 * game.GetTimeScale())//LerpFT(0.1, ply.lerp_rh or 1, rhik2 and 1 or 0)
-
-    local lerp_lh = math.ease.InOutSine(ply.lerp_lh)
-    local lerp_rh = math.ease.InOutSine(ply.lerp_rh)
-
-    //if lerp_rh == 0 and lerp_lh == 0 then return end
 
     local limblength = ply:BoneLength(ply_l_forearm_index) - 0
 
     if !limblength or limblength == 0 then limblength = 12 end
 
-    //local r_upperarm_length = limblength
-    //local r_forearm_length = limblength
-    //local l_upperarm_length = limblength
-    //local l_forearm_length = limblength
 
     ply.segmentsr = ply.segmentsr or {}
     ply.segmentsr[1] = ply.segmentsr[1] or {Pos = Vector(), Len = 0}
@@ -988,13 +516,6 @@ function hg.DoTPIK(ply, ent)
     ply.segmentsl[1] = ply.segmentsl[1] or {Pos = Vector(), Len = 0}
     ply.segmentsl[2] = ply.segmentsl[2] or {Pos = Vector(), Len = 0}
     
-    if not ply.BonesLength then
-        ply.BonesLength = {}
-
-        for i = 0, ent:GetBoneCount() - 1 do
-            ply.BonesLength[i] = ply:BoneLength(i)
-        end
-    end
 
     local spinepos = ply_spine_matrix:GetTranslation()
     local spineang = ply_spine_matrix:GetAngles()
@@ -1123,7 +644,7 @@ function hg.DoTPIK(ply, ent)
 
         local angrotate = math.NormalizeAngle(-eyeang.r + ply_r_hand_matrix:GetAngles().r + math.NormalizeAngle((eyeang.y - ply_r_hand_matrix:GetAngles().y)) * (math.NormalizeAngle(ply_r_hand_matrix:GetAngles().p)) / 90 + -90)
         
-        local wrst = ent:LookupBone("ValveBiped.Bip01_R_Ulna")
+        local wrst = ply_r_ulna_index
         local wmat = wrst and ent:GetBoneMatrix(wrst)
         if wrst and wmat then
             ang:RotateAroundAxis(ang:Forward(), angrotate * 0.5 + -30)
@@ -1131,7 +652,7 @@ function hg.DoTPIK(ply, ent)
             ent:SetBoneMatrix(wrst, wmat)
         end
 
-        local wrst = ent:LookupBone("ValveBiped.Bip01_R_Wrist")
+        local wrst = ply_r_wrist_index
         local wmat = wrst and ent:GetBoneMatrix(wrst)
         if wrst and wmat then
             ang:RotateAroundAxis(ang:Forward(), angrotate * 0.5 - 30)
@@ -1258,7 +779,7 @@ function hg.DoTPIK(ply, ent)
 
         local angrotate = math.NormalizeAngle(-eyeang.r + ply_l_hand_matrix:GetAngles().r + math.NormalizeAngle((eyeang.y - ply_l_hand_matrix:GetAngles().y)) * (math.NormalizeAngle(ply_l_hand_matrix:GetAngles().p)) / 90 - 45)
 
-        local wrst = ent:LookupBone("ValveBiped.Bip01_L_Ulna")
+        local wrst = ply_l_ulna_index
         local wmat = wrst and ent:GetBoneMatrix(wrst)
         if wrst and wmat then
             ang:RotateAroundAxis(ang:Forward(), angrotate * 0.5 + 00)
@@ -1266,7 +787,7 @@ function hg.DoTPIK(ply, ent)
             ent:SetBoneMatrix(wrst, wmat)
         end
 
-        local wrst = ent:LookupBone("ValveBiped.Bip01_L_Wrist")
+        local wrst = ply_l_wrist_index
         local wmat = wrst and ent:GetBoneMatrix(wrst)
         if wrst and wmat then
             ang:RotateAroundAxis(ang:Forward(), angrotate * 0.5 + 00)
@@ -1762,35 +1283,4 @@ function meta:PullLHTowards(towards, timetopull, mdl, offsets, callback)
         callback(ply:GetActiveWeapon())
     end)
 
-    do return end
-
-    if towards == nil then
-        ply.pullingTowards = nil
-        ply.pullingTowardsStart = nil
-        ply.pullingTowardsTime = nil
-        ply.pullingTowardsWeapon = nil
-
-        if IsValid(ply.pullingTowardsModel) then
-            ply.pullingTowardsModel:Remove()
-        end
-
-        //ply.pullingMagNow = nil
-        ply.pullingTowardsModel = nil
-        ply.pullingTowardsOffsets = nil
-
-        return
-    end
-
-    //ply.pullingMagNow = magNOW
-    ply.pullingTowards = towards
-    ply.pullingTowardsStart = CurTime()
-    ply.pullingTowardsTime = timetopull
-    ply.pullingTowardsWeapon = ply:GetActiveWeapon()
-    ply.pullingTowardsCallback = callback
-    if mdl then
-        ply.pullingTowardsModel = ClientsideModel(mdl)
-        ply.pullingTowardsModel:SetNoDraw(true)
-        ply.pullingTowardsOffsets = offsets
-        //ply.pullingTowardsModel:SetPos(self:GetPos())
-    end
 end
