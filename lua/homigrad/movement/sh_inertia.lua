@@ -572,7 +572,8 @@ local Angle, Vector, AngleRand, VectorRand, math, hook, util, game = Angle, Vect
 		local wasCrouch = ply.HgWasCrouching and true or false
 		local isCrouch = ply:Crouching() and true or false
 		if wasCrouch and not isCrouch and not IsValid(ply.FakeRagdoll) then
-			ply.CurrentSpeed = math.max(ply.CurrentSpeed or 0, math.min((ply.move or walk_speed) * mul, inertia_len))
+			local standTarget = (ply.move or walk_speed) * mul
+		ply.CurrentSpeed = math.max(ply.CurrentSpeed or 0, math.min(standTarget, ply:GetRunSpeed() * 1.1))
 		end
 		ply.HgWasCrouching = isCrouch
 
