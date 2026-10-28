@@ -6,15 +6,14 @@ hg.organism.module.blood = {}
 local module = hg.organism.module.blood
 
 hg.organism.bloodtypes = {
-	["o-"] = {["o-"] = true,["o+"] = true,["a-"] = true,["a+"] = true,["b-"] = true,["b+"] = true,["ab-"] = true,["ab+"] = true},
-	["o+"] = {["o+"] = true,["a+"] = true,["b+"] = true,["ab+"] = true},
-	["a-"] = {["a+"] = true,["a-"] = true,["ab+"] = true,["ab-"] = true},
-	["a+"] = {["a+"] = true,["ab+"] = true},
-	["b-"] = {["b+"] = true,["b-"] = true,["ab+"] = true,["ab-"] = true},
-	["b+"] = {["b+"] = true,["ab+"] = true},
-	["ab-"] = {["ab+"] = true,["ab-"] = true},
+	["o-"] = {["o-"] = true, ["o+"] = true, ["a-"] = true, ["a+"] = true, ["b-"] = true, ["b+"] = true, ["ab-"] = true, ["ab+"] = true},
+	["o+"] = {["o+"] = true, ["a+"] = true, ["b+"] = true, ["ab+"] = true},
+	["a-"] = {["a+"] = true, ["a-"] = true, ["ab+"] = true, ["ab-"] = true},
+	["a+"] = {["a+"] = true, ["ab+"] = true},
+	["b-"] = {["b+"] = true, ["b-"] = true, ["ab+"] = true, ["ab-"] = true},
+	["b+"] = {["b+"] = true, ["ab+"] = true},
+	["ab-"] = {["ab+"] = true, ["ab-"] = true},
 	["ab+"] = {["ab+"] = true},
-	["c-"] = {["c-"] = true,["o-"] = true,["o+"] = true,["a-"] = true,["a+"] = true,["b-"] = true,["b+"] = true,["ab-"] = true,["ab+"] = true},
 }
 
 module[1] = function(org)
@@ -38,11 +37,8 @@ module[1] = function(org)
 	org.wantToVomit = 0
 	org.vomitInThroat = nil
 
-	org.bloodtype = table.GetKeys(hg.organism.bloodtypes)[math.random(8)]
-	
-	if org.bloodtype == "c-" then
-		org.bloodtype = "o-" --эпик
-	end
+	local keys = table.GetKeys(hg.organism.bloodtypes)
+	org.bloodtype = keys[math.random(#keys)]
 
 	org.hemotransfusionshock = 0
 
@@ -105,13 +101,13 @@ module[2] = function(owner, org, mulTime)
 			net.WriteMatrix(mat)
 			net.WriteVector(mat:GetTranslation() + mat:GetAngles():Right() * 6 + mat:GetAngles():Forward() * 1)
 			net.WriteVector(mat:GetAngles():Right() * 2 * math.Clamp(org.pulse / 70, 0.4, 1))
-			net.Broadcast()
+			net.SendPVS(mat:GetTranslation())
 
 			ent:EmitSound("vomit/vomit5.mp3")
 		end
 	end
 
-	if org.isPly and not org.otrub and org.blood < 2900 then org.owner:Notify(math.random(2) == 1 and "I cant feel anything..." or (math.random(2) == 1 and "I think I'm gonna faint right now...") or "I dont feel so good...",60,"blood2",0) end
+	if org.isPly and not org.otrub and org.blood < 2900 then org.owner:Notify("I dont feel so good...",60,"blood2",0) end
 
 	if org.internalBleed < 0.5 and org.bleed < 0.05 and org.pulse > 5 then
 		org.blood = min(org.blood + mulTime * 5 * (adrenaline * 1.5 + 1) * (org.satiety / 100 + 1) * org.pulse / 70, 5000)
@@ -150,7 +146,8 @@ module[2] = function(owner, org, mulTime)
 
 	org.consciousness = math.min(org.consciousness, math.min(org.blood / 3000, 1) * math.Clamp(((org.temperature < 30 and org.temperature - 30 or 0) * 0.25 + 1), 0.25, 1))
 
-	local beatsPerSecond = max(min(60 / math.max(org.pulse,2) / (org.bleed / 15), 7), 0.3)
+	local bleedSafe = math.max(org.bleed, 0.01)
+	local beatsPerSecond = max(min(60 / math.max(org.pulse,2) / (bleedSafe / 15), 7), 0.3)
 	time = CurTime()
 
 	local coagulatespeed = 0
@@ -251,7 +248,12 @@ module[2] = function(owner, org, mulTime)
 
 	org.bleed = (bleedoutspeed + bleedoutspeed2 + bleed)--в секунду
 	
-	local timetouncon = (org.blood - 2500) / org.bleed
+	local timetouncon
+	if org.bleed < 0.01 then
+		timetouncon = math.huge
+	else
+		timetouncon = (org.blood - 2500) / org.bleed
+	end
 	
 	local bleeding_will_stop = (timetouncon ~= timetouncon) or ((coagulatespeed * timetouncon - org.bleed) > 0)
 	local canwakeup_pain = ((org.pain - 5) / (org.painlessen)) < timetouncon
@@ -307,13 +309,14 @@ function hg.organism.Vomit(owner, snd)
 			net.WriteMatrix(mat)
 			net.WriteVector(mat:GetTranslation() + mat:GetAngles():Right() * 6 + mat:GetAngles():Forward() * 1)
 			net.WriteVector(mat:GetAngles():Right() * 2 * math.Clamp(org.pulse / 70, 0.4, 1))
-			net.Broadcast()
+			net.SendPVS(mat:GetTranslation())
 		end
 	end
 end
 
 function hg.organism.CoughBlood(org)
 	local ply = org.owner
+	if not hg.IsValidPlayer(ply) then return end
 	local phr = "zcitysnd/real_sonar/" .. (ThatPlyIsFemale(ply) and "female" or "male") .. "_cough" .. math.random(4) .. ".mp3"
 	ply:EmitSound(phr)
 	ply.phrCld = CurTime() + 2
@@ -322,13 +325,22 @@ function hg.organism.CoughBlood(org)
 	if math.random(5) == 1 then
 		org.vomitInThroat = nil
 
+		local ent = hg.GetCurrentCharacter(ply)
+		if not IsValid(ent) then return end
+
+		local bon = "ValveBiped.Bip01_Head1"
+		local bone = ent:LookupBone(bon)
+		if not bone then return end
+		local mat = ent:GetBoneMatrix(bone)
+		if not mat then return end
+
 		net.Start("bloodsquirt2")
 		net.WriteEntity(ent)
 		net.WriteString(bon)
 		net.WriteMatrix(mat)
 		net.WriteVector(mat:GetTranslation() + mat:GetAngles():Right() * 6 + mat:GetAngles():Forward() * 1)
 		net.WriteVector(mat:GetAngles():Right() * 2 * math.Clamp(org.pulse / 70, 0.4, 1))
-		net.Broadcast()
+		net.SendPVS(mat:GetTranslation())
 
 		ent:EmitSound("vomit/vomit5.mp3")
 	end

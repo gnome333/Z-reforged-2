@@ -58,7 +58,7 @@ bloodparticles_hook[4] = function(mul)
         
         tr.start = posSet
         tr.endpos = tr.start + part[3] * mul
-        result = util_TraceLine(tr)
+        local result = util_TraceLine(tr)
         
         local hitPos = result.HitPos
 

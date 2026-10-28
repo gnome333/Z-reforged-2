@@ -203,7 +203,7 @@ net.Receive("bloodsquirt", function()
 	//local mat = ent:GetBoneMatrix(bone)
 	local localPos, localDir = WorldToLocal(pos, dir:Angle(), mat:GetTranslation(), mat:GetAngles())
 
-	local name = "squirtblood"..ent:EntIndex()..dir[1]
+	local name = "squirtblood" .. ent:EntIndex() .. "_" .. tostring(bone) .. "_" .. math.Round(pos[1]) .. "_" .. math.Round(CurTime() * 100)
 	local i = 250
 	local maxI = i
 	local vechuy = Vector(0,0,0)
@@ -252,7 +252,7 @@ net.Receive("bloodsquirt2", function()
 		localPos:Add(-Vector(2,-2,0))
 	end
 
-	local name = "squirtblood2"..ent:EntIndex()//..dir[1]
+	local name = "squirtblood2" .. ent:EntIndex() .. "_" .. tostring(bone) .. "_" .. math.Round(CurTime() * 100)
 	local i = 50
 	local maxI = i
 	local vechuy = Vector(0,0,0)

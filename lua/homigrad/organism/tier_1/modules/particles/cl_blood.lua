@@ -151,9 +151,7 @@ local function decalBlood(pos, normal, tr, artery, owner)
 	else
 		if !hg_old_blood:GetBool() then
 			util_Decal("Normal.Blood2" .. math.Clamp(n + math.random(0, 2), 1, 5), pos + normal, pos - normal, owner)
-			if n == 50 then
-				util_Decal("Blood", pos + normal, pos - normal, owner)
-			end
+-- was unreachable (n>6 returns above): util.Decal Blood removed
 		else
 			util_Decal("Normal.Blood1", pos + normal, pos - normal, owner)
 		end
@@ -244,14 +242,14 @@ bloodparticles_hook[2] = function(mul)
 				--local down = vecDown * mul * (math.max(0, grav))
 				local down = result.HitNormal
 				local nextpos = (result.Normal + down):GetNormalized() * 5
-				
-				if !insolid and (part.nextput or 0) < CurTime() then
+
+				local insolid = result.StartSolid and IsValid(result.Entity)
+				if not insolid and (part.nextput or 0) < CurTime() then
 					part.nextput = CurTime() + 1
 
 					decalBlood(result.HitPos, result.HitNormal, result, part.artery, part.owner)
 				end
 
-				local insolid = result.StartSolid and IsValid(result.Entity)
 				if insolid then
 					if result.Entity:IsVehicle() then
 						table_remove(hg.bloodparticles1, i)
