@@ -55,7 +55,7 @@ function MODE:HUDPaint()
     local playerRole = lply:GetNWString("PlayerRole", "Refugee") 
     local roleColor = teams[team_].color1
     roleColor.a = 255 * fade
-    zb.SwayText("You are a " .. playerRole, "ZB_HomicideMediumLarge", sw * 0.5, sh * 0.5, roleColor, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER, 0)
+    draw.SimpleText("You are a " .. playerRole, "ZB_HomicideMediumLarge", sw * 0.5, sh * 0.5, roleColor, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
 
     local objective = teams[team_].objective
     local objectiveColor = teams[team_].color2

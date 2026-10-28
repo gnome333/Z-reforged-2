@@ -13,7 +13,7 @@ local render_DrawSprite = render.DrawSprite
 local table_remove = table.remove
 
 net.Receive("co_gas_vis", function()
-	local count = net.ReadUInt(16)
+	local count = net.ReadUInt(8)
 	local list = {}
 	for i = 1, count do
 		list[i] = {net.ReadVector(), net.ReadUInt(8) / 100}
@@ -39,42 +39,16 @@ hook.Add("Think", "co_gas_sync", function()
 
 	local vis = hg.COvis
 	local claimed = {}
-
-	local cell = 700
-	local grid = {}
-	for j = 1, #fresh do
-		local p = fresh[j][1]
-		local key = math.floor(p.x / cell) + math.floor(p.y / cell) * 1024 + math.floor(p.z / cell) * 1048576
-		local bucket = grid[key]
-		if not bucket then
-			bucket = {}
-			grid[key] = bucket
-		end
-		bucket[#bucket + 1] = j
-	end
-
 	for i = #vis, 1, -1 do
 		local vp = vis[i]
-		local p = vp.pos
-		local bestD, bestJ = cell * cell, nil
-		local ix, iy, iz = math.floor(p.x / cell), math.floor(p.y / cell), math.floor(p.z / cell)
+		local bestD, bestJ = 250 * 250, nil
 
-		for dx = -1, 1 do
-			for dy = -1, 1 do
-				for dz = -1, 1 do
-					local bucket = grid[ix + dx + (iy + dy) * 1024 + (iz + dz) * 1048576]
-					if bucket then
-						for k = 1, #bucket do
-							local j = bucket[k]
-							if not claimed[j] then
-								local d = p:DistToSqr(fresh[j][1])
-								if d < bestD then
-									bestD = d
-									bestJ = j
-								end
-							end
-						end
-					end
+		for j = 1, #fresh do
+			if not claimed[j] then
+				local d = vp.pos:DistToSqr(fresh[j][1])
+				if d < bestD then
+					bestD = d
+					bestJ = j
 				end
 			end
 		end
@@ -93,11 +67,11 @@ hook.Add("Think", "co_gas_sync", function()
 
 				local str = util.TraceLine({
 					start = vp.pos,
-					endpos = vp.pos + Vector(0, 0, 12000),
+					endpos = vp.pos + Vector(0, 0, 2400),
 					mask = MASK_SOLID_BRUSHONLY
 				})
 
-				if str.HitSky then
+				if str.HitSky or not str.Hit then
 					table_remove(vis, i)
 					continue
 				end
@@ -115,9 +89,8 @@ hook.Add("Think", "co_gas_sync", function()
 				topos = Vector(pos.x, pos.y, pos.z),
 				inten = 0,
 				toInt = f[2],
-				born = CurTime(),
 				seed = math_Rand(0, 100),
-				size = math_Rand(170, 260),
+				size = math_Rand(90, 150),
 				mat = smoke_mats[math_random(#smoke_mats)],
 				col = Color(155, 148, 140, 0),
 				col2 = Color(118, 104, 92, 0)
@@ -137,7 +110,7 @@ hook.Add("PostDrawTranslucentRenderables", "co_gas_render", function(isDepth, is
 	local ft = FrameTime()
 	local kPos = math_min(ft * 4, 1)
 	local kInt = math_min(ft * 6, 1)
-	local eyeLimit = 6500 * 6500
+	local eyeLimit = 3500 * 3500
 
 	for i = #vis, 1, -1 do
 		local vp = vis[i]
@@ -154,25 +127,21 @@ hook.Add("PostDrawTranslucentRenderables", "co_gas_render", function(isDepth, is
 		pos.y = pos.y + (topos.y - pos.y) * kPos
 		pos.z = pos.z + (topos.z - pos.z) * kPos
 
-		local dist2 = pos:DistToSqr(eye)
-		if vp.inten <= 0.03 or dist2 > eyeLimit then continue end
+		if vp.inten <= 0.03 or pos:DistToSqr(eye) > eyeLimit then continue end
 
 		local pos2 = vp.pos2
 		pos2.x = pos.x
 		pos2.y = pos.y
 		pos2.z = pos.z - vp.size * 0.35
 
-		local grow = 1 + math_min((now - (vp.born or now)) * 0.02, 0.35)
-		local size = vp.size * grow * (0.85 + 0.25 * math.sin(now * 0.9 + vp.seed))
-		local alpha = vp.inten * 140 / grow
+		local size = vp.size * (0.85 + 0.25 * math.sin(now * 0.9 + vp.seed))
+		local alpha = vp.inten * 110
 
 		vp.col.a = alpha
 		vp.col2.a = alpha * 0.7
 
 		render_SetMaterial(vp.mat)
 		render_DrawSprite(pos, size * 1.7, size * 1.7, vp.col)
-		if dist2 < 2500 * 2500 then
-			render_DrawSprite(pos2, size, size, vp.col2)
-		end
+		render_DrawSprite(pos2, size, size, vp.col2)
 	end
 end)

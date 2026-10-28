@@ -1052,7 +1052,7 @@ function MODE:HUDPaint()
 				local textAlpha = math.min(alpha, 255 * math.Clamp((t - 1.5) / 0.7, 0, 1))
 
 				draw.SimpleText("CRISIS RESPONSE", "CRI_Title", sw * 0.5, sh * 0.12, ColorAlpha(criRed, textAlpha), TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
-				zb.SwayText("YOU ARE " .. info.name, "CRI_Title", sw * 0.5, sh * 0.5, ColorAlpha(info.color, textAlpha), TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER, 0, beginAt + 1.9, 4.5)
+				draw.SimpleText("YOU ARE " .. info.name, "CRI_Title", sw * 0.5, sh * 0.5, ColorAlpha(info.color, textAlpha), TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
 				draw.SimpleText(info.objective, "CRI_Med", sw * 0.5, sh * 0.6, ColorAlpha(criWhite, textAlpha), TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
 			end
 		else

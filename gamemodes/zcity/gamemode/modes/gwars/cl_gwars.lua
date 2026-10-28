@@ -178,7 +178,7 @@ function MODE:HUDPaint()
 	local Rolename = teams[team_].name
 	local ColorRole = teams[team_].color1
 	ColorRole.a = 255 * fade
-	zb.SwayText("You are " .. Rolename, "ZB_HomicideMediumLarge", sw * 0.5, sh * 0.5, ColorRole, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER, 0)
+	draw.SimpleText("You are " .. Rolename, "ZB_HomicideMediumLarge", sw * 0.5, sh * 0.5, ColorRole, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
 	local Objective = teams[team_].objective
 	local ColorObj = teams[team_].color2
 	ColorObj.a = 255 * fade

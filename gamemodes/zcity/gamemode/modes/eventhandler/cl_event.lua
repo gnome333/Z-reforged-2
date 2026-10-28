@@ -62,7 +62,7 @@ function MODE:HUDPaint()
     local Rolename = isEventer and "Eventer" or GetGlobalString("ZB_EventRole","Player")
     local ColorRole = isEventer and eventer.color1 or fighter.color1
     ColorRole.a = 255 * fade
-    zb.SwayText("You are a "..Rolename , "ZB_HomicideMediumLarge", sw * 0.5, sh * 0.5, ColorRole, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER, 0)
+    draw.SimpleText("You are a "..Rolename , "ZB_HomicideMediumLarge", sw * 0.5, sh * 0.5, ColorRole, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
 
     local Objective = GetGlobalString("ZB_EventObjective","")
     local ColorObj = isEventer and eventer.color1 or fighter.color1

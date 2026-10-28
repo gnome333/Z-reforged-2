@@ -117,7 +117,7 @@ function MODE:HUDPaint()
     local Rolename = teams[team_].name
     local ColorRole = teams[team_].color1
     ColorRole.a = 255 * fade
-    zb.SwayText("You are "..Rolename , "ZB_HomicideMediumLarge", sw * 0.5, sh * 0.5, ColorRole, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER, 0, StartTime)
+    draw.SimpleText("You are "..Rolename , "ZB_HomicideMediumLarge", sw * 0.5, sh * 0.5, ColorRole, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
 
     local Objective = teams[team_].objective
     local ColorObj = teams[team_].color2
@@ -436,7 +436,7 @@ local function OpenBuyMenu()
 			local ent = scripted_ents.GetStored( Item.ItemClass )
 
 			local ItemPanel = vgui.Create("DPanel",CategoryPanel)
-			ItemPanel:SetSize(0,ScrH()*0.12)
+			ItemPanel:SetSize(0,ScrH()*0.1)
 			ItemPanel:Dock(TOP)
 			ItemPanel:DockMargin(0,8,0,0)
 			ItemPanel.Paint = PaintPanel1
@@ -449,46 +449,6 @@ local function OpenBuyMenu()
 				local boxed = ScrH()*0.07/2
 				ItemButton:DockMargin(5 + (bBox and boxed or 0),5,5 + (bBox and boxed or 0),5)
 				ItemButton:SetImage( ( weapon ~= nil and ( (weapon.WepSelectIcon2 and weapon.WepSelectIcon2:GetName() .. ".png") or weapon.IconOverride) ) or ((ent and ent.t.IconOverride) or "none") )
-			end
-
-			local AttCount = Item.Attachments and #Item.Attachments or 0
-			if AttCount > 0 then
-				local cols = math.min(5, AttCount)
-				local rows = math.ceil(AttCount / cols)
-				local pitch = math.floor(math.min((ScrH() * 0.12 - 12) / rows, ScrH() * 0.06, ScrW() * 0.35 * 0.42 / cols))
-				if pitch < 22 then pitch = 22 end
-				local cell = pitch - 4
-				local top = math.floor((ScrH() * 0.12 - rows * pitch) / 2)
-				if top < 3 then top = 3 end
-
-				local ItemAtt = vgui.Create("DGrid",ItemPanel)
-				ItemAtt:Dock(RIGHT)
-				ItemAtt:DockMargin(4,top,8,top)
-				ItemAtt:SetCols(cols)
-				ItemAtt:SetColWide(pitch)
-				ItemAtt:SetRowHeight(pitch)
-				ItemAtt:SetSize(cols * pitch, rows * pitch)
-				ItemAtt.Paint = function() end
-
-				for id,AttachN in pairs(Item.Attachments) do
-					local ico = hg.attachmentsIcons[AttachN]
-					local Attach = vgui.Create( "DImageButton" )
-					Attach:SetImage(ico)
-					Attach:SetSize(cell,cell)
-
-					Attach.Attachment = {k,n,AttachN}
-
-					function Attach:DoClick()
-						TDM_LogBuy(self.Attachment)
-
-						net.Start("tdm_buyitem")
-							net.WriteTable(self.Attachment)
-						net.SendToServer()
-					end
-
-					Attach.Paint = PaintPanel2
-					ItemAtt:AddItem(Attach)
-				end
 			end
 
 			local ItemButton = vgui.Create("DPanel",ItemPanel)
@@ -534,36 +494,27 @@ local function OpenBuyMenu()
 				local ammo = weapon.Primary.Ammo != "none" and weapon.Primary.Ammo or weapon.Ammo or (weapons.GetStored( weapon.Base ) and weapons.GetStored( weapon.Base ).Primary.Ammo)
 				
 				if hg.ammotypeshuy[ammo] then
-					local ammoName = ammo
-					local short = string.match(ammoName, "^%S+") or ammoName
-
-					surface.SetFont("ZB_TDM_DESCSMALL")
-					local w = surface.GetTextSize(short)
-
 					local amm = vgui.Create( "DButton", ItemButton)
 					amm:DockMargin(10,5,10,10)
 					amm:Dock(LEFT)
-					amm:SetText("")
+					amm:SetText(ammo)
+					amm:SetTextColor(Color(200,200,200))
 					amm:SetFont("ZB_TDM_DESCSMALL")
-					amm:SetHeight(ScrH()*0.021)
-					amm:SetWidth(math.max(w + 10, ScrH()*0.03))
-					amm:SetTooltip("Buy ammo: " .. ammoName)
+					
+					surface.SetFont("ZB_TDM_DESCSMALL")
+					local w, h = surface.GetTextSize(ammo)
 
-					local ammoClass = "ent_ammo_"..hg.ammotypeshuy[ammoName].name
+					amm:SetHeight(ScrH()*0.025)
+					amm:SetWidth(w + 7)
+					local ammo2 = "ent_ammo_"..hg.ammotypeshuy[ammo].name
 					local name
-					for name2, ammoItem in pairs(MODE.BuyItems["Ammo"] or {}) do
-						if not istable(ammoItem) then continue end
-						if ammoItem.ItemClass == ammoClass then
+					for name2, ammo in pairs(MODE.BuyItems["Ammo"]) do
+						if not istable(ammo) then continue end
+						if ammo.ItemClass == ammo2 then
 							name = name2
 						end
 					end
 					
-					if not name then
-						amm:SetMouseInputEnabled(false)
-					end
-
-					local col = name and Color(200,200,200) or Color(110,110,110)
-
 					amm.huy = {"Ammo", name}
 
 					function amm:DoClick()
@@ -574,13 +525,37 @@ local function OpenBuyMenu()
 						net.SendToServer()
 					end
 
-					amm.Paint = function(self, ww, hh)
-						surface.SetDrawColor(0,0,0,170)
-						surface.DrawRect(0,0,ww,hh)
-						surface.SetDrawColor(255,0,0,128)
-						surface.DrawOutlinedRect(0,0,ww,hh,1)
-						draw.SimpleText(short, "ZB_TDM_DESCSMALL", ww * 0.5, hh * 0.5, col, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
+					amm.Paint = PaintPanel
+				end
+			end
+
+			if Item.Attachments and #Item.Attachments > 0 then
+				local ItemAtt = vgui.Create("DGrid",ItemPanel)
+				local ItemIcon = math.ceil(ScrH()*0.06)
+				ItemAtt:Dock(RIGHT)
+				ItemAtt:DockMargin(0,5,0,0)
+				ItemAtt:SetCols( 4 )
+				ItemAtt:SetColWide(ItemIcon)
+				ItemAtt:SetRowHeight(ItemIcon)
+				ItemAtt.Paint = function() end
+				for id,AttachN in pairs(Item.Attachments) do
+					local ico = hg.attachmentsIcons[AttachN]
+					local Attach = vgui.Create( "DImageButton" )
+					Attach:SetImage(ico)
+					Attach:SetSize(ItemIcon-5,ItemIcon-5)
+
+					Attach.Attachment = {k,n,AttachN}
+
+					function Attach:DoClick()
+						TDM_LogBuy(self.Attachment)
+
+						net.Start("tdm_buyitem")
+							net.WriteTable(self.Attachment)
+						net.SendToServer()
 					end
+
+					Attach.Paint = PaintPanel2
+					ItemAtt:AddItem(Attach)
 				end
 			end
 		end

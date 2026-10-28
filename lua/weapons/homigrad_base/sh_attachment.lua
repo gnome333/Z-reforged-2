@@ -525,8 +525,8 @@ if CLIENT then
 				})
 				if deg < 0 and not chekvisible.Hit then
 					render.SetMaterial(mat2)
-					render.DrawSprite(pos + ang:Forward() * 0.5, 500 * math.min(deg, 0), 50 * math.min(deg, 0), color_white)
-					render.DrawSprite(pos + ang:Forward() * 0.5, 125 * math.min(deg, 0), 375 * math.min(deg, 0), color_white)
+					render.DrawSprite(pos + ang:Forward() * 0.5, 200 * math.min(deg, 0), 20 * math.min(deg, 0), color_white)
+					render.DrawSprite(pos + ang:Forward() * 0.5, 50 * math.min(deg, 0), 150 * math.min(deg, 0), color_white)
 				end
 			end
 		else

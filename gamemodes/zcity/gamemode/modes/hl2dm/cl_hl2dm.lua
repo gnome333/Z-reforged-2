@@ -64,7 +64,7 @@ function MODE:HUDPaint()
     
     role_data.color.a = 255 * fade
 
-    zb.SwayText("You are " .. role_data.name, "ZB_HomicideMediumLarge", sw * 0.5, sh * 0.5, role_data.color, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER, 0)
+    draw.SimpleText("You are " .. role_data.name, "ZB_HomicideMediumLarge", sw * 0.5, sh * 0.5, role_data.color, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
 
     local objective_color = team_data.color2
 

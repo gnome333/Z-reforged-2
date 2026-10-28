@@ -90,7 +90,7 @@ if SERVER then
 						something_ignited = true
 
 						if hg.COGasAdd then
-							hg.COGasAdd(tbl2[1], 0.45)
+							hg.COGasAdd(tbl2[1], 0.3)
 						end
 					end
 				end
