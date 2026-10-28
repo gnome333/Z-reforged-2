@@ -83,11 +83,12 @@ function ENT:AddFire(fire)
 	local closestFireBigger
 
 	self.distMem[fire] = {}
+	local firePos = fire:GetPos()
 	for k, fire2 in pairs(self.fires) do
 		if !IsValid(fire2) then continue end
 		local dist = 0
 		if fire != fire2 then
-			dist = fire:GetPos():Distance(fire2:GetPos())
+			dist = firePos:Distance(fire2:GetPos())
 			if dist < minDist then
 				minDist = dist
 				closestFire = fire2

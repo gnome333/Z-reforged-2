@@ -350,6 +350,13 @@ end
 
 ---------------------------------------------------------------------------]]
 if SERVER then
+	-- Locals for the hot server think paths (avoids repeated global lookups)
+	local math_Rand = math.Rand
+	local math_random = math.random
+	local CurTime = CurTime
+	local IsValid = IsValid
+	local next = next
+
 	--[[-------------------------------------------------------------------------
 	Life and feed
 	---------------------------------------------------------------------------]]
@@ -386,20 +393,46 @@ if SERVER then
 		local foundCluster
 		local minDist = math.huge
 
-		local closeEnts = ents.FindInSphere(self:GetPos(), vFireClusterSize)
-		for k, cluster in pairs(closeEnts) do
-			-- We only care about fire clusters
-			if cluster:GetClass() != "vfire_cluster" then continue end
-			-- We have to be on the same parent
-			if cluster.parent != self.parent then continue end
-			-- We have to have matching material types
-			if cluster.matType != self.matType then continue end
+		local parent = self.parent
+		local pos = self:GetPos()
+		local matType = self.matType
+		local maxDistSqr = vFireClusterSize * vFireClusterSize
 
-			-- Find the closest cluster
-			local dist = self:GetPos():DistToSqr(cluster:GetPos())
-			if dist < minDist then
-				minDist = dist
-				foundCluster = cluster
+		-- Every cluster of a parent is registered in parent.fireClusters, so we can
+		-- look the cluster up there instead of running a sphere query over the world
+		-- (that one walks every entity around the fire, on every fire creation).
+		local clusters = parent.fireClusters
+		if clusters then
+			for cluster in pairs(clusters) do
+				if !IsValid(cluster) then continue end
+				-- We have to have matching material types
+				if cluster.matType != matType then continue end
+
+				-- Find the closest cluster
+				local dist = pos:DistToSqr(cluster:GetPos())
+				if dist < minDist and dist <= maxDistSqr then
+					minDist = dist
+					foundCluster = cluster
+				end
+			end
+		elseif vFiresCount > 0 then
+			-- No cluster is registered on this parent, but fires do exist: keep the old
+			-- sphere query as a safety net so we never create a duplicate cluster.
+			local closeEnts = ents.FindInSphere(pos, vFireClusterSize)
+			for k, cluster in pairs(closeEnts) do
+				-- We only care about fire clusters
+				if !IsValid(cluster) or cluster:GetClass() != "vfire_cluster" then continue end
+				-- We have to be on the same parent
+				if cluster.parent != parent then continue end
+				-- We have to have matching material types
+				if cluster.matType != matType then continue end
+
+				-- Find the closest cluster
+				local dist = pos:DistToSqr(cluster:GetPos())
+				if dist < minDist then
+					minDist = dist
+					foundCluster = cluster
+				end
 			end
 		end
 
@@ -630,13 +663,13 @@ if SERVER then
 
 		local ran
 		if curTime >= self.nextDropThink then
-			if !ran then ran = math.random(0, 1000 + vFiresCount * 10) end
+			if !ran then ran = math_random(0, 1000 + vFiresCount * 10) end
 			self:DropThink(ran)
 			self.nextDropThink = curTime + vFireDropThinkTickRate + throttleAdd
 		end
 
 		if curTime >= self.nextSpreadThink then
-			if !ran then ran = math.random(0, 1000 + vFiresCount * 10) end
+			if !ran then ran = math_random(0, 1000 + vFiresCount * 10) end
 			self:SpreadThink(ran)
 			self.nextSpreadThink = curTime + vFireSpreadThinkTickRate + throttleAdd
 		end
@@ -644,14 +677,13 @@ if SERVER then
 
 
 		-- Our next think will always be the minimal of our next think tasks' timings
-		local nextThink = math.Min(
-			self.nextFuelThink,
-			self.nextLifeThink,
-			self.nextEatThink,
-			self.nextBurnThink,
-			self.nextDropThink,
-			self.nextSpreadThink
-		)
+		-- (plain comparisons instead of math.Min with six arguments - this runs a lot)
+		local nextThink = self.nextFuelThink
+		if self.nextLifeThink < nextThink then nextThink = self.nextLifeThink end
+		if self.nextEatThink < nextThink then nextThink = self.nextEatThink end
+		if self.nextBurnThink < nextThink then nextThink = self.nextBurnThink end
+		if self.nextDropThink < nextThink then nextThink = self.nextDropThink end
+		if self.nextSpreadThink < nextThink then nextThink = self.nextSpreadThink end
 
 
 		self:NextThink(nextThink)
@@ -789,14 +821,22 @@ if SERVER then
 
 	function ENT:BurnThink()
 
+		local parent = self.parent
 		local damageEnabled = vFireEnableDamage and vFireDamageMultiplier > 0
+
+		-- Fast path: nothing is touching us and there's no damage work left to do.
+		-- Ground fires (the vast majority) used to run the whole damage path,
+		-- including building DamageInfo, every burn cycle for nothing.
+		if next(self.burning) == nil and !parent:IsPlayer() and (!damageEnabled or parent:IsWorld()) then
+			return
+		end
 
 		-- Who is the owner of the fire? This will likely be the doer of the damage
 		local owner = self:GetOwner()
 		if !IsValid(owner) then owner = nil end
 
 		-- How much damage are we doing this burn cycle?
-		local amount = self.life * math.Rand(0.01, 0.08) * vFireDamageMultiplier
+		local amount = self.life * math_Rand(0.01, 0.08) * vFireDamageMultiplier
 		
 
 
@@ -838,7 +878,7 @@ if SERVER then
 				-- If we're burning a character, use the oppurtunity to spread to it
 				if vFireIsCharacter(ent) and vFireEnableSpread then
 					-- If we're burning an NPC, spread to it, if it's a player, lower the chance of spread
-					if (ent:IsPlayer() and hg.GetCurrentCharacter(ent):IsPlayer() and math.random(1, 6) == 1) or !ent:IsPlayer() then
+					if (ent:IsPlayer() and hg.GetCurrentCharacter(ent):IsPlayer() and math_random(1, 6) == 1) or !ent:IsPlayer() then
 						local newFeed = self.feed + vFireTakeFuel(ent, 12)
 						if newFeed > 0 then
 							CreateVFire(ent, ent:GetPos(), Vector(), newFeed, self)
@@ -857,8 +897,6 @@ if SERVER then
 
 
 		-- Damage the parent as well (it's not in our burning table)
-		local parent = self.parent
-
 		if damageEnabled and !parent:IsWorld() then
 			
 			local dmg = DamageInfo()
@@ -941,24 +979,39 @@ if SERVER then
 			-- We only spread if our random variable is below 1000 - the more throttle there is, the higher the probability of ran being >= 1000
 			-- and as a result, fire spreading is throttled
 
-			for _,v in ipairs(hg.gasolinePath) do
-				if v[1]:Distance(self:GetPos()) > (vFireBaseRadius(self:GetFireState() or 1) or 1) or v[2] ~= false then continue end
-				v[2] = CurTime()
-				v[3] = self:GetOwner()
+			-- Values that used to be recalculated several times per think
+			local curTime = CurTime()
+			local pos = self:GetPos()
+			local radius = vFireBaseRadius(self:GetFireState() or 1) or 1
+
+			-- Gasoline paths: test the cheap "already ignited" flag first and compare
+			-- squared distances, so we don't run a sqrt for every path point of every fire
+			local gasPath = hg.gasolinePath
+			if gasPath then
+				local radiusSqr = radius * radius
+				for i = 1, #gasPath do
+					local v = gasPath[i]
+					if v[2] ~= false then continue end
+					if pos:DistToSqr(v[1]) > radiusSqr then continue end
+					v[2] = curTime
+					v[3] = self:GetOwner()
+				end
 			end
 
-			if self.NextParticle < CurTime() and vFireLifeToState(self.life) > 2 then
+			if self.NextParticle < curTime then
 				local state = vFireLifeToState(self.life)
-				self.NextParticle = CurTime() + math.Rand(0.3, 0.5) + (7 - state) * 0.15
-				self.totalparticles = math.ceil(state * 5)
-				if self.gasparticles < self.totalparticles and hg.COGasAdd then
-					hg.COGasAdd(self:GetPos(), 0.25 * (state - 2))
+				if state > 2 then
+					self.NextParticle = curTime + math_Rand(0.3, 0.5) + (7 - state) * 0.15
+					self.totalparticles = math.ceil(state * 5)
+					if self.gasparticles < self.totalparticles and hg.COGasAdd then
+						hg.COGasAdd(pos, 0.25 * (state - 2))
 
-					self.gasparticles = self.gasparticles + 1
-				end
-		
-				if (self.gasparticles == self.totalparticles) then
-					return
+						self.gasparticles = self.gasparticles + 1
+					end
+
+					if (self.gasparticles == self.totalparticles) then
+						return
+					end
 				end
 			end
 			
@@ -971,8 +1024,8 @@ if SERVER then
 					local upwards = Vector(0, 0, 1)
 
 					local dir = upwards + self:GetWindVector() + VectorRand()
-					dir = dir * (vFireBaseRadius(self:GetFireState() or 1) or 1)
-					local tr = util.QuickTrace(self:GetPos(), dir, self.parent)
+					dir = dir * radius
+					local tr = util.QuickTrace(pos, dir, self.parent)
 					if tr.Hit and tr.Fraction > 0 then
 						local ent = tr.Entity
 						if vFireIsVFireEnt(ent) then return end
@@ -984,19 +1037,19 @@ if SERVER then
 
 				else -- Attempt to spread on the ground
 
-					local mul = (vFireBaseRadius(self:GetFireState() or 1) or 1) * math.Rand(0.775, 1)
+					local mul = radius * math_Rand(0.775, 1)
 					local dir = forward * -mul
 					local ang = self:GetAngles()
 					
 					-- We use a constant spread angle to give fire spreading a sort of 'momentum'
 					-- This value gets passed on to children fires with a slight offset
-					if !self.spreadAng then self.spreadAng = math.Rand(0, 360) end
+					if !self.spreadAng then self.spreadAng = math_Rand(0, 360) end
 					
 					ang:RotateAroundAxis(forward, self.spreadAng)
 					local offset = ang:Right() * mul + forward * 2
 
-					local pos = self:GetPos() + offset
-					local tr = util.QuickTrace(pos, dir)
+					local tracePos = pos + offset
+					local tr = util.QuickTrace(tracePos, dir)
 					local ent = tr.Entity
 					if tr.Hit and vfireallowspreadon[tr.MatType] and (tr.Fraction > 0 or IsValid(ent)) then
 
@@ -1188,15 +1241,34 @@ if CLIENT then
 	for i = 1, vFireMaxState do
 		lightCalls[i] = {}
 	end
-	local glowCalls = {}
 
 	local blue = 10
 	local yellow = 100
+
+	-- Glow draw data lives in flat arrays, and the color is reused, so drawing a fire
+	-- no longer allocates a table + a Color object every single frame
+	local glowPos = {}
+	local glowSize = {}
+	local glowAlpha = {}
+	local glowCount = 0
+	local glowCol = Color(255, yellow, blue, 255)
 
 	-- Used for optimization purposes
 	-- local draws = 0
 
 	hg_potatopc = hg_potatopc or hg.ConVars.potatopc
+
+	-- hg_potatopc:GetBool() used to be called once per fire per frame - cache it per frame
+	local potatoFrame = -1
+	local potatoCached = false
+	local function isPotatoMode()
+		local frame = FrameNumber()
+		if frame != potatoFrame then
+			potatoFrame = frame
+			potatoCached = hg_potatopc:GetBool()
+		end
+		return potatoCached
+	end
 
 	function ENT:Draw()
 
@@ -1225,19 +1297,17 @@ if CLIENT then
 		local pos = self:GetPos() + self:GetForward() * 7
 		local aSqrd = a * a
 
-		local potato = hg_potatopc:GetBool()
+		local potato = isPotatoMode()
 
 
 		if vFireEnableGlows and not potato then
 			local vis = util.PixelVisible(pos, 1, self.pVis)
 			if vis > 0 then -- Only draw the sprite if it'll be visible
-				local glowSize = vis * aSqrd * 6
-				-- Load information onto our glow calls table
-				table.insert(glowCalls, {
-					pos = pos,
-					glowSize = glowSize,
-					aSqrd = aSqrd
-				})
+				-- Load information into our glow arrays (no per-fire table allocation)
+				glowCount = glowCount + 1
+				glowPos[glowCount] = pos
+				glowSize[glowCount] = vis * aSqrd * 6
+				glowAlpha[glowCount] = math.Min(aSqrd * 0.85, 255)
 			end
 		end
 
@@ -1246,7 +1316,7 @@ if CLIENT then
 		if self.LOD then return end
 
 
-		if true and not potato then
+		if vFireEnableLights and not potato then
 			-- Load information onto our light calls table
 			local entIndex = self:EntIndex()
 			lightCalls[state][entIndex] = {
@@ -1267,16 +1337,28 @@ if CLIENT then
 	-- Draw our glow calls, arguably better than drawing seperate sprites because we
 	-- only set our material once?
 	hook.Add("PostDrawTranslucentRenderables", "_vFireLightCallbacks", function()
+		if glowCount <= 0 then return end
+
 		render.SetMaterial(lightmat)
-		for key, glowData in pairs(glowCalls) do
+		for i = 1, glowCount do
+			local size = glowSize[i]
+			glowCol.a = glowAlpha[i]
+
 			render.DrawSprite(
-				glowData.pos, -- Position
-				glowData.glowSize, -- Width
-				glowData.glowSize, -- Height (or the other way around)
-				Color(255, yellow, blue, math.Min(glowData.aSqrd * 0.85, 255)) -- Color
+				glowPos[i], -- Position
+				size, -- Width
+				size, -- Height (or the other way around)
+				glowCol -- Color
 			)
 		end
-		glowCalls = {}
+
+		-- Drop the references we kept for this frame
+		for i = 1, glowCount do
+			glowPos[i] = nil
+			glowSize[i] = nil
+			glowAlpha[i] = nil
+		end
+		glowCount = 0
 	end)
 
 	-- We need to cache our r_maxdlights ConVar for the sake of performance
@@ -1286,22 +1368,27 @@ if CLIENT then
 	hook.Add("Think", "_vFireLightCallbacks", function()
 
 		-- Draw lights from biggest to smallest to prioritize big lights in case of limit breach
+		-- vfire_enable_lights used to be ignored here - it now actually disables the light work
 		local lightsDrawn = 0
+		local lightsEnabled = vFireEnableLights
 		for state = vFireMaxState, 1, -1 do
-			for entIndex, callback in pairs(lightCalls[state]) do
-				local dLight = DynamicLight(entIndex)
-				if dLight then
-					dLight.Pos = callback[1]
-					dLight.r = 255
-					dLight.g = yellow
-					dLight.b = blue
-					dLight.Brightness = callback[2] * vFireLightMul
-					dLight.Decay = lightDecay
-					dLight.Size = callback[3]
-					dLight.DieTime = CurTime() + 10
+			local calls = lightCalls[state]
+			if lightsEnabled then
+				for entIndex, callback in pairs(calls) do
+					local dLight = DynamicLight(entIndex)
+					if dLight then
+						dLight.Pos = callback[1]
+						dLight.r = 255
+						dLight.g = yellow
+						dLight.b = blue
+						dLight.Brightness = callback[2] * vFireLightMul
+						dLight.Decay = lightDecay
+						dLight.Size = callback[3]
+						dLight.DieTime = CurTime() + 10
 
-					lightsDrawn = lightsDrawn + 1
-					if lightsDrawn >= maxLights then break end
+						lightsDrawn = lightsDrawn + 1
+						if lightsDrawn >= maxLights then break end
+					end
 				end
 			end
 			lightCalls[state] = {}

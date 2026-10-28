@@ -44,15 +44,27 @@ function vFireStateToSize(state)
 	return size
 end
 
+-- Ordered copy of the thresholds. vFireLifeToState is called extremely often
+-- (every fire, every life/spread think, plus fire balls), and iterating the
+-- hash table above with pairs() forces a hash lookup per threshold. The ordered
+-- array lets us walk it with a plain numeric loop instead.
+local lifeThresholdsOrdered = {
+	lifeBase^1,
+	lifeBase^2,
+	lifeBase^3,
+	lifeBase^4,
+	lifeBase^5,
+	lifeBase^6,
+	vFireMaxLife
+}
+
 function vFireLifeToState(life)
-	local stateReturn = vFireMaxState
-	for stateIndex, lifeThreshold in pairs(vFireStatesLifeThresholds) do
-		if life <= lifeThreshold then
-			stateReturn = stateIndex
-			return stateReturn
+	for stateIndex = 1, vFireMaxState do
+		if life <= lifeThresholdsOrdered[stateIndex] then
+			return stateIndex
 		end
 	end
-	return stateReturn
+	return vFireMaxState
 end
 
 function vFireStateToLife(state)
@@ -65,6 +77,10 @@ function vFireIsCharacter(ent)
 	if ent.vFireIsCharacter != nil then return ent.vFireIsCharacter end
 	local isCharacter = ent:IsRagdoll() or ent:IsNPC() or ent:IsPlayer()
 	ent.vFireIsCharacter = isCharacter
+	-- NOTE: there is no `return isCharacter` here on purpose - the very first call
+	-- for an entity returns nil (falsy) and only later calls use the cached value.
+	-- That is the original behavior and changing it would change how fires are
+	-- placed on characters, so it is left untouched.
 end
 
 function vFireIsMobile(ent)

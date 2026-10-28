@@ -388,7 +388,7 @@ hg.binds_capturing = false
 
 hg.binds = {
     {cmd = "fake", title = "Fake (ragdolling)", id = "fake"},
-    {cmd = "+hmcd_holdbreath", title = "Hold breath", id = "holdbreath"},
+    {cmd = "+hmcd_holdbreath", title = "Hold breath (toggle)", id = "holdbreath"},
     {cmd = "+neckbreak", title = "Break neck (infiltrator)", id = "neckbreak"},
     {cmd = "+hg_disarm", title = "Disarm (assassin)", id = "disarm"},
     {cmd = "+hg_zoom", title = "Zoom", id = "zoom"},

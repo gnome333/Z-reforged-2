@@ -251,7 +251,12 @@ hook.Add("HG_OnOtrub","hg_illbeback_Acchivment",function(ply)
     if ply:IsRagdoll() then
         ply = hg.RagdollOwner(ply)
     end
-    if hg.achievements.GetPlayerAchievement(ply,"illbeback")["value"] == 1 and ply.illbeback > CurTime() then
+    -- ply.illbeback is set on the *entity* (only when the player was shot in the head
+    -- this round), while the achievement value is persisted in MySQL per SteamID64.
+    -- After a reconnect or map change the value can still be 1 while the field is nil,
+    -- and "nil > CurTime()" throws "attempt to compare number with nil".
+    if not IsValid(ply) or not ply:IsPlayer() then return end
+    if hg.achievements.GetPlayerAchievement(ply,"illbeback")["value"] == 1 and (ply.illbeback or 0) > CurTime() then
         hg.achievements.SetPlayerAchievement(ply,"illbeback",2)
     end
 end)
@@ -273,6 +278,9 @@ hook.Add("HG_OnWakeOtrub","hg_illbeback_Acchivment",function(ply)
     if ply:IsRagdoll() then
         ply = hg.RagdollOwner(ply)
     end
+    -- Same guard as above: hg.RagdollOwner can return nil, and the achievement
+    -- helpers index the player, so a nil here used to be a second crash.
+    if not IsValid(ply) or not ply:IsPlayer() then return end
     if hg.achievements.GetPlayerAchievement(ply,"illbeback")["value"] == 2 then
         hg.achievements.SetPlayerAchievement(ply,"illbeback",3)
     end

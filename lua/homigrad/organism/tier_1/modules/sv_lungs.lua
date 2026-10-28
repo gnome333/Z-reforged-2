@@ -39,6 +39,117 @@ function hg.organism.CanBreath(org)
 	return org.o2 and org.o2.curregen >= org.losing_oxy
 end
 
+--[[-------------------------------------------------------------------------
+	CO poisoning tunables
+	---------------------------------------------------------------------------
+	Real carbon monoxide binds haemoglobin roughly 250x more strongly than
+	oxygen does, and it is eliminated with a half-life measured in hours. The
+	values below compress that into game time but keep the shape of the real
+	curve:
+
+	  * elimination is exponential (a half-life), not a linear drain, so the
+	    last of the gas lingers and a victim stays ill after leaving the cloud;
+	  * uptake scales with the inhaled concentration, so a dense cloud
+	    saturates the blood in seconds while a thin haze takes minutes;
+	  * once the blood is saturated the brain is damaged directly - severe CO
+	    poisoning kills through hypoxia that oxygen alone cannot reverse.
+---------------------------------------------------------------------------]]
+local CO_CONC_SCALE = 2.4			-- grid concentration -> internal scale
+local CO_CONC_MAX = 8.0				-- cap on the internal scale (was 3.2)
+local CO_ABSORB = 0.6				-- org.CO gained per second per scale unit
+local CO_MAX = 30					-- blood saturation ceiling
+local CO_CLEAR_HALFLIFE = 180		-- seconds for org.CO to halve in clean air
+local CO_BREATHE_CONC = 0.3			-- below this the victim breathes clean air
+local CO_SEVERE = 20				-- org.CO above which the brain takes damage
+local CO_BRAIN_RATE = 1 / 60		-- brain damage per second at full severity
+
+--[[-------------------------------------------------------------------------
+	Effective radius of the cloud
+	---------------------------------------------------------------------------
+	Gas is sampled in a small volume around the head instead of at a single
+	point. Standing at the edge of a cloud therefore still poisons you (at a
+	reduced dose) instead of being a binary "inside / outside" test, and the
+	reach of a cloud grows with CO_SAMPLE_RADIUS.
+---------------------------------------------------------------------------]]
+local CO_SAMPLE_RADIUS = 110		-- units around the head that count as "in the cloud"
+local CO_SAMPLE_EDGE = 0.5			-- dose multiplier at the edge of that radius
+
+-- Direct fire sources (env_fire / vfire) are also felt from further away now.
+local CO_FIRE_RADIUS = 420
+local CO_POCKET_RADIUS = 460
+
+-- Sample directions used for the volumetric gas field: the head itself plus
+-- six neighbours, so a person does not have to stand exactly inside a gassy
+-- voxel to be affected.
+local coSampleDirs = {
+	Vector(0, 0, 0),
+	Vector(1, 0, 0), Vector(-1, 0, 0),
+	Vector(0, 1, 0), Vector(0, -1, 0),
+	Vector(0, 0, 1), Vector(0, 0, -1),
+}
+local coSamplePos = Vector()
+
+-- Returns the strongest concentration around the head, weighted so that the
+-- edge of the sampling radius counts less than the centre.
+local function sampleCOField(head)
+	if not (hg.co and hg.co.physics and hg.co.physics:GetBool()) then return nil end
+	if not hg.COGetConcentration then return nil end
+
+	local best = 0
+
+	local center = hg.COGetConcentration(head)
+	if center and center > best then best = center end
+
+	local edgeMul = CO_SAMPLE_EDGE
+	for i = 2, #coSampleDirs do
+		local d = coSampleDirs[i]
+		coSamplePos:SetUnpacked(
+			head.x + d.x * CO_SAMPLE_RADIUS,
+			head.y + d.y * CO_SAMPLE_RADIUS,
+			head.z + d.z * CO_SAMPLE_RADIUS
+		)
+		local c = hg.COGetConcentration(coSamplePos)
+		if c then
+			c = c * edgeMul
+			if c > best then best = c end
+		end
+	end
+
+	return best
+end
+
+--[[-------------------------------------------------------------------------
+CO source weighting for the lungs module.
+The distance weight is now computed before the visibility trace: when a source
+can't beat the current best value anyway, the trace is skipped completely.
+Before, every nearby fire / gas pocket was traced for every player twice a second.
+---------------------------------------------------------------------------]]
+local coTraceLine = util.TraceLine
+
+local function coConsiderSource(epos, blocker, k, pos, owner, rag, best)
+	local dsqr = pos:DistToSqr(epos)
+	if dsqr > CO_FIRE_RADIUS * CO_FIRE_RADIUS then return best end
+
+	local s = (0.6 + 1.4 * (1 - math.sqrt(dsqr) / CO_FIRE_RADIUS)) * (k or 1)
+	if s <= best then return best end
+
+	if dsqr > 64 * 64 then
+		local filter = {owner}
+		if rag then filter[#filter + 1] = rag end
+		if blocker then filter[#filter + 1] = blocker end
+
+		local tr = coTraceLine({
+			start = epos,
+			endpos = pos,
+			mask = MASK_SHOT,
+			filter = filter
+		})
+		if tr.Hit then return best end
+	end
+
+	return s
+end
+
 local function insta_send_holdingbreath(org)
 	net.Start("organism_send") // отправляем только дизориентацию (чтобы не нагружать нет), и сразу
 	
@@ -90,38 +201,60 @@ local function togglebreath(ply, toggle)
 	ply.phrCld = 0
 end
 
-concommand.Add("hmcd_holdbreath",function(ply)
+--[[-------------------------------------------------------------------------
+	Breath holding is a toggle, not a hold
+	---------------------------------------------------------------------------
+	Pressing the key once holds the breath, pressing it again releases it.
+	The old behaviour required keeping the key pressed, which is unusable
+	while running from a gas cloud.
+
+	Both the plain command and the "+"/"-" pair are supported so existing
+	keybinds keep working: the "+" half toggles, and the "-" half does nothing
+	on release (otherwise letting go of the key would immediately undo the
+	toggle).
+
+	Releasing is always allowed - only *starting* to hold the breath needs
+	stamina and working lungs. Being unable to exhale would be worse than the
+	thing the check was protecting against.
+---------------------------------------------------------------------------]]
+local function canStartHoldingBreath(ply)
+	if not ply.organism then return false end
+	if not ply:Alive() then return false end
+	if ply.organism.stamina[1] < 90 then return false end
+	if ply.organism.o2.curregen == 0 then return false end
+	return true
+end
+
+local function doToggleBreath(ply)
 	if not ply.organism then return end
-	if not ply:Alive() then return end
-	if ply.organism.stamina[1] < 90 then return end
-	if ply.organism.o2.curregen == 0 then return end
 
 	if (ply.cooldownbreathe or 0) > CurTime() then return end
-	ply.cooldownbreathe = CurTime() + 0.5
 
-	togglebreath(ply)
+	if ply.organism.holdingbreath then
+		-- Releasing is always permitted
+		ply.cooldownbreathe = CurTime() + 0.5
+		togglebreath(ply, false)
+		return
+	end
+
+	if not canStartHoldingBreath(ply) then return end
+
+	ply.cooldownbreathe = CurTime() + 0.5
+	togglebreath(ply, true)
+end
+
+concommand.Add("hmcd_holdbreath", function(ply)
+	doToggleBreath(ply)
 end)
 
-concommand.Add("+hmcd_holdbreath",function(ply)
-	if not ply.organism then return end
-	if not ply:Alive() then return end
-	if ply.organism.stamina[1] < 90 then return end
-	if ply.organism.o2.curregen == 0 then return end
-
-	if (ply.cooldownbreathe or 0) > CurTime() then return end
-	ply.cooldownbreathe = CurTime() + 0.5
-
-	togglebreath(ply,true)
+concommand.Add("+hmcd_holdbreath", function(ply)
+	-- One press holds the breath, the next press releases it
+	doToggleBreath(ply)
 end)
 
-concommand.Add("-hmcd_holdbreath",function(ply)
-	if not ply.organism then return end
-	if ply.organism.stamina[1] < 90 then return end
-	if ply.organism.o2.curregen == 0 then return end
-
-	if (ply.cooldownbreathe or 0) > CurTime() then ply.releasebreathe = ply.cooldownbreathe return end
-
-	togglebreath(ply,false)
+concommand.Add("-hmcd_holdbreath", function(ply)
+	-- Releasing the key must NOT release the breath anymore - the state is
+	-- owned by the toggle above. Kept as a no-op so old binds stay valid.
 end)
 
 local lowoxy = {
@@ -217,31 +350,9 @@ module[2] = function(owner, org, timeValue)
 		local rag = IsValid(owner.FakeRagdoll) and owner.FakeRagdoll or nil
 		local best = 0
 
-		local function considersrc(epos, blocker, k)
-			local dsqr = pos:DistToSqr(epos)
-			if dsqr > 280 * 280 then return end
-
-			if dsqr > 64 * 64 then
-				local filter = {owner}
-				if rag then filter[#filter + 1] = rag end
-				if blocker then filter[#filter + 1] = blocker end
-
-				local tr = util.TraceLine({
-					start = epos,
-					endpos = pos,
-					mask = MASK_SHOT,
-					filter = filter
-				})
-				if tr.Hit then return end
-			end
-
-			local s = (0.6 + 1.4 * (1 - math.sqrt(dsqr) / 280)) * (k or 1)
-			if s > best then best = s end
-		end
-
 		if owner:IsOnFire() or (rag and rag:IsOnFire()) then best = 2 end
 
-		for _, e in ipairs(ents.FindInSphere(pos, 280)) do
+		for _, e in ipairs(ents.FindInSphere(pos, CO_FIRE_RADIUS)) do
 			local cls = e:GetClass()
 			if cls == "env_fire" and !e:GetNoDraw() then
 				if not e.NextCOSky or e.NextCOSky < CurTime() then
@@ -256,7 +367,7 @@ module[2] = function(owner, org, timeValue)
 				end
 
 				if not e.COOpenSky then
-					considersrc(e:GetPos(), e)
+					best = coConsiderSource(e:GetPos(), e, nil, pos, owner, rag, best)
 				end
 			elseif cls == "vfire" and e.GetFireState then
 				local st = e:GetFireState() or 0
@@ -273,33 +384,60 @@ module[2] = function(owner, org, timeValue)
 					end
 
 					if not e.COOpenSky then
-						considersrc(e:GetPos(), e, (st - 2) / 5)
+						best = coConsiderSource(e:GetPos(), e, (st - 2) / 5, pos, owner, rag, best)
 					end
 				end
 			end
 		end
 
-		local parts = hg.particles
-		if parts and #parts > 0 then
-			local pfilter = {owner}
-			if rag then pfilter[#pfilter + 1] = rag end
-			if ent != owner then pfilter[#pfilter + 1] = ent end
+		--[[-------------------------------------------------------------------
+			Inhaled CO from the gas field
+			---------------------------------------------------------------------
+			With the volumetric model (hg_co_physics 1) the concentration is
+			sampled in a small volume around the head (see sampleCOField), so a
+			person in a filled room gets a smooth, position dependent dose and
+			the edge of a cloud still affects them. The legacy pocket model is
+			kept for hg_co_physics 0.
+		-------------------------------------------------------------------]]
+		local gridConc = sampleCOField(head)
 
-			for i = 1, #parts do
-				local part = parts[i]
-				local inten = part[6]
-				if inten and inten > 0.05 then
-					local dsqr = head:DistToSqr(part[1])
-					if dsqr < 320 * 320 then
-						local tr = util.TraceLine({
-							start = part[1],
-							endpos = head,
-							mask = MASK_SHOT,
-							filter = pfilter
-						})
-						if not tr.Hit then
-							local s = (0.9 + 0.9 * (1 - math.sqrt(dsqr) / 320)) * inten
-							best = math.min(best + s, 3.2)
+		if gridConc then
+			-- The grid reports a normalised concentration where ~1.0 is a room
+			-- that is thoroughly filled. Dense clouds go well above that, so the
+			-- scale is capped generously instead of at the old pocket-model 3.2.
+			if gridConc > 0.02 then
+				best = math.min(best + gridConc * CO_CONC_SCALE, CO_CONC_MAX)
+			end
+		else
+			local parts = hg.particles
+			if parts and #parts > 0 then
+				local pfilter = {owner}
+				if rag then pfilter[#pfilter + 1] = rag end
+				if ent != owner then pfilter[#pfilter + 1] = ent end
+
+				local headSqr = CO_POCKET_RADIUS * CO_POCKET_RADIUS
+				local partCount = #parts
+
+				for i = 1, partCount do
+					-- Once the scale is saturated no further pocket can change
+					-- the result - stop tracing
+					if best >= CO_CONC_MAX then break end
+
+					local part = parts[i]
+					local inten = part[6]
+					if inten and inten > 0.05 then
+						local dsqr = head:DistToSqr(part[1])
+						if dsqr < headSqr then
+							local tr = util.TraceLine({
+								start = part[1],
+								endpos = head,
+								mask = MASK_SHOT,
+								filter = pfilter
+							})
+							if not tr.Hit then
+								local s = (0.9 + 0.9 * (1 - math.sqrt(dsqr) / CO_POCKET_RADIUS)) * inten
+								best = math.min(best + s, CO_CONC_MAX)
+							end
 						end
 					end
 				end
@@ -323,26 +461,39 @@ module[2] = function(owner, org, timeValue)
 		org.COregen = math.Approach(org.COregen, 0, timeValue * 0.5)
 	end
 
-	if (org.COConcentration or 0) < 0.3 then
-		org.CO = max(org.CO - timeValue, 0)
+	if (org.COConcentration or 0) < CO_BREATHE_CONC then
+		-- Exponential elimination with a long half-life. The old linear drain
+		-- (1 unit per second) emptied the blood in half a minute, which made
+		-- CO a joke: step out of the cloud and you were clean. Now the victim
+		-- keeps a significant blood level for minutes and stays impaired.
+		org.CO = max(org.CO * (0.5 ^ (timeValue / CO_CLEAR_HALFLIFE)), 0)
 	end
 	if success then
 		local oxygenate = hg.organism.OxygenateBlood(org) * 0.5
 		local lerp = min(max(org.pulse - 20, 0) / 20, 1)
 		local regen = Lerp(lerp, 0, o2.regen * oxygenate * math.Rand(0.95, 1.05))
 
-		org.CO = min(org.CO + (not org.holdingbreath and org.COregen > 0 and timeValue * 0.6 * (org.COConcentration or 0) or 0), 30)
+		org.CO = min(org.CO + (not org.holdingbreath and org.COregen > 0 and timeValue * CO_ABSORB * (org.COConcentration or 0) or 0), CO_MAX)
 
 		if org.holdingbreath then
 			local conc = min(org.breathCOConc or 0, org.COConcentration or 0)
 
-			if conc > 0.3 then
-				org.CO = min(org.CO + timeValue * 0.6 * conc + timeValue * 0.8, 30)
+			if conc > CO_BREATHE_CONC then
+				org.CO = min(org.CO + timeValue * CO_ABSORB * conc + timeValue * 0.8, CO_MAX)
 			end
 		end
 
 		if org.CO > 10 then
-			org.consciousness = math.min(org.consciousness, math.max((30 - org.CO) / 20, 0))
+			org.consciousness = math.min(org.consciousness, math.max((CO_MAX - org.CO) / 20, 0))
+		end
+
+		-- Severe poisoning damages the brain directly, and this damage is what
+		-- a dense cloud kills with: the deeper the blood is saturated, the
+		-- faster it happens. This is why a high concentration now kills in
+		-- well under a minute instead of just knocking the victim out.
+		if org.CO > CO_SEVERE then
+			local severity = (org.CO - CO_SEVERE) / (CO_MAX - CO_SEVERE)
+			org.brain = math.min(org.brain + timeValue * CO_BRAIN_RATE * severity, 1)
 		end
 
 		local mask_blevota = owner:GetNetVar("zableval_masku", false)
