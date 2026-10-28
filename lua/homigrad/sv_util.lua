@@ -1866,16 +1866,8 @@ if !istable(gmnetwork) and util.IsBinaryModuleInstalled("network") then
 end
 
 
-hook.Add("SetupMove", "AntiCrouchSpam", function(ply, mvd, cmd) -- на самом деле довольно безполезная херня просто нельзя спамить присядом лол
-	if !ply:Alive() or !hg.GetCurrentCharacter( ply ):IsPlayer() then return end
-
-	ply.OldCrouchState = ply.OldCrouchState or false
-
-	if ply.CrouchCD and ply.CrouchCD > CurTime() then
-		mvd:RemoveKeys( IN_DUCK )
-	elseif ply.OldCrouchState != mvd:KeyDown( IN_DUCK ) and !mvd:KeyDown( IN_DUCK ) then
-		ply.CrouchCD = CurTime() + 0.35
-	end
-
-	ply.OldCrouchState = mvd:KeyDown( IN_DUCK )
-end)
+-- NOTE: the second, server only "AntiCrouchSpam" hook that used to live here has been removed.
+-- It tracked its own CrouchCD / OldCrouchState while "HG_AntiGmodPVP" in movement/sh_inertia.lua
+-- tracked CrouchMinUntil / CrouchRecrouch, and neither knew about the other, so a single tap of
+-- the duck key locked duck input for ~0.85s. Crouch spam is handled by HG_AntiGmodPVP only now
+-- (tunable with hg_crouch_min / hg_crouch_cd).

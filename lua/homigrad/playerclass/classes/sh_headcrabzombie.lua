@@ -340,23 +340,27 @@ hook.Add("HG_MovementCalc_2", "ZombSpeed", function(mul, ply, cmd, mv)
 end)
 
 hook.Add("UpdateAnimation", "ZombAnimRate", function(ply, vel, maxSeqGroundSpeed)
+	-- validity has to come first: the old order read ply.PlayerClassName before IsValid(ply)
+	if not IsValid(ply) or not ply:Alive() then return end
+
 	if ply.PlayerClassName == "headcrabzombie" then
 		local isAmputated = ply:IsBerserk() and ply.organism and (ply.organism.llegamputated or ply.organism.rlegamputated)
-		if not IsValid(ply) or not ply:Alive() or isAmputated then return end
+		if isAmputated then return end
 
+		-- UpdateAnimation has no return values, the returns below used to go nowhere
 		if vel:LengthSqr() >= 77000 and vel:LengthSqr() < 110000 then
 			ply:SetPlaybackRate(1.1)
-			return ply, vel, maxSeqGroundSpeed
+			return
 		end
 
 		if vel:LengthSqr() >= 17000 then
 			ply:SetPlaybackRate(1.2)
-			return ply, vel, maxSeqGroundSpeed
+			return
 		end
 
 		if not ply:OnGround() then
 			ply:SetPlaybackRate(0.8)
-			return ply, vel, maxSeqGroundSpeed
+			return
 		end
 	end
 end)

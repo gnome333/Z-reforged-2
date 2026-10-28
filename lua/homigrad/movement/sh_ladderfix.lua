@@ -10,11 +10,24 @@ local getAABB = PLAYER.GetHull
 local hullmult = Vector(1, 1, 0)
 
 local function onladder(tab, ply)
+	-- Ladders behind a playerclip brush are very common map geometry. The mask has to be relaxed
+	-- *before* the trace -- the original code flipped it after util.TraceHull had already run, so it
+	-- changed nothing, and the caller then forced the mask back to MASK_PLAYERSOLID anyway.
+	local oldmask = tab.mask
+
+	tab.mask = bit.band(oldmask, bit.bnot(CONTENTS_PLAYERCLIP))
+
 	local tr = util.TraceHull(tab, ply)
-	tab.mask = bit.bxor(tab.mask, CONTENTS_PLAYERCLIP)
+
+	tab.mask = oldmask
+
 	if bit.band(tr.Contents, CONTENTS_LADDER) != 0 then return true end
+
+	-- util.GetSurfaceData returns a table (SurfacePropertyData), not an entity, so IsValid() was
+	-- always false and this whole branch was dead code.
 	local sd = util.GetSurfaceData(tr.SurfaceProps)
-	if IsValid(sd) and sd.climbable != 0 then return true end
+
+	if sd and sd.climbable and sd.climbable != 0 then return true end
 
 	return false
 end
