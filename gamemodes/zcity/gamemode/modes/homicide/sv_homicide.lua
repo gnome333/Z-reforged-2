@@ -1489,8 +1489,6 @@ hook.Add("Player_Death", "HMCD_PlayerDeath", function(ply, _)
 				ply:ChatPrint("You suicided.")
 			elseif not biggest_attacker then
 				ply:ChatPrint("You have died.")
-			else
-				ply:ChatPrint("You were killed by "..biggest_attacker..".")
 			end
 		end
 	end)

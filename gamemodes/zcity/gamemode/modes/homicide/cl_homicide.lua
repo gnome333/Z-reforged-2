@@ -76,11 +76,30 @@ net.Receive("HMCD_RoundStart",function()
 
 	MODE.RoleEndedChosingState = screen_time_is_default
 
+	local subRole = lply.SubRole
+	local role_music = subRole == "traitor_infiltrator" or subRole == "traitor_infiltrator_soe" or subRole == "traitor_assasin" or subRole == "traitor_assasin_soe"
+
+	if not role_music then
+		zb.StopRoundMusic()
+	end
+
 	if(screen_time_is_default)then
-		if istable(MODE.TypeSounds[MODE.Type]) then
-			surface.PlaySound(table.Random(MODE.TypeSounds[MODE.Type]))
-		else
-			surface.PlaySound(MODE.TypeSounds[MODE.Type])
+		if not role_music then
+			if istable(MODE.TypeSounds[MODE.Type]) then
+				surface.PlaySound(table.Random(MODE.TypeSounds[MODE.Type]))
+			else
+				surface.PlaySound(MODE.TypeSounds[MODE.Type])
+			end
+		end
+	end
+
+	if(lply.isTraitor)then
+		local subRole = lply.SubRole
+
+		if(subRole == "traitor_infiltrator" or subRole == "traitor_infiltrator_soe")then
+			zb.PlayRoundMusic({"muzika/rounds/infiltrator.wav", "muzika/rounds/infiltrator3.wav"})
+		elseif(subRole == "traitor_assasin" or subRole == "traitor_assasin_soe")then
+			zb.PlayRoundMusic({"muzika/rounds/sc_assasin.wav", "muzika/rounds/sc_assasin2.wav"})
 		end
 	end
 
@@ -318,7 +337,7 @@ function MODE:HUDPaint()
 	local color_white_faded = Color(255, 255, 255, 255 * fade)
 	color_white_faded.a = 255 * fade
 
-	draw.SimpleText("You are "..Rolename , "ZB_HomicideMediumLarge", sw * 0.5, sh * 0.5, ColorRole, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
+	zb.SwayText("You are "..Rolename , "ZB_HomicideMediumLarge", sw * 0.5, sh * 0.5, ColorRole, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER, 0, StartTime, 4.5)
 
 
 
@@ -329,13 +348,13 @@ function MODE:HUDPaint()
 	if(lply.SubRole and lply.SubRole != "")then
 		cur_y = cur_y + ScreenScale(20)
 
-		draw.SimpleText("" .. ((MODE.SubRoles[lply.SubRole] and MODE.SubRoles[lply.SubRole].Name or lply.SubRole) or lply.SubRole), "ZB_HomicideMediumLarge", sw * 0.5, cur_y, ColorRole, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
+		zb.SwayText("" .. ((MODE.SubRoles[lply.SubRole] and MODE.SubRoles[lply.SubRole].Name or lply.SubRole) or lply.SubRole), "ZB_HomicideMediumLarge", sw * 0.5, cur_y, ColorRole, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER, 1.1, StartTime, 4.5)
 	end
 
 	if(!lply.MainTraitor and lply.isTraitor)then
 		cur_y = cur_y + ScreenScale(20)
 
-		draw.SimpleText("Assistant", "ZB_HomicideMedium", sw * 0.5, cur_y, ColorRole, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
+		zb.SwayText("Assistant", "ZB_HomicideMedium", sw * 0.5, cur_y, ColorRole, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER, 2.2, StartTime, 4.5)
 	end
 
 
@@ -371,13 +390,13 @@ function MODE:HUDPaint()
 	if(lply.Profession and lply.Profession != "")then
 		cur_y = cur_y + ScreenScale(20)
 
-		draw.SimpleText("Occupation: " .. ((MODE.Professions[lply.Profession] and MODE.Professions[lply.Profession].Name or lply.Profession) or lply.Profession), "ZB_HomicideMedium", sw * 0.5, cur_y, color_role_innocent, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
+		zb.SwayText("Occupation: " .. ((MODE.Professions[lply.Profession] and MODE.Professions[lply.Profession].Name or lply.Profession) or lply.Profession), "ZB_HomicideMedium", sw * 0.5, cur_y, color_role_innocent, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER, 3.3, StartTime, 4.5)
 	end
 	
 	if(handicap[lply:GetLocalVar("karma_sickness", 0)])then
 		cur_y = cur_y + ScreenScale(20)
 
-		draw.SimpleText(handicap[lply:GetLocalVar("karma_sickness", 0)], "ZB_HomicideMedium", sw * 0.5, cur_y, color_role_innocent, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
+		zb.SwayText(handicap[lply:GetLocalVar("karma_sickness", 0)], "ZB_HomicideMedium", sw * 0.5, cur_y, color_role_innocent, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER, 4.4, StartTime, 4.5)
 	end
 
 	local Objective = ( lply.isTraitor and MODE.TypeObjectives[MODE.Type].traitor.objective ) or ( lply.isGunner and MODE.TypeObjectives[MODE.Type].gunner.objective ) or MODE.TypeObjectives[MODE.Type].innocent.objective

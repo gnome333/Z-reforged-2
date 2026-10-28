@@ -219,7 +219,7 @@ module[2] = function(owner, org, timeValue)
 
 		local function considersrc(epos, blocker, k)
 			local dsqr = pos:DistToSqr(epos)
-			if dsqr > 200 * 200 then return end
+			if dsqr > 280 * 280 then return end
 
 			if dsqr > 64 * 64 then
 				local filter = {owner}
@@ -235,13 +235,13 @@ module[2] = function(owner, org, timeValue)
 				if tr.Hit then return end
 			end
 
-			local s = (0.6 + 1.4 * (1 - math.sqrt(dsqr) / 200)) * (k or 1)
+			local s = (0.6 + 1.4 * (1 - math.sqrt(dsqr) / 280)) * (k or 1)
 			if s > best then best = s end
 		end
 
 		if owner:IsOnFire() or (rag and rag:IsOnFire()) then best = 2 end
 
-		for _, e in ipairs(ents.FindInSphere(pos, 200)) do
+		for _, e in ipairs(ents.FindInSphere(pos, 280)) do
 			local cls = e:GetClass()
 			if cls == "env_fire" and !e:GetNoDraw() then
 				if not e.NextCOSky or e.NextCOSky < CurTime() then
@@ -290,7 +290,7 @@ module[2] = function(owner, org, timeValue)
 				local inten = part[6]
 				if inten and inten > 0.05 then
 					local dsqr = head:DistToSqr(part[1])
-					if dsqr < 240 * 240 then
+					if dsqr < 320 * 320 then
 						local tr = util.TraceLine({
 							start = part[1],
 							endpos = head,
@@ -298,8 +298,8 @@ module[2] = function(owner, org, timeValue)
 							filter = pfilter
 						})
 						if not tr.Hit then
-							local s = (0.9 + 0.9 * (1 - math.sqrt(dsqr) / 240)) * inten
-							best = math.min(best + s, 2.2)
+							local s = (0.9 + 0.9 * (1 - math.sqrt(dsqr) / 320)) * inten
+							best = math.min(best + s, 3.2)
 						end
 					end
 				end
@@ -341,7 +341,9 @@ module[2] = function(owner, org, timeValue)
 			end
 		end
 
-		org.consciousness = math.min(org.consciousness, (30 - org.CO) / 30)
+		if org.CO > 10 then
+			org.consciousness = math.min(org.consciousness, math.max((30 - org.CO) / 20, 0))
+		end
 
 		local mask_blevota = owner:GetNetVar("zableval_masku", false)
 
@@ -354,7 +356,7 @@ module[2] = function(owner, org, timeValue)
 
 		o2.curregen = regenerate
 
-		o2[1] = max(o2[1] - (org.CO > 0 and o2.curregen * 1.1 * (org.CO / 30) or 0),0)
+		o2[1] = max(o2[1] - (org.CO > 10 and o2.curregen * 1.1 * ((org.CO - 10) / 20) or 0),0)
 
 		//org.owner:ResetNotification("oxygen_cantbreathe")
 		//org.owner:ResetNotification("oxygen_cantbreathe2")

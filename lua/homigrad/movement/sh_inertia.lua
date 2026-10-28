@@ -53,8 +53,10 @@ local Angle, Vector, AngleRand, VectorRand, math, hook, util, game = Angle, Vect
 
 	local vomitVPAng, vecZero = Angle(1, 0, 0), Vector()
 	hook.Add("SetupMove", "HG(StartCommand)", function(ply, mv, cmd)
-		--\\ DeltaTime (tick-based, prediction-safe)
-		local delta_time = math.min(engine.TickInterval(), 1 / 20)
+		--\\ DeltaTime
+			ply.LastStartCommand = ply.LastStartCommand or SysTime()
+			local delta_time = SysTime() - ply.LastStartCommand--FrameTime()
+			ply.LastStartCommand = SysTime()
 		--//
 
 		if(not IsValid(ply) or not ply:Alive())then
@@ -104,12 +106,12 @@ local Angle, Vector, AngleRand, VectorRand, math, hook, util, game = Angle, Vect
 			local vel0 = ply:GetVelocity()
 		local velLen0 = vel0:Length()
 
-		if not IsValid(ply.FakeRagdoll) and cmd:KeyDown(IN_SPEED) and not ply:Crouching() and (cmd:KeyDown(IN_BACK) or (org.stamina and org.stamina[1] and org.stamina[1] < 30 and velLen0 > 200)) then
+		if not IsValid(ply.FakeRagdoll) and ply:KeyDown(IN_SPEED) and not ply:Crouching() and (ply:KeyDown(IN_BACK) or (org.stamina and org.stamina[1] and org.stamina[1] < 30 and velLen0 > 200)) then
 			cmd:RemoveKey(IN_SPEED)
 			mv:RemoveKey(IN_SPEED)
 		end
 
-		local wantCrouchRun = ply:Crouching() and cmd:KeyDown(IN_SPEED) and cmd:KeyDown(IN_FORWARD)
+		local wantCrouchRun = ply:Crouching() and cmd:KeyDown(IN_SPEED) and ply:KeyDown(IN_FORWARD)
 		local runnin = cmd:KeyDown(IN_SPEED) and not ply:Crouching() and ply:KeyDown(IN_FORWARD)
 		local crouchrunnin = wantCrouchRun and ply:OnGround() and not IsValid(ply.FakeRagdoll)
 
@@ -126,8 +128,8 @@ local Angle, Vector, AngleRand, VectorRand, math, hook, util, game = Angle, Vect
 		local fm = cmd:GetForwardMove() * (org.brain and org.brain > 0.1 and math.sin(CurTime() / 2) or 1)
 		local sm = cmd:GetSideMove() * (org.brain and org.brain > 0.1 and math.sin(CurTime() / 2) or 1)
 
-		local slow_walking = cmd:KeyDown(IN_WALK)
-		local aiming = cmd:KeyDown(IN_ATTACK2) and wep and IsValid(wep) and ishgweapon(wep)
+		local slow_walking = ply:KeyDown(IN_WALK)
+		local aiming = ply:KeyDown(IN_ATTACK2) and wep and IsValid(wep) and ishgweapon(wep)
 		local walk_speed = ply:GetWalkSpeed()
 		local slow_walk_speed = ply:GetSlowWalkSpeed()
 		local crouch_walk_speed = ply:GetCrouchedWalkSpeed()
@@ -272,18 +274,16 @@ local Angle, Vector, AngleRand, VectorRand, math, hook, util, game = Angle, Vect
 			vel2 = 1
 		end
 
-		local change = math.abs(math.AngleDifference(calc_vector2d_angle(ply.LastVelocity), calc_vector2d_angle(vel)))
-		change = math.Clamp(change, 0, 180)
+		local change = math.abs(math.AngleDifference(calc_vector2d_angle(ply.LastVelocity), calc_vector2d_angle(vel))) // * (SERVER and 0 or 5)
 
-		if ply.LastVelocity == vel and ply.LastChangeVelocity then -- cached when velocity pointer unchanged
+		if ply.LastVelocity == vel and ply.LastChangeVelocity then // this is so bullshit but it works
 			change = ply.LastChangeVelocity
 		end
 
 		local change_mul = math.abs(ply.CurrentSpeed - slow_walk_speed)
 
 		ply.LastChangeVelocity = change
-		local sharpTurnDamp = math.Clamp(delta_time * change * change_mul * ply.SpeedSharpLoseMul * 50, 0, ply.CurrentSpeed)
-		ply.CurrentSpeed = math.Approach(ply.CurrentSpeed, slow_walk_speed * mul, sharpTurnDamp)
+		ply.CurrentSpeed = math.Approach(ply.CurrentSpeed, slow_walk_speed * mul, delta_time * change * change_mul * ply.SpeedSharpLoseMul * 0.25 * 200)
 		ply.LastVelocity = vel
 		ply.LastVelocityLen = velLen
 		--//
@@ -295,11 +295,8 @@ local Angle, Vector, AngleRand, VectorRand, math, hook, util, game = Angle, Vect
 		ply.MovementInertia = ply.MovementInertia or vel
 
 		--\\ Side & back running debuffs
-			local wishLenN = math.sqrt(fm * fm + sm * sm)
-			if wishLenN > 1 then
-				fm = fm / wishLenN
-				sm = sm / wishLenN
-			end
+			fm = fm / math.abs(fm ~= 0 and fm or 1)
+			sm = sm / math.abs(sm ~= 0 and sm or 1)
 			local movement_penalty = math.abs(sm * 1.2)
 
 			if(movement_penalty == 0)then
@@ -579,20 +576,16 @@ local Angle, Vector, AngleRand, VectorRand, math, hook, util, game = Angle, Vect
 		end
 		ply.HgWasCrouching = isCrouch
 
-		if ply._hgMaxSpd ~= inertia_len then
-			ply._hgMaxSpd = inertia_len
-			mv:SetMaxSpeed(inertia_len)
-			mv:SetMaxClientSpeed(inertia_len)
-			ply:SetMaxSpeed(math.max(100, inertia_len))
-		end
-		if ply:OnGround() then ply:SetJumpPower(DEFAULT_JUMP_POWER * math.min(k, 1.1) * (not ply:GetNWBool("TauntStopMoving", false) and 1 or 0) * (ply.organism.superfighter and 1.5 or 1) * (ply.JumpPowerMul or 1)) end
+mv:SetMaxSpeed(inertia_len)
+		mv:SetMaxClientSpeed(inertia_len)
+		ply:SetMaxSpeed(math.max(100, inertia_len))
+		ply:SetJumpPower(DEFAULT_JUMP_POWER * math.min(k, 1.1) * (not ply:GetNWBool("TauntStopMoving", false) and 1 or 0) * (ply.organism.superfighter and 1.5 or 1) * (ply.JumpPowerMul or 1))
 
 		if(CLIENT)then
 			local fwangs = math.rad(GetViewPunchAngles2()[2] + GetViewPunchAngles3()[2])
 
-			local ofm, osm = forward_move, side_move
-			forward_move = ofm * math.cos(fwangs) + osm * math.sin(fwangs)
-			side_move = osm * math.cos(fwangs) - ofm * math.sin(fwangs)
+			forward_move = forward_move * math.cos(fwangs) + side_move * math.sin(fwangs)
+			side_move = side_move * math.cos(fwangs) + forward_move * math.sin(fwangs)
 
 			cmd:SetForwardMove(forward_move * inertia_len)
 			cmd:SetSideMove(side_move * inertia_len)
@@ -609,9 +602,8 @@ local Angle, Vector, AngleRand, VectorRand, math, hook, util, game = Angle, Vect
 		local airside = mv:GetSideSpeed()
 		local airlen = math.sqrt(airfwd * airfwd + airside * airside)
 
-		local hg_air_maxwish = 60
-		if airlen > hg_air_maxwish then
-			local airscale = hg_air_maxwish / airlen
+		if airlen > 15 then
+			local airscale = 15 / airlen
 			mv:SetForwardSpeed(airfwd * airscale)
 			mv:SetSideSpeed(airside * airscale)
 		end
@@ -679,7 +671,10 @@ local Angle, Vector, AngleRand, VectorRand, math, hook, util, game = Angle, Vect
 			ply.CrouchRecrouch = ct + 0.35
 		end
 
-		-- air crouch no longer forced (was sticky-duck bug)
+		if not ply:OnGround() and ply:WaterLevel() < 2 and ply:GetMoveType() == MOVETYPE_WALK and was != now then
+			cmd:AddKey(IN_DUCK)
+			now = true
+		end
 
 		ply.OldCrouched = now
 	end)
