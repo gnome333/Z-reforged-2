@@ -1001,10 +1001,10 @@ if SERVER then
 			if self.NextParticle < curTime then
 				local state = vFireLifeToState(self.life)
 				if state > 2 then
-					self.NextParticle = curTime + math_Rand(0.3, 0.5) + (7 - state) * 0.15
-					self.totalparticles = math.ceil(state * 5)
+					self.NextParticle = curTime + math_Rand(0.7, 1.1) + (7 - state) * 0.25
+					self.totalparticles = math.ceil(state * 2)
 					if self.gasparticles < self.totalparticles and hg.COGasAdd then
-						hg.COGasAdd(pos, 0.25 * (state - 2))
+						hg.COGasAdd(pos, 0.14 * (state - 2))
 
 						self.gasparticles = self.gasparticles + 1
 					end

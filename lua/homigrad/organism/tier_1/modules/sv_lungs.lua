@@ -48,75 +48,36 @@ end
 	curve:
 
 	  * elimination is exponential (a half-life), not a linear drain, so the
-	    last of the gas lingers and a victim stays ill after leaving the cloud;
-	  * uptake scales with the inhaled concentration, so a dense cloud
-	    saturates the blood in seconds while a thin haze takes minutes;
-	  * once the blood is saturated the brain is damaged directly - severe CO
-	    poisoning kills through hypoxia that oxygen alone cannot reverse.
+	    last of the gas lingers a little after leaving the cloud;
+	  * the blood does not soak up gas without limit: it settles at a level
+	    set by the air around it (CO_HALF_CONC), so a dense plume saturates
+	    the blood in seconds while a thin haze stops at a low level and stays
+	    there;
+	  * lethality follows the dose with a steep curve: a little gas in the
+	    blood eats the victim away over tens of minutes (and is survivable if
+	    he gets out and the blood clears), a lot of gas kills in a few minutes
+	    - slowly enough that getting out is always an option.
+
+	The gas itself only reaches a short distance: a pocket of CO is dangerous
+	within CO_POCKET_RADIUS of its centre (and the closer, the worse), so
+	walking around the edge of a plume is survivable. CO_POCKET_RADIUS used to
+	be 640 - every single pocket poisoned a 13 metre sphere, which made the
+	whole room lethal; it is 200 now, so the danger stays inside the visible
+	cloud.
 ---------------------------------------------------------------------------]]
-local CO_CONC_SCALE = 2.4			-- grid concentration -> internal scale
-local CO_CONC_MAX = 8.0				-- cap on the internal scale (was 3.2)
-local CO_ABSORB = 0.6				-- org.CO gained per second per scale unit
+local CO_CONC_MAX = 4.5				-- cap on the internal scale
+local CO_ABSORB = 0.85				-- org.CO gained per second per scale unit
 local CO_MAX = 30					-- blood saturation ceiling
-local CO_CLEAR_HALFLIFE = 180		-- seconds for org.CO to halve in clean air
-local CO_BREATHE_CONC = 0.3			-- below this the victim breathes clean air
-local CO_SEVERE = 20				-- org.CO above which the brain takes damage
-local CO_BRAIN_RATE = 1 / 60		-- brain damage per second at full severity
+local CO_CLEAR_HALFLIFE = 30		-- seconds for org.CO to halve in clean air
+local CO_BREATHE_CONC = 0.22		-- below this the victim breathes clean air
+local CO_BRAIN_RATE = 0.7 / 80		-- brain damage per second at full saturation
+local CO_BRAIN_EXP = 2.9			-- how steeply lethality follows the dose
+local CO_SLEEP = 10					-- org.CO above which the victim blacks out
+local CO_HALF_CONC = 1.6			-- concentration that holds the blood at half saturation
+local CO_UPTAKE = 0.055				-- how fast the blood follows the inhaled concentration
 
---[[-------------------------------------------------------------------------
-	Effective radius of the cloud
-	---------------------------------------------------------------------------
-	Gas is sampled in a small volume around the head instead of at a single
-	point. Standing at the edge of a cloud therefore still poisons you (at a
-	reduced dose) instead of being a binary "inside / outside" test, and the
-	reach of a cloud grows with CO_SAMPLE_RADIUS.
----------------------------------------------------------------------------]]
-local CO_SAMPLE_RADIUS = 110		-- units around the head that count as "in the cloud"
-local CO_SAMPLE_EDGE = 0.5			-- dose multiplier at the edge of that radius
-
--- Direct fire sources (env_fire / vfire) are also felt from further away now.
-local CO_FIRE_RADIUS = 420
-local CO_POCKET_RADIUS = 460
-
--- Sample directions used for the volumetric gas field: the head itself plus
--- six neighbours, so a person does not have to stand exactly inside a gassy
--- voxel to be affected.
-local coSampleDirs = {
-	Vector(0, 0, 0),
-	Vector(1, 0, 0), Vector(-1, 0, 0),
-	Vector(0, 1, 0), Vector(0, -1, 0),
-	Vector(0, 0, 1), Vector(0, 0, -1),
-}
-local coSamplePos = Vector()
-
--- Returns the strongest concentration around the head, weighted so that the
--- edge of the sampling radius counts less than the centre.
-local function sampleCOField(head)
-	if not (hg.co and hg.co.physics and hg.co.physics:GetBool()) then return nil end
-	if not hg.COGetConcentration then return nil end
-
-	local best = 0
-
-	local center = hg.COGetConcentration(head)
-	if center and center > best then best = center end
-
-	local edgeMul = CO_SAMPLE_EDGE
-	for i = 2, #coSampleDirs do
-		local d = coSampleDirs[i]
-		coSamplePos:SetUnpacked(
-			head.x + d.x * CO_SAMPLE_RADIUS,
-			head.y + d.y * CO_SAMPLE_RADIUS,
-			head.z + d.z * CO_SAMPLE_RADIUS
-		)
-		local c = hg.COGetConcentration(coSamplePos)
-		if c then
-			c = c * edgeMul
-			if c > best then best = c end
-		end
-	end
-
-	return best
-end
+local CO_FIRE_RADIUS = 400
+local CO_POCKET_RADIUS = 200
 
 --[[-------------------------------------------------------------------------
 CO source weighting for the lungs module.
@@ -130,7 +91,7 @@ local function coConsiderSource(epos, blocker, k, pos, owner, rag, best)
 	local dsqr = pos:DistToSqr(epos)
 	if dsqr > CO_FIRE_RADIUS * CO_FIRE_RADIUS then return best end
 
-	local s = (0.6 + 1.4 * (1 - math.sqrt(dsqr) / CO_FIRE_RADIUS)) * (k or 1)
+	local s = (0.35 + 0.75 * (1 - math.sqrt(dsqr) / CO_FIRE_RADIUS)) * (k or 1)
 	if s <= best then return best end
 
 	if dsqr > 64 * 64 then
@@ -390,54 +351,32 @@ module[2] = function(owner, org, timeValue)
 			end
 		end
 
-		--[[-------------------------------------------------------------------
-			Inhaled CO from the gas field
-			---------------------------------------------------------------------
-			With the volumetric model (hg_co_physics 1) the concentration is
-			sampled in a small volume around the head (see sampleCOField), so a
-			person in a filled room gets a smooth, position dependent dose and
-			the edge of a cloud still affects them. The legacy pocket model is
-			kept for hg_co_physics 0.
-		-------------------------------------------------------------------]]
-		local gridConc = sampleCOField(head)
+		local parts = hg.particles
+		if parts and #parts > 0 then
+			local pfilter = {owner}
+			if rag then pfilter[#pfilter + 1] = rag end
+			if ent != owner then pfilter[#pfilter + 1] = ent end
 
-		if gridConc then
-			-- The grid reports a normalised concentration where ~1.0 is a room
-			-- that is thoroughly filled. Dense clouds go well above that, so the
-			-- scale is capped generously instead of at the old pocket-model 3.2.
-			if gridConc > 0.02 then
-				best = math.min(best + gridConc * CO_CONC_SCALE, CO_CONC_MAX)
-			end
-		else
-			local parts = hg.particles
-			if parts and #parts > 0 then
-				local pfilter = {owner}
-				if rag then pfilter[#pfilter + 1] = rag end
-				if ent != owner then pfilter[#pfilter + 1] = ent end
+			local headSqr = CO_POCKET_RADIUS * CO_POCKET_RADIUS
+			local partCount = #parts
 
-				local headSqr = CO_POCKET_RADIUS * CO_POCKET_RADIUS
-				local partCount = #parts
+			for i = 1, partCount do
+				if best >= CO_CONC_MAX then break end
 
-				for i = 1, partCount do
-					-- Once the scale is saturated no further pocket can change
-					-- the result - stop tracing
-					if best >= CO_CONC_MAX then break end
-
-					local part = parts[i]
-					local inten = part[6]
-					if inten and inten > 0.05 then
-						local dsqr = head:DistToSqr(part[1])
-						if dsqr < headSqr then
-							local tr = util.TraceLine({
-								start = part[1],
-								endpos = head,
-								mask = MASK_SHOT,
-								filter = pfilter
-							})
-							if not tr.Hit then
-								local s = (0.9 + 0.9 * (1 - math.sqrt(dsqr) / CO_POCKET_RADIUS)) * inten
-								best = math.min(best + s, CO_CONC_MAX)
-							end
+				local part = parts[i]
+				local inten = part[6]
+				if inten and inten > 0.05 then
+					local dsqr = head:DistToSqr(part[1])
+					if dsqr < headSqr then
+						local tr = util.TraceLine({
+							start = part[1],
+							endpos = head,
+							mask = MASK_SHOT,
+							filter = pfilter
+						})
+						if not tr.Hit then
+							local s = (0.5 + 0.5 * (1 - math.sqrt(dsqr) / CO_POCKET_RADIUS)) * inten
+							best = math.min(best + s, CO_CONC_MAX)
 						end
 					end
 				end
@@ -462,10 +401,10 @@ module[2] = function(owner, org, timeValue)
 	end
 
 	if (org.COConcentration or 0) < CO_BREATHE_CONC then
-		-- Exponential elimination with a long half-life. The old linear drain
-		-- (1 unit per second) emptied the blood in half a minute, which made
-		-- CO a joke: step out of the cloud and you were clean. Now the victim
-		-- keeps a significant blood level for minutes and stays impaired.
+		-- Exponential elimination. The half-life is short enough that a victim
+		-- who leaves the cloud recovers within a minute or so instead of being
+		-- crippled for several minutes, but it is still an exponential curve:
+		-- the blood is cleaned fast at first and the last of the gas lingers.
 		org.CO = max(org.CO * (0.5 ^ (timeValue / CO_CLEAR_HALFLIFE)), 0)
 	end
 	if success then
@@ -473,27 +412,60 @@ module[2] = function(owner, org, timeValue)
 		local lerp = min(max(org.pulse - 20, 0) / 20, 1)
 		local regen = Lerp(lerp, 0, o2.regen * oxygenate * math.Rand(0.95, 1.05))
 
-		org.CO = min(org.CO + (not org.holdingbreath and org.COregen > 0 and timeValue * CO_ABSORB * (org.COConcentration or 0) or 0), CO_MAX)
+		if not org.holdingbreath and org.COregen > 0 then
+			local conc = org.COConcentration or 0
+
+			if conc > 0 then
+				--[[The blood only holds as much gas as the air around it can
+				sustain. A dense plume drives it to (almost) full saturation
+				in a few seconds, a thin haze settles at a low level and stops
+				there no matter how long the victim keeps breathing it - which
+				is exactly what makes "a little gas" and "a lot of gas" two
+				different fates instead of both ending in saturation.----------]]
+				local eq = CO_MAX * conc / (conc + CO_HALF_CONC)
+				local k = min(CO_UPTAKE * conc * timeValue, 1)
+
+				org.CO = min(org.CO + (eq - org.CO) * k, CO_MAX)
+			end
+		end
 
 		if org.holdingbreath then
 			local conc = min(org.breathCOConc or 0, org.COConcentration or 0)
 
 			if conc > CO_BREATHE_CONC then
-				org.CO = min(org.CO + timeValue * CO_ABSORB * conc + timeValue * 0.8, CO_MAX)
+				-- The gas already sitting in the lungs keeps being absorbed,
+				-- but it cannot push the blood past the level that same air
+				-- would have reached anyway - otherwise holding your breath
+				-- would poison you faster than breathing.
+				local eq = CO_MAX * conc / (conc + CO_HALF_CONC)
+
+				org.CO = min(org.CO + timeValue * CO_ABSORB * conc, eq)
 			end
 		end
 
-		if org.CO > 10 then
+		if org.CO > CO_SLEEP then
 			org.consciousness = math.min(org.consciousness, math.max((CO_MAX - org.CO) / 20, 0))
 		end
 
-		-- Severe poisoning damages the brain directly, and this damage is what
-		-- a dense cloud kills with: the deeper the blood is saturated, the
-		-- faster it happens. This is why a high concentration now kills in
-		-- well under a minute instead of just knocking the victim out.
-		if org.CO > CO_SEVERE then
-			local severity = (org.CO - CO_SEVERE) / (CO_MAX - CO_SEVERE)
-			org.brain = math.min(org.brain + timeValue * CO_BRAIN_RATE * severity, 1)
+		--[[Dose-dependent lethality.
+		There is no on/off kill threshold any more: the brain damage rate
+		follows the amount of gas in the blood through a steep power curve.
+		Measured against the model above (the hypoxia makes the top end a
+		little faster still):
+		  CO ~22 (thick plume):     dies in about 3.5 minutes;
+		  CO ~20:                   about 5 minutes;
+		  CO ~15:                   about 14 minutes;
+		  CO ~12 (thin haze):       about half an hour;
+		  CO ~10 (edge of a cloud): over an hour - and the victim can simply
+		                            walk out, the blood clears in seconds;
+		  CO below ~9:              the brain's own recovery outpaces the
+		                            damage, so a trace of gas never kills.
+		In other words: breathe a little of it and it eats you away for a very
+		long time, breathe a lot and it kills you - but never instantly, and
+		never before the victim has had a chance to walk out.----------------]]
+		if org.CO > 0.5 then
+			local dose = min(org.CO / CO_MAX, 1)
+			org.brain = min(org.brain + timeValue * CO_BRAIN_RATE * dose ^ CO_BRAIN_EXP, 1)
 		end
 
 		local mask_blevota = owner:GetNetVar("zableval_masku", false)

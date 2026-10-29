@@ -1,27 +1,12 @@
---[[-------------------------------------------------------------------------
-	CO gas — orchestration layer
-
-	This file owns the public API (hg.COGasAdd), the wind field, the network
-	layer and the admin commands. The actual gas dynamics live in
-	sv_co_grid.lua (hg_co_physics 1) or in the legacy pocket simulation below
-	(hg_co_physics 0).
-
-	Both models expose the same public surface, so nothing else in the addon
-	has to care which one is active:
-		hg.COGasAdd(pos, peak, vel, norepl, gen, heat)
-		hg.particles                       (legacy model only)
-		hg.COGetConcentration(pos)         (nil when the grid is disabled)
-		net "co_gas_vis" / "co_gas_grid"
----------------------------------------------------------------------------]]
-
 hg.co = hg.co or {}
 local co = hg.co
 
 local math_min = math.min
 local math_max = math.max
 local math_Rand = math.Rand
-local math_random = math.random
 local math_floor = math.floor
+local math_cos = math.cos
+local math_sin = math.sin
 local CurTime = CurTime
 local TraceLine = util.TraceLine
 local PointContents = util.PointContents
@@ -32,49 +17,42 @@ local istable = istable
 
 local MASK = MASK_SOLID
 local BLOCK = CONTENTS_SOLID
-local SIM_RATE = 0.25
-local MAX_POCKETS = 1200
-local MOVE_MULT = 1
-local MAX_GEN = 2
+local SIM_RATE = 0.2
+local MAX_GEN = 1
 local TAIL_LIFE = 50
-local PUFF_LIFE = 420
+local PUFF_LIFE = 170
 local SKY_DIST = 12000
+local SKY_HALF_LIFE = 0.6
+local CHILD_DELAY = 34
+local CHILD_PEAK = 0.7
+local CHILD_SPREAD = 14
+local AIM_SPEED_MIN = 34
+local AIM_SPEED_MAX = 58
+local AIM_TURN = 0.45
+local AIM_TURN_BIG = 1.1
+local AIM_TURN_BIG_CHANCE = 0.12
+local STEER_RATE = 0.75
+local TURB_AMP = 30
+local TURB_FREQ = 0.22
+local TURB_FREQ2 = 0.17
+local JITTER = 0.8
+local RISE_COLD = -5
+local RISE_HOT = 6
+local RISE_HEAT = 150
+local MAX_SEND = 1200
+local SEND_MIN_INT = 0.02
 
-local MAX_SEND = 800
-local SEND_RADIUS = 6000
-
---[[-------------------------------------------------------------------------
-	Wind field
-	Shared with the grid solver through co.wind.
----------------------------------------------------------------------------]]
---[[-------------------------------------------------------------------------
-	Wind field
-	---------------------------------------------------------------------------
-	The wind exists for exactly three jobs, all of them outdoors:
-
-	  1. Dispersal in the open. Gas released outside is carried away and
-	     diluted instead of hanging over the map forever.
-	  2. Ventilation through openings. A doorway or a broken window is a face
-	     with partial openness, so the wind blowing past it drags gas out of
-	     the room (and pushes it in). A room with a way out clears; a sealed
-	     room does not.
-	  3. A reason to close the doors during a gas attack.
-
-	Indoors the wind is deliberately zero - the outside wind does not blow
-	through a closed room. What mixes a sealed room is turbulent diffusion
-	(see hg_co_diffusion), which is how it works in reality.
----------------------------------------------------------------------------]]
 local wind = Vector(0, 0, 0)
 local nextWind = 0
 
 local function updateWind(now)
 	if nextWind < now then
-		nextWind = now + math_Rand(10, 25)
+		nextWind = now + math_Rand(12, 28)
 
 		local ang = math_Rand(0, math.pi * 2)
-		local spd = math_Rand(20, 55)
-		wind.x = math.cos(ang) * spd
-		wind.y = math.sin(ang) * spd
+		local spd = math_Rand(14, 38)
+		wind.x = math_cos(ang) * spd
+		wind.y = math_sin(ang) * spd
 		wind.z = 0
 	end
 
@@ -82,25 +60,18 @@ local function updateWind(now)
 end
 
 util.AddNetworkString("co_gas_vis")
-util.AddNetworkString("co_gas_grid")
 
---[[-------------------------------------------------------------------------
-	Trace budgets for the legacy pocket model
----------------------------------------------------------------------------]]
 local SKY_TRACE_BUDGET = 320
 local GAP_TRACE_BUDGET = 1000
 local skyTracesLeft = SKY_TRACE_BUDGET
 local gapTracesLeft = GAP_TRACE_BUDGET
 
--- Reused trace description tables: util.TraceLine copies what it needs, so the
--- same table can be reused for every trace instead of allocating a new one
 local trSky = { start = nil, endpos = Vector(), mask = MASK }
 local trMove = { start = nil, endpos = nil, mask = MASK }
 local trChild = { start = nil, endpos = nil, mask = MASK }
 local trGap = { start = nil, endpos = nil, mask = MASK }
 local trSlide = { start = nil, endpos = nil, mask = MASK }
 
--- Preallocated vectors used by the gap probing (rebuilt in place, never allocated)
 local gapOffs = {
 	Vector(), Vector(), Vector(), Vector(),
 	Vector(0, 0, -20), Vector(0, 0, -42), Vector(0, 0, 18),
@@ -118,9 +89,6 @@ local probes = {
 	Vector(0, 0, -8),
 }
 
---[[-------------------------------------------------------------------------
-	Public API
----------------------------------------------------------------------------]]
 local function gasFreePos(pos)
 	if band(PointContents(pos), BLOCK) == 0 then
 		if util.IsInWorld(pos) then return pos end
@@ -137,7 +105,6 @@ local function gasFreePos(pos)
 	return nil
 end
 
--- Legacy pocket creation (only used when hg_co_physics is 0)
 local function pocketAdd(pos, peak, vel, norepl, gen, heat)
 	if not isvector(pos) then return nil end
 
@@ -147,13 +114,14 @@ local function pocketAdd(pos, peak, vel, norepl, gen, heat)
 	local now = CurTime()
 
 	local particles = hg.particles
-	if #particles >= MAX_POCKETS then
+	local maxParts = co.maxparts:GetInt()
+	if #particles >= maxParts then
 		table.remove(particles, 1)
 	end
 
 	local ppos = Vector(fixed.x, fixed.y, fixed.z)
-	local vvel = vel and Vector(vel.x, vel.y, vel.z) or VectorRand(-40, 40)
-	local pocket = { ppos, vvel, now + PUFF_LIFE, math.max(peak or 0.5, 0.1), now, 0 }
+	local vvel = vel and Vector(vel.x, vel.y, vel.z) or VectorRand(-15, 15)
+	local pocket = { ppos, vvel, now + PUFF_LIFE, math_max(peak or 0.5, 0.1), now, 0 }
 	pocket[12] = gen or 0
 	if heat then
 		pocket[13] = math_max(heat, 0)
@@ -169,24 +137,11 @@ end
 
 function hg.COGasAdd(pos, peak, vel, norepl, gen, heat)
 	if not isvector(pos) then return nil end
-
-	if co.physics:GetBool() then
-		-- Grid model: the injection is a source term in the cell that holds
-		-- this position. `peak` keeps its old meaning (relative strength),
-		-- it is just scaled into concentration units.
-		local amount = (peak or 0.5) * co.INJECT_SCALE
-		return hg.COAddSource(pos, amount, heat and heat * 40 or 0)
-	end
-
 	return pocketAdd(pos, peak, vel, norepl, gen, heat)
 end
 
---[[-------------------------------------------------------------------------
-	Legacy pocket simulation
----------------------------------------------------------------------------]]
 local function skyExposed(part, now)
 	if (part[8] or 0) < now then
-		-- Out of trace budget: keep the previous result and retry next tick
 		if skyTracesLeft <= 0 then return part[7] end
 		skyTracesLeft = skyTracesLeft - 1
 
@@ -205,8 +160,22 @@ end
 
 local function newAim()
 	local ang = math_Rand(0, math.pi * 2)
-	local spd = math_Rand(60, 110)
-	return Vector(math.cos(ang) * spd, math.sin(ang) * spd, 0), math_Rand(4, 9)
+	local spd = math_Rand(AIM_SPEED_MIN, AIM_SPEED_MAX)
+	return Vector(math_cos(ang) * spd, math_sin(ang) * spd, 0), math_Rand(6, 11)
+end
+
+local function turnAim(aim)
+	local a = math_Rand(-AIM_TURN, AIM_TURN)
+	if math_Rand(0, 1) < AIM_TURN_BIG_CHANCE then
+		a = a + (math_Rand(0, 1) < 0.5 and -AIM_TURN_BIG or AIM_TURN_BIG)
+	end
+	local c, s = math_cos(a), math_sin(a)
+	local dir = Vector(aim.x * c - aim.y * s, aim.x * s + aim.y * c, 0)
+	if dir:LengthSqr() < 1 then
+		dir = Vector(1, 0, 0)
+	end
+	dir:Normalize()
+	return dir * math_Rand(AIM_SPEED_MIN, AIM_SPEED_MAX)
 end
 
 local function simPocket(part, dt, now)
@@ -219,9 +188,9 @@ local function simPocket(part, dt, now)
 	local aim = part[10]
 	if not isvector(aim) or (part[9] or 0) < now then
 		local steer, ttl
-		if isvector(aim) and math_random(2) == 1 then
-			steer = Vector(aim.x, aim.y, 0) * math_Rand(0.8, 1.3)
-			ttl = math_Rand(3, 7)
+		if isvector(aim) then
+			steer = turnAim(aim)
+			ttl = math_Rand(6, 11)
 		else
 			steer, ttl = newAim()
 		end
@@ -230,21 +199,19 @@ local function simPocket(part, dt, now)
 		aim = steer
 	end
 
-	if part[11] ~= false and (now - part[5]) >= 10 and (part[12] or 0) < MAX_GEN then
+	if part[11] ~= false and (now - part[5]) >= CHILD_DELAY and (part[12] or 0) < MAX_GEN then
 		part[11] = false
 
-		for i = 1, 2 do
-			local cpos = Vector(pos.x + math_Rand(-20, 20), pos.y + math_Rand(-20, 20), pos.z + math_Rand(-12, 12))
-			trChild.start = pos
-			trChild.endpos = cpos
-			local ctr = TraceLine(trChild)
-			if not ctr.Hit and not ctr.StartSolid then
-				pocketAdd(cpos, (part[4] or 0.5) * 0.85, vel, false, (part[12] or 0) + 1, part[13])
-			end
+		local cpos = Vector(pos.x + math_Rand(-CHILD_SPREAD, CHILD_SPREAD), pos.y + math_Rand(-CHILD_SPREAD, CHILD_SPREAD), pos.z + math_Rand(-8, 8))
+		trChild.start = pos
+		trChild.endpos = cpos
+		local ctr = TraceLine(trChild)
+		if not ctr.Hit and not ctr.StartSolid then
+			pocketAdd(cpos, (part[4] or 0.5) * CHILD_PEAK, vel, false, (part[12] or 0) + 1, part[13])
 		end
 	end
 
-	local shift = vel * dt * MOVE_MULT
+	local shift = vel * (dt * co.speed:GetFloat())
 	local dist = shift:Length()
 	if dist > 0.1 then
 		trMove.start = pos
@@ -279,8 +246,6 @@ local function simPocket(part, dt, now)
 				end
 				tan:Normalize()
 
-				-- Gap probing is the most expensive part of the simulation: only run it
-				-- while we have budget left, otherwise retry it on the next tick
 				if (part[15] or 0) < now and gapTracesLeft > 0 then
 					part[15] = now + 0.5
 
@@ -318,7 +283,9 @@ local function simPocket(part, dt, now)
 								pos:Set(tmpEnter)
 							end
 
-							steer = dir * math_Rand(70, 120)
+							local ja = math_Rand(-0.9, 0.9)
+							local cj, sj = math_cos(ja), math_sin(ja)
+							steer = Vector(dir.x * cj - dir.y * sj, dir.x * sj + dir.y * cj, 0) * math_Rand(40, 70)
 							gapFound = true
 							break
 						end
@@ -326,7 +293,7 @@ local function simPocket(part, dt, now)
 				end
 
 				if not gapFound then
-					steer = tan * math_Rand(70, 120)
+					steer = tan * math_Rand(40, 70)
 
 					if rem > 2 then
 						trSlide.start = pos
@@ -342,7 +309,7 @@ local function simPocket(part, dt, now)
 			end
 
 			aim:Set(steer)
-			part[9] = now + (gapFound and 2 or math_Rand(3, 7))
+			part[9] = now + (gapFound and math_Rand(1.5, 3) or math_Rand(2.5, 5))
 			vel.x = steer.x
 			vel.y = steer.y
 		else
@@ -351,29 +318,30 @@ local function simPocket(part, dt, now)
 	end
 
 	local ph = part[14] or 0
-	local turbX = math.sin(now * 0.5 + ph) * 30
-	local turbY = math.cos(now * 0.37 + ph * 1.3) * 30
+	local turb = TURB_AMP * co.turbulence:GetFloat()
+	local turbX = math_sin(now * TURB_FREQ + ph) * turb
+	local turbY = math_cos(now * TURB_FREQ2 + ph * 1.3) * turb
 	local wk = part[7] and 1 or 0.25
-	local k = math_min(dt * 1.5, 1)
+	local k = math_min(dt * STEER_RATE, 1)
 
-	vel.x = Lerp(k, vel.x, aim.x + wind.x * wk + turbX) + math_Rand(-2.5, 2.5)
-	vel.y = Lerp(k, vel.y, aim.y + wind.y * wk + turbY) + math_Rand(-2.5, 2.5)
+	vel.x = Lerp(k, vel.x, aim.x + wind.x * wk + turbX) + math_Rand(-JITTER, JITTER)
+	vel.y = Lerp(k, vel.y, aim.y + wind.y * wk + turbY) + math_Rand(-JITTER, JITTER)
 
 	local heat = part[13] or 0
 	if heat > 0 then
-		part[13] = math_max(heat - dt * 0.07, 0)
+		part[13] = math_max(heat - dt * 0.12, 0)
 	end
 
-	local riseTarget = heat > 0.05 and (10 + heat * 240) or -12
-	vel.z = Lerp(math_min(dt * 2, 1), vel.z, riseTarget) + math_Rand(-3, 3)
-	vel.z = math_max(-10, math_min(vel.z, 300))
+	local riseTarget = heat > 0.05 and (RISE_HOT + heat * RISE_HEAT) or RISE_COLD
+	vel.z = Lerp(math_min(dt * 1.2, 1), vel.z, riseTarget) + math_Rand(-1, 1)
+	vel.z = math_max(-8, math_min(vel.z, 220))
 
 	local peak = part[4]
 	local age = now - part[5]
 	local remain = part[3] - now
 
 	if skyExposed(part, now) then
-		part[4] = peak * 0.5
+		part[4] = peak * 0.5 ^ (dt / SKY_HALF_LIFE)
 		if part[4] < 0.05 then
 			part[3] = now
 			part[4] = 0
@@ -382,16 +350,12 @@ local function simPocket(part, dt, now)
 		end
 	end
 
-	part[6] = math_max(math_min(age / 2.5, 1) * math_min(remain / TAIL_LIFE, 1) * part[4], 0)
+	part[6] = math_max(math_min(age / 4, 1) * math_min(remain / TAIL_LIFE, 1) * part[4], 0)
 	return false
 end
 
---[[-------------------------------------------------------------------------
-	Networking
----------------------------------------------------------------------------]]
 local sendPos = {}
 local sendInt = {}
-local sendCells = {}
 
 local function getViewers()
 	local viewers = nil
@@ -404,16 +368,15 @@ local function getViewers()
 	return viewers
 end
 
--- Legacy: send pockets
 local function sendPockets(viewers)
 	local count = 0
 
 	for i = 1, #hg.particles do
-		if count >= MAX_POCKETS then break end
+		if count >= MAX_SEND then break end
 
 		local part = hg.particles[i]
 		local inten = part[6]
-		if inten and inten > 0.02 then
+		if inten and inten > SEND_MIN_INT then
 			count = count + 1
 			sendPos[count] = part[1]
 			sendInt[count] = inten
@@ -434,79 +397,13 @@ local function sendPockets(viewers)
 	end
 end
 
--- Grid: send the cells that carry gas near a viewer
-local function sendGrid(viewers)
-	local list, count = hg.COGetCells()
-	if count <= 0 then return end
-
-	local L = hg.COGetCellSize()
-	local radiusSqr = SEND_RADIUS * SEND_RADIUS
-	local sendCount = 0
-
-	for i = 1, count do
-		local cell = list[i]
-		local c = cell.c
-		if c > 0.02 then
-			local p = cell.pos
-			for j = 1, #viewers do
-				if p:DistToSqr(viewers[j]:GetPos()) < radiusSqr then
-					sendCount = sendCount + 1
-					sendCells[sendCount] = cell
-					break
-				end
-			end
-		end
-	end
-
-	if sendCount <= 0 then return end
-
-	-- Cap the payload: keep the strongest cells so the field looks stable
-	if sendCount > MAX_SEND then
-		table.sort(sendCells, function(a, b) return a.c > b.c end)
-		for i = MAX_SEND + 1, sendCount do
-			sendCells[i] = nil
-		end
-		sendCount = MAX_SEND
-	end
-
-	net.Start("co_gas_grid")
-	net.WriteFloat(L)
-	net.WriteUInt(sendCount, 16)
-	for i = 1, sendCount do
-		local cell = sendCells[i]
-		-- Concentration is capped for the wire: anything above 1.0 already
-		-- renders as fully opaque, and 0..1 fits comfortably in 8 bits.
-		local c = cell.c
-		if c > 1 then c = 1 end
-		net.WriteVector(cell.pos)
-		net.WriteUInt(math_min(math_floor(c * 100 + 0.5), 255), 8)
-	end
-	net.Send(viewers)
-
-	for i = 1, sendCount do
-		sendCells[i] = nil
-	end
-end
-
---[[-------------------------------------------------------------------------
-	Commands
----------------------------------------------------------------------------]]
 concommand.Add("hg_cogas", function(ply)
 	if not (IsValid(ply) and ply:IsAdmin()) then return end
 	local pos = ply:GetPos() + ply:GetAimVector() * 60
 	pos.z = pos.z + 20
 
-	if co.physics:GetBool() then
-		-- Fill the surrounding volume, not a single point
-		local L = hg.COGetCellSize()
-		for i = 1, 24 do
-			hg.COAddSource(pos + VectorRand(-L, L), 0.08, 15)
-		end
-		return
-	end
-
-	for i = 1, 24 do
-		hg.COGasAdd(pos + VectorRand(-30, 30), 0.8)
+	for i = 1, 10 do
+		hg.COGasAdd(pos + VectorRand(-30, 30), 0.6)
 	end
 end)
 
@@ -526,9 +423,17 @@ concommand.Add("hg_covis", function(ply, _, args)
 	ply:ChatPrint("CO gas visibility: " .. (state and "ON" or "OFF"))
 end)
 
---[[-------------------------------------------------------------------------
-	Main tick
----------------------------------------------------------------------------]]
+concommand.Add("hg_co_clear", function(ply)
+	if IsValid(ply) and not ply:IsAdmin() then return end
+	hg.particles = {}
+end)
+
+concommand.Add("hg_co_count", function(ply)
+	local msg = string.format("[CO gas] pockets=%d  speed=%.2f  turbulence=%.2f",
+		#hg.particles, co.speed:GetFloat(), co.turbulence:GetFloat())
+	if IsValid(ply) then ply:ChatPrint(msg) else print(msg) end
+end)
+
 local lastSim = 0
 local lastNet = 0
 
@@ -541,53 +446,40 @@ end)
 hook.Add("Think", "co_gas_sim", function()
 	local now = CurTime()
 
-	-- The wind field is shared by both models
 	updateWind(now)
 
-	local gridMode = co.physics:GetBool()
+	if lastSim + SIM_RATE <= now then
+		local dt = math_min(now - lastSim, 0.5)
+		lastSim = now
 
-	if gridMode then
-		-- Volumetric solver (sv_co_grid.lua)
-		if hg.COGridThink then hg.COGridThink() end
-	else
-		-- Legacy pocket solver
-		if lastSim + SIM_RATE <= now then
-			local dt = math_min(now - lastSim, 0.5)
-			lastSim = now
+		skyTracesLeft = SKY_TRACE_BUDGET
+		gapTracesLeft = GAP_TRACE_BUDGET
 
-			skyTracesLeft = SKY_TRACE_BUDGET
-			gapTracesLeft = GAP_TRACE_BUDGET
-
-			local particles = hg.particles
-			for i = #particles, 1, -1 do
-				local part = particles[i]
-				if not istable(part) or not isvector(part[1]) or not isvector(part[2]) or (part[3] or 0) < now or not util.IsInWorld(part[1]) then
-					table.remove(particles, i)
-					continue
-				end
-
-				if simPocket(part, dt, now) then
-					table.remove(particles, i)
-				end
+		local particles = hg.particles
+		for i = #particles, 1, -1 do
+			local part = particles[i]
+			if not istable(part) or not isvector(part[1]) or not isvector(part[2]) or (part[3] or 0) < now or not util.IsInWorld(part[1]) then
+				table.remove(particles, i)
+				continue
 			end
 
-			while #particles > MAX_POCKETS do
-				table.remove(particles, 1)
+			if simPocket(part, dt, now) then
+				table.remove(particles, i)
 			end
+		end
+
+		local maxParts = co.maxparts:GetInt()
+		while #particles > maxParts do
+			table.remove(particles, 1)
 		end
 	end
 
-	-- Network the visible gas twice per second
 	if lastNet < now then
 		lastNet = now + 0.5
 
 		local viewers = getViewers()
 		if viewers then
-			if gridMode then
-				sendGrid(viewers)
-			else
-				sendPockets(viewers)
-			end
+			sendPockets(viewers)
 		end
 	end
 end)
