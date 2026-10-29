@@ -100,7 +100,8 @@ function SWEP:PrimaryAttack()
 				if Tr.Hit then owner:SetVelocity(-owner:GetAimVector() * 300) end
 			end
 
-			if owner.organism then owner.organism.stamina.subadd = 1.5 end
+			-- += not = : this used to erase whatever cost another weapon had queued in the same tick
+			if owner.organism then owner.organism.stamina.subadd = owner.organism.stamina.subadd + 1.5 end
 			owner:DoAnimationEvent(ACT_GMOD_GESTURE_MELEE_SHOVE_1HAND)
 			owner:ViewPunch(Angle(-1, math.random(-1, 1), math.random(-1, 1)))
 		end
@@ -125,7 +126,7 @@ function SWEP:SecondaryAttack()
 	if self:GetCurrentState() == "Nothing" then
 		if IsValid(self.GrapplinHook) then
 			self.DesiredDist = math.Clamp(self.DesiredDist + 50, 10, 4000)
-			if owner.organism then owner.organism.stamina.subadd = 1 end
+			if owner.organism then owner.organism.stamina.subadd = owner.organism.stamina.subadd + 1 end
 			owner:ViewPunch(Angle(-1, 0, 0))
 		end
 
@@ -378,7 +379,7 @@ function SWEP:CustomThink(State, Sprintin, HiddenAmt, BackAmt)
 			self.NextSpinWhooshTime = CurTime() + math.Clamp(10 / Pow, .3, 1.25)
 			sound.Play("weapons/slam/throw.wav", self:GetPos(), 65, math.Clamp(Pow, 60, 130))
 			owner:ViewPunch(Angle(-1, 0, 0))
-			if owner.organism then owner.organism.stamina.subadd = 1.5 end
+			if owner.organism then owner.organism.stamina.subadd = owner.organism.stamina.subadd + 1.5 end
 		end
 
 		if SERVER then

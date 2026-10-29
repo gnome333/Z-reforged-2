@@ -483,6 +483,8 @@ end
 			ply.CrouchSlowUntil = 0
 			ply.OldCrouched = nil
 			ply.MovementInertiaAddView = nil
+			-- the sprint gate keeps its state on the player, so it has to be cleared on respawn
+			ply.StaminaSprintBlocked = nil
 		end)
 
 		if SERVER then

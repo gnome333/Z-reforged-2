@@ -60,7 +60,7 @@ if not game.IsDedicated() then
 	hg.settings:AddOpt("Server-side settings","hg_thirdperson", "Thirdperson (WIP)")
 	hg.settings:AddOpt("Server-side settings","hg_legacycam", "Legacy camera")
 	hg.settings:AddOpt("Server-side settings","hg_ragdollcombat", "Ragdoll combat mode")
-	hg.settings:AddOpt("Server-side settings","hg_movement_stamina_debuff", "Movement stamina debuff")
+	hg.settings:AddOpt("Server-side settings","hg_stamina_debuff_floor", "Lowest speed multiplier at zero stamina")
 	hg.settings:AddOpt("Server-side settings","hg_furcity", "Furcity")
 	hg.settings:AddOpt("Server-side settings","hg_appearance_access_for_all", "Appearance full access for all", nil, nil, "bool")
 	hg.settings:AddOpt("Server-side settings","hg_healanims", "Heal & food animations")

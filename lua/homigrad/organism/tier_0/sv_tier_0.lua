@@ -71,7 +71,10 @@ hook.Add("Think", "homigrad-organism", function()
 		return
 	end
 	
-	mulTime = (SysTime() - start) * game.GetTimeScale()
+	-- SysTime() keeps running while the server is frozen (map load, pause, lag spike), so the first
+	-- tick after a stall used to hand every module a huge timeValue and drain a whole stamina bar
+	-- in a single step. Cap it at a quarter second -- four missed ticks is already an anomaly.
+	mulTime = math.min((SysTime() - start) * game.GetTimeScale(), 0.25)
 
 	start = SysTime()
 	for owner, org in pairs(hg.organism.list) do -- теперь ясно почему от трупов лагает...

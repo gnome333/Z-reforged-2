@@ -43,7 +43,81 @@ local Angle, Vector, AngleRand, VectorRand, math, hook, util, game = Angle, Vect
 		hg.approach_vector = approach_vector
 	--//
 
-	local hg_movement_stamina_debuff = CreateConVar("hg_movement_stamina_debuff", "0.3", {FCVAR_REPLICATED,FCVAR_ARCHIVE,FCVAR_NOTIFY}, "Multiply movement debuff when having low stamina", 0, 1)
+	--\\ Stamina
+		-- The sprint cut-off and the speed penalty both used to be built on the absolute stamina
+		-- value against a hardcoded 180/120. Two consequences:
+		--   * anything with stamina.max above 180 (homicide traitors run at 300) never hit the
+		--     penalty at all, because the clamped expression stayed at 1;
+		--   * the cut-off sat exactly on the value the regeneration pulls towards, so at the wall
+		--     sprint toggled on and off about six times per second -- a stutter, not fatigue.
+		-- Both are now driven by hg.stamina.ratio() (see organism/sh_stamina.lua), and the gate
+		-- uses a hysteresis band instead of a single threshold.
+		local hg_stamina_debuff_start = CreateConVar("hg_stamina_debuff_start", "0.75", {FCVAR_REPLICATED,FCVAR_ARCHIVE,FCVAR_NOTIFY}, "Stamina ratio below which movement starts to slow down", 0, 1)
+		local hg_stamina_debuff_floor = CreateConVar("hg_stamina_debuff_floor", "0.6", {FCVAR_REPLICATED,FCVAR_ARCHIVE,FCVAR_NOTIFY}, "Lowest speed multiplier reached at zero stamina", 0.1, 1)
+		local hg_stamina_sprint_block = CreateConVar("hg_stamina_sprint_block", "0.10", {FCVAR_REPLICATED,FCVAR_ARCHIVE,FCVAR_NOTIFY}, "Stamina ratio below which sprint is blocked", 0, 1)
+		local hg_stamina_sprint_unblock = CreateConVar("hg_stamina_sprint_unblock", "0.30", {FCVAR_REPLICATED,FCVAR_ARCHIVE,FCVAR_NOTIFY}, "Stamina ratio above which sprint is allowed again", 0, 1)
+		local hg_adrenaline_speed = CreateConVar("hg_adrenaline_speed_bonus", "0.12", {FCVAR_REPLICATED,FCVAR_ARCHIVE,FCVAR_NOTIFY}, "Maximum speed bonus from full adrenaline (0.12 = +12%)", 0, 1)
+
+		-- Adrenaline is a 0..5 value (sv_pain pushes it to 4, the injector clamps it at 5). The old
+		-- expression was math.min(Round(a, 1) / 24, 0.3) + 1, whose cap of 0.3 was unreachable --
+		-- adrenaline would have had to reach 7.2 to hit it -- so it silently gave +21% at the top of
+		-- the range. Written out plainly instead: a small, deliberate bonus, tunable in one place.
+		local function adrenaline_speed_mul(org)
+			local a = math.Clamp((org and org.adrenaline or 0) / 5, 0, 1)
+
+			if a <= 0 then return 1 end
+
+			return 1 + hg_adrenaline_speed:GetFloat() * a
+		end
+
+		-- Ground surface: loose ground costs a little top speed. The trace is cached inside
+		-- hg.stamina.groundSurfaceMuls (0.2s), so running this per usercmd is cheap, and tracing
+		-- locally on both sides keeps client prediction in step with the server -- a networked
+		-- value would only arrive about once a second.
+		local function surface_speed_mul(ply)
+			if not (hg.stamina and hg.stamina.groundSurfaceMuls) then return 1 end
+
+			local _, speed = hg.stamina.groundSurfaceMuls(ply)
+
+			return speed or 1
+		end
+
+		-- Smooth, normalised speed penalty. 1.0 above the start ratio, easing down to the floor at
+		-- zero. The old curve dropped straight to 0.3, which turned a tired player into a snail
+		-- instead of a tired player.
+		local function stamina_speed_mul(ratio)
+			local start = hg_stamina_debuff_start:GetFloat()
+
+			if ratio >= start then return 1 end
+
+			local t = math.Clamp(ratio / math.max(start, 0.01), 0, 1)
+
+			t = t * t * (3 - 2 * t)
+
+			return Lerp(t, hg_stamina_debuff_floor:GetFloat(), 1)
+		end
+
+		-- Sprint gate with hysteresis: block below the low threshold, allow again above the high
+		-- one. The state lives on the player so both realms behave the same way for the same
+		-- synced stamina value.
+		local function stamina_sprint_blocked(ply, org)
+			local natural = hg.stamina and hg.stamina.ratio(org) or 1
+			local low = hg_stamina_sprint_block:GetFloat()
+			-- keep the band positive even if the two convars are set the wrong way round
+			local high = math.max(hg_stamina_sprint_unblock:GetFloat(), low + 0.05)
+
+			if ply.StaminaSprintBlocked then
+				if natural >= high then
+					ply.StaminaSprintBlocked = false
+				end
+			elseif natural <= low then
+				ply.StaminaSprintBlocked = true
+			end
+
+			return ply.StaminaSprintBlocked and true or false
+		end
+	--//
+
 	local hg_inertiamul = CreateConVar("hg_inertiamul", "1", {FCVAR_REPLICATED,FCVAR_ARCHIVE,FCVAR_NOTIFY}, "Multiply inertia for player movement", 0.01, 5)
 	-- "hg_inertiaenabled" used to sit here with a default of 0 and FCVAR_ARCHIVE, but it never did
 	-- anything (only the mv write at the bottom was gated by it), so every install has a stale
@@ -142,10 +216,10 @@ local Angle, Vector, AngleRand, VectorRand, math, hook, util, game = Angle, Vect
 			return
 		end
 
-			local vel0 = ply:GetVelocity()
-		local velLen0 = vel0:Length()
-
-		if not IsValid(ply.FakeRagdoll) and ply:KeyDown(IN_SPEED) and not ply:Crouching() and (ply:KeyDown(IN_BACK) or (org.stamina and org.stamina[1] and org.stamina[1] < 30 and velLen0 > 200)) then
+		-- Backpedalling always strips sprint. The stamina cut-off used to be a third clause here
+		-- (stamina < 30 while already moving faster than 200) and is now the hysteresis gate, which
+		-- does not depend on the current velocity and therefore cannot oscillate with it.
+		if not IsValid(ply.FakeRagdoll) and ply:KeyDown(IN_SPEED) and not ply:Crouching() and (ply:KeyDown(IN_BACK) or stamina_sprint_blocked(ply, org)) then
 			cmd:RemoveKey(IN_SPEED)
 			mv:RemoveKey(IN_SPEED)
 		end
@@ -425,11 +499,12 @@ local Angle, Vector, AngleRand, VectorRand, math, hook, util, game = Angle, Vect
 		k = k * math.Clamp(consmul, 0.7, 1)
 		k = k * math.Clamp((org.temperature and (1 - (org.temperature - 38) * 0.25) or 1), 0.5, 1)
 		k = k * math.Clamp((org.temperature and ((org.temperature - 35) * 0.25 + 1) or 1), 0.5, 1)
-		k = k * math.Clamp(math.Round((org.stamina and org.stamina[1] or 180), 0) / 120, hg_movement_stamina_debuff:GetFloat(), 1)
+		k = k * stamina_speed_mul(hg.stamina and hg.stamina.ratio(org) or 1)
 		k = k * math.Clamp(5 / ((org.immobilization or 0) + 1), 0.45, 1)
 		k = k * math.Clamp((org.blood or 0) / 5000, 0, 1)
 		k = k * math.Clamp(10 / ((org.shock or 0) + 1), 0.45, 1)
-		k = k * (math.min(math.Round((org.adrenaline or 0), 1) / 24, 0.3) + 1)
+		k = k * adrenaline_speed_mul(org)
+		k = k * surface_speed_mul(ply)
 		k = k * math.Clamp((org.lleg and org.lleg >= 0.5 and math.max(1 - org.lleg, 0.6) or 1) * (org.rleg and org.rleg >= 0.5 and math.max(1 - org.rleg, 0.6) or 1) * ((org.analgesia or 0) * 1 + 1), 0, 1)
 		k = k * (org.llegdislocation and 0.75 or 1) * (org.rlegdislocation and 0.75 or 1)
 		k = k * (org.pelvis == 1 and 0.4 or 1)

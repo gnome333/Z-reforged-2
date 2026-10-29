@@ -365,7 +365,9 @@ hook.Add("Bones", "homigrad-lean-bone", function(ply, dtime)
 		local leanStamina = math.Round(ply.lean,2)
 
 		if ply.takeOldLeanStamina > leanStamina and leanStamina < 0.9 then
-			ply.organism.stamina.subadd = 0.85 * math.max(ply.organism.stamina[1]/ply.organism.stamina.range,0.85)
+			-- this used to overwrite subadd instead of adding to it, so leaning silently erased the
+			-- cost of every punch and block charged during the same organism tick
+			ply.organism.stamina.subadd = ply.organism.stamina.subadd + 0.85 * math.max(ply.organism.stamina[1]/ply.organism.stamina.range,0.85)
 		end
 
 		if ply.takeOldLeanStamina != leanStamina then
