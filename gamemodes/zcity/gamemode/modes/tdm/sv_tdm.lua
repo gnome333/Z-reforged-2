@@ -255,6 +255,8 @@ local function loadBoughtAmmo(ply, ammoName)
 	end)
 end
 
+local MaxGrenadeCount = 3
+
 local function buyItem(ply, tItem, silent)
 	local function notify(msg)
 		if silent then return end
@@ -316,6 +318,23 @@ local function buyItem(ply, tItem, silent)
 	if item.TeamBased != nil and item.TeamBased != ply:Team() then notify("This item is not available for your team.") return false end
 
 	if ((ply:GetNWInt("TDM_Money",0) - item.Price) < 0) then notify("Not enough money.") return false end
+
+	-- Stackable grenades: allow buying up to MaxGrenadeCount of the same type
+	local currentGrenade = ply:GetWeapon(item.ItemClass)
+	if IsValid(currentGrenade) and currentGrenade.count ~= nil then
+		if currentGrenade.count >= MaxGrenadeCount then
+			notify("You already have the maximum amount (" .. MaxGrenadeCount .. ") of this grenade.")
+			return false
+		end
+
+		currentGrenade.count = currentGrenade.count + 1
+
+		ply:SetNWInt( "TDM_Money", ply:GetNWInt("TDM_Money",0) - item.Price )
+		ply:EmitSound("items/itempickup.wav")
+
+		return true
+	end
+
 	local ent = ply:Give(item.ItemClass)
 
 	if not IsValid(ent) then

@@ -138,7 +138,8 @@ AddItemToBUY( "M67", "Weapon", "weapon_hg_grenade_tpik", 500, "Explosive", {}, n
 AddItemToBUY( "RGD-5", "Weapon", "weapon_hg_rgd_tpik", 450, "Explosive", {}, nil, 0 )
 AddItemToBUY( "F-1", "Weapon", "weapon_hg_f1_tpik", 500, "Explosive", {}, nil, 0 )
 AddItemToBUY( "Smoke Grenade", "Weapon", "weapon_hg_smokenade_tpik", 250, "Explosive", {}, nil, 0 )
-AddItemToBUY( "Flashbang", "Weapon", "weapon_hg_flashbang_tpik", 250, "Explosive", {} )
+AddItemToBUY( "Flashbang", "Weapon", "weapon_hg_flashbang_tpik", 250, "Explosive", {}, nil, 1 )
+AddItemToBUY( "Molotov Cocktail", "Weapon", "weapon_hg_molotov_tpik", 500, "Explosive", {}, nil, 0 )
 
 --Ammo
 AddItemToBUY( "7.62x39mm (30)", "Ammo", "ent_ammo_7.62x39mm", 100, "Ammo", {}, 30)

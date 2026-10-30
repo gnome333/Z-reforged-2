@@ -103,6 +103,10 @@ local function PaintPanel1(self, w, h)
 	surface.SetDrawColor(th.Shop.r, th.Shop.g, th.Shop.b, 55)
 	surface.SetMaterial(gradient_l)
 	surface.DrawTexturedRect(0, 0, w / 1.5, h)
+	if self.DoClick and (self:IsHovered() or self:IsChildHovered()) then
+		surface.SetDrawColor(th.Shop.r, th.Shop.g, th.Shop.b, 22)
+		surface.DrawRect(0, 0, w, h)
+	end
 end
 
 local function PaintPanel2(self, w, h)
@@ -190,11 +194,40 @@ local function OpenBuyMenu()
 			local weapon = weapons.GetStored(Item.ItemClass)
 			local ent = scripted_ents.GetStored(Item.ItemClass)
 
-			local ItemPanel = vgui.Create("DPanel", CategoryPanel)
+			local ammoItem
+			if weapon then
+				local ammo = weapon.Primary.Ammo != "none" and weapon.Primary.Ammo or weapon.Ammo or (weapons.GetStored(weapon.Base) and weapons.GetStored(weapon.Base).Primary.Ammo)
+
+				if hg.ammotypeshuy[ammo] then
+					local ammoClass = "ent_ammo_" .. hg.ammotypeshuy[ammo].name
+					for name2, shopAmmo in pairs(MODE.BuyItems["Ammo"] or {}) do
+						if not istable(shopAmmo) then continue end
+						if shopAmmo.ItemClass == ammoClass then
+							ammoItem = name2
+						end
+					end
+				end
+			end
+
+			local ItemPanel = vgui.Create("DButton", CategoryPanel)
 			ItemPanel:SetSize(0, ScrH() * 0.12)
 			ItemPanel:Dock(TOP)
 			ItemPanel:DockMargin(0, 8, 0, 0)
 			ItemPanel.Paint = PaintPanel1
+			ItemPanel:SetText("")
+			ItemPanel:SetCursor("hand")
+
+			function ItemPanel:DoClick()
+				local item = {k, n}
+
+				if ammoItem and IsValid(LocalPlayer():GetWeapon(Item.ItemClass)) then
+					item = {"Ammo", ammoItem}
+				end
+
+				net.Start("tdm_buyitem")
+					net.WriteTable(item)
+				net.SendToServer()
+			end
 
 			if (weapon ~= nil and ((weapon.WepSelectIcon2 and weapon.WepSelectIcon2:GetName()) or weapon.IconOverride)) or ((ent and ent.t.IconOverride)) then
 				local ItemButton = vgui.Create("DImage", ItemPanel)
@@ -204,6 +237,7 @@ local function OpenBuyMenu()
 				local boxed = ScrH() * 0.07 / 2
 				ItemButton:DockMargin(5 + (bBox and boxed or 0), 5, 5 + (bBox and boxed or 0), 5)
 				ItemButton:SetImage((weapon ~= nil and ((weapon.WepSelectIcon2 and weapon.WepSelectIcon2:GetName() .. ".png") or weapon.IconOverride)) or ((ent and ent.t.IconOverride) or "none"))
+				ItemButton:SetMouseInputEnabled(false)
 			end
 
 			local AttCount = Item.Attachments and #Item.Attachments or 0
@@ -248,6 +282,7 @@ local function OpenBuyMenu()
 			ItemButton:Dock(FILL)
 			ItemButton:DockMargin(0, 5, 0, 0)
 			ItemButton.Paint = function() end
+			ItemButton:SetMouseInputEnabled(false)
 
 			local lbl = vgui.Create("DLabel", ItemButton)
 			lbl:SetText(n)
@@ -255,85 +290,30 @@ local function OpenBuyMenu()
 			lbl:Dock(TOP)
 			lbl:SetFont("ZB_TDM_MENU")
 			lbl:SetSize(ScrW() * 0.5, ScrH() * 0.04)
+			lbl:SetMouseInputEnabled(false)
 
 			local lbl = vgui.Create("DLabel", ItemButton)
-			local refillPrice = GetRefillPrice(Item.ItemClass)
-			lbl:SetText(refillPrice and ("Refill: $" .. refillPrice) or ("Price: $" .. Item.Price))
 			lbl:DockMargin(10, 0, 5, 0)
 			lbl:Dock(TOP)
 			lbl:SetTextColor(th.Price)
 			lbl:SetFont("ZB_TDM_DESC")
 			lbl:SetSize(ScrW() * 0.5, ScrH() * 0.02)
+			lbl:SetMouseInputEnabled(false)
 
-			local BuyBtn = vgui.Create("DButton", ItemButton)
-			BuyBtn:DockMargin(10, 5, 10, 10)
-			BuyBtn:Dock(LEFT)
-			BuyBtn:SetText("Buy")
-			BuyBtn:SetTextColor(Color(200, 200, 200))
-			BuyBtn:SetFont("ZB_TDM_DESC")
-			BuyBtn:SetHeight(ScrH() * 0.025)
-			BuyBtn.Paint = PaintPanel
-			BuyBtn.Item = {k, n}
+			function lbl:Think()
+				if (self.NextPriceUpdate or 0) > CurTime() then return end
+				self.NextPriceUpdate = CurTime() + 0.25
 
-			function BuyBtn:DoClick()
-				net.Start("tdm_buyitem")
-					net.WriteTable(self.Item)
-				net.SendToServer()
-			end
+				local refillPrice = GetRefillPrice(Item.ItemClass)
+				local ammoPrice = ammoItem and MODE.BuyItems["Ammo"][ammoItem].Price
 
-			if weapon then
-				local ammo = weapon.Primary.Ammo != "none" and weapon.Primary.Ammo or weapon.Ammo or (weapons.GetStored(weapon.Base) and weapons.GetStored(weapon.Base).Primary.Ammo)
-
-				if hg.ammotypeshuy[ammo] then
-					local ammoName = ammo
-					local short = string.match(ammoName, "^%S+") or ammoName
-
-					surface.SetFont("ZB_TDM_DESCSMALL")
-					local w = surface.GetTextSize(short)
-
-					local amm = vgui.Create("DButton", ItemButton)
-					amm:DockMargin(10, 5, 10, 10)
-					amm:Dock(LEFT)
-					amm:SetText("")
-					amm:SetFont("ZB_TDM_DESCSMALL")
-					amm:SetHeight(ScrH() * 0.021)
-					amm:SetWidth(math.max(w + 10, ScrH() * 0.03))
-					amm:SetTooltip("Buy ammo: " .. ammoName)
-
-					local ammoClass = "ent_ammo_" .. hg.ammotypeshuy[ammoName].name
-					local name
-					for name2, ammoEntry in pairs(MODE.BuyItems["Ammo"] or {}) do
-						if not istable(ammoEntry) then continue end
-						if ammoEntry.ItemClass == ammoClass then
-							name = name2
-						end
-					end
-
-					if not name then
-						amm:SetMouseInputEnabled(false)
-					end
-
-					local col = name and Color(200, 200, 200) or Color(110, 110, 110)
-
-					amm.huy = {"Ammo", name}
-
-					function amm:DoClick()
-						if not self.huy[2] then return end
-
-						net.Start("tdm_buyitem")
-							net.WriteTable(self.huy)
-						net.SendToServer()
-					end
-
-					amm.Paint = function(self, ww, hh)
-						surface.SetDrawColor(0, 0, 0, 170)
-						surface.DrawRect(0, 0, ww, hh)
-						surface.SetDrawColor(255, 0, 0, 128)
-						surface.DrawOutlinedRect(0, 0, ww, hh, 1)
-						draw.SimpleText(short, "ZB_TDM_DESCSMALL", ww * 0.5, hh * 0.5, col, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
-					end
+				if ammoPrice and IsValid(LocalPlayer():GetWeapon(Item.ItemClass)) then
+					self:SetText("Ammo: $" .. ammoPrice)
+				else
+					self:SetText(refillPrice and ("Refill: $" .. refillPrice) or ("Price: $" .. Item.Price))
 				end
 			end
+			lbl:Think()
 		end
 		if itemcount > 0 then
 			local tab = Sheet:AddSheet(k, CategoryPanel)

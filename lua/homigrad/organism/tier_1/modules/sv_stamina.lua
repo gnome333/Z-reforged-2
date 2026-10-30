@@ -2,26 +2,6 @@
 local min, max, Round = math.min, math.max, math.Round
 local hg_organism_stamina_sprint_mul = CreateConVar("hg_organism_stamina_sprint_mul","1",{FCVAR_ARCHIVE,FCVAR_NOTIFY,FCVAR_NEVER_AS_STRING},"Multiply stamina drain when sprinting",0,10)
 
--- Owned by sh_inertia.lua (shared, replicated), which uses it as the crouch-run basis. Read here
--- only to work out the same crouch-run target speed, so the drain matches what the body actually
--- does. Falls back to the same default if the convar is somehow missing.
-local hg_movement_crouchwalkspeed = ConVarExists("hg_movement_crouchwalkspeed") and GetConVar("hg_movement_crouchwalkspeed") or nil
-local CROUCH_RUN_CAP = 135
-
--- Crouch running (duck + sprint) used to cost nothing. Two separate reasons:
---   * Player:IsSprinting() is documented as "holding their sprint key and are allowed to sprint",
---     and Source does not allow sprinting while ducked, so the whole drain block was skipped;
---   * even when it was not skipped, velLen normalises against GetRunSpeed(), while sh_inertia
---     drives a crouch run towards min(crouchWalk * 2.1, 135) -- about 126 instead of ~308 -- so
---     the same expression came out at roughly half the drain.
--- Crouch running more than doubles crouch walking speed, so it is a real sprint and has to cost
--- the same as one.
-local function crouchRunSpeed()
-	local base = hg_movement_crouchwalkspeed and hg_movement_crouchwalkspeed:GetFloat() or 60
-
-	return math.max(math.min(base * 2.1, CROUCH_RUN_CAP), 1)
-end
-
 --local Organism = hg.organism
 hg.organism.module.stamina = {}
 local module = hg.organism.module.stamina
@@ -72,9 +52,7 @@ module[2] = function(owner, org, timeValue)
 	if owner:IsPlayer() then
 		local wep = owner:GetActiveWeapon()
 		local walk = owner:KeyDown(IN_FORWARD) or owner:KeyDown(IN_BACK) or owner:KeyDown(IN_MOVELEFT) or owner:KeyDown(IN_MOVERIGHT)
-		local runSpeed = max(owner:GetRunSpeed() / hg_organism_stamina_sprint_mul:GetFloat(), 1)
-		local speed = max(min(owner:GetVelocity():Length(), org.moveMaxSpeed), 0)
-		velLen = speed / runSpeed
+		velLen = max(min(owner:GetVelocity():Length(), org.moveMaxSpeed), 0) / (owner:GetRunSpeed() / hg_organism_stamina_sprint_mul:GetFloat())-- / ((IsValid(wep) and wep ~= NULL and wep:GetClass() == "weapon_hands_sh" and owner:KeyDown(IN_WALK)) and 1.3 or 0.58))
 		--print(velLen)
 
 		-- What we are standing on. Loose ground makes sprinting cost more; the same helper feeds the
@@ -84,30 +62,15 @@ module[2] = function(owner, org, timeValue)
 		if hg.stamina and hg.stamina.groundSurfaceMuls then
 			drainMul = hg.stamina.groundSurfaceMuls(owner)
 		end
-
-		-- Crouch running counts as a sprint even though IsSprinting() refuses to say so while
-		-- ducked. The movement code treats it as one (it drives the body towards the crouch run
-		-- target and treats it like `runnin` for pain and speed gain), so stamina has to agree.
-		local crouchRunning = owner:Crouching() and owner:KeyDown(IN_SPEED)
-
-		-- Effort is measured against the fastest speed available in the current stance, so a full
-		-- crouch run costs the same as a full run instead of about half. Being slowed by a wall or
-		-- an injury still scales it down, exactly as it does while upright.
-		local effort = velLen
-
-		if crouchRunning then
-			effort = speed / (crouchRunSpeed() / hg_organism_stamina_sprint_mul:GetFloat())
-		end
-
 		-- The old condition also required stamina[1] > 20. Because regeneration keeps running in
 		-- the same tick, dropping below 20 stopped the drain while the recovery continued, so the
 		-- last 20 points were free: you could sprint on an empty bar forever. Sprinting always
 		-- costs effort now; the sprint gate itself lives in the movement code.
-		if (owner:OnGround() or owner:WaterLevel() >= 2) and walk and not owner:InVehicle() and (owner:IsSprinting() or crouchRunning) then
+		if (owner:OnGround() or owner:WaterLevel() >= 2) and walk and not owner:InVehicle() and owner:IsSprinting() then
 			local water = owner:WaterLevel() >= 2
 			-- Wading already doubles the cost, so the ground underneath is not counted a second
 			-- time -- otherwise a river bed of sand would stack to nearly 3x.
-			stamina.sub = (water and 2 or 1) * (max(effort, 0) ^ 0.5) * (water and 1 or drainMul)
+			stamina.sub = (water and 2 or 1) * (velLen ^ 0.5) * (water and 1 or drainMul)
 		end
 	end
 
