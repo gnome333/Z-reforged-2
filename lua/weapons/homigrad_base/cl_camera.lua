@@ -165,6 +165,12 @@ function SWEP:Camera(eyePos, eyeAng, view, vellen, ply)
 	if not IsValid(self) then return end
 	ply = ply or self:GetOwner()
 	gun = self:GetWeaponEntity()
+
+	-- Work on a copy of the incoming eye angles. The table handed in by the
+	-- Camera hook is the player's own angle object; everything below adds to
+	-- it (recoil, shake, sway, adrenaline), so writing into it would corrupt
+	-- the view input for the next frame.
+	eyeAng = Angle(eyeAng[1], eyeAng[2], eyeAng[3])
 	
 	//if self.drawnlasttime != CurTime() then
 		//self.drawnlasttime = CurTime()
@@ -313,7 +319,11 @@ function SWEP:Camera(eyePos, eyeAng, view, vellen, ply)
 	local fraction2 = math.ease.InCubic(self:GetAnimPos_Shoot2(self.lastShoot or 0, 1))
 	
 	outputPos = LerpVector(k, posIdle, posZoom)
-	outputAng = LerpAngle(k, angIdle, angIdle)
+	-- Copy, do not alias: angIdle is the player's own eye angle table handed in
+	-- by the Camera hook. Everything below adds to outputAng (recoil, shake,
+	-- sway), and mutating the player's angle object corrupts the view input for
+	-- the next frame - sway would eat its own source and stop working.
+	outputAng = Angle(angIdle[1], angIdle[2], angIdle[3])
 
 	--outputPos:Add(VectorRand(-1, 1) * (math.random(2) == 1 and 1 or -1) * 0.05 * fraction2)
 
@@ -520,3 +530,4 @@ hook.Add("PreDrawTranslucentRenderables","huy",function()
 		playerModel:ManipulateBoneAngles(playerModel:LookupBone("ValveBiped.Bip01_R_Thigh"),-angleHuy)
 	end
 end)]]
+
