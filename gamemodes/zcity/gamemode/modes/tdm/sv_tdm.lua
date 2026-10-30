@@ -274,11 +274,37 @@ local function buyItem(ply, tItem, silent)
 
 	if tItem[3] then
 		if not ply:HasWeapon(item.ItemClass) then notify("You can't buy this attachment without a weapon.") return false end
-		if ((ply:GetNWInt("TDM_Money",0) - AttachmentPrice) < 0) then notify("Not enough money.") return false end
+
+		local shortAtt = string.Replace(tItem[3], "ent_att_", "")
+		local price = (MODE.AttachmentPrices and MODE.AttachmentPrices[shortAtt]) or AttachmentPrice
+		if ((ply:GetNWInt("TDM_Money",0) - price) < 0) then notify("Not enough money.") return false end
 
 		local wep = ply:GetWeapon(item.ItemClass)
-		hg.AddAttachmentForce( ply,wep,tItem[3] )
-		ply:SetNWInt( "TDM_Money", ply:GetNWInt("TDM_Money",0) - AttachmentPrice )
+		if not IsValid(wep) then notify("This item is unavailable.") return false end
+
+		-- Проверяем, что attachment реально подходит этому оружию
+		local attName = string.Replace(tItem[3], "ent_att_", "")
+		local placement
+		for plc, tbl in pairs(hg.attachments) do
+			if tbl[attName] then placement = plc break end
+		end
+
+		if not placement then notify("This attachment does not exist.") return false end
+
+		local available = wep.availableAttachments and wep.availableAttachments[placement]
+		if not available then notify("This weapon has no slot for this attachment.") return false end
+
+		local mountType = available["mountType"]
+		local attMount = hg.attachments[placement][attName].mountType
+		local fits = istable(mountType) and not table.IsEmpty(mountType) and table.HasValue(mountType, attMount) or mountType == attMount
+
+		if not fits then notify("This attachment does not fit this weapon.") return false end
+
+		local current = wep.attachments and wep.attachments[placement]
+		if current and current[1] == attName then notify("This attachment is already installed.") return false end
+
+		hg.AddAttachmentForce( ply,wep,attName )
+		ply:SetNWInt( "TDM_Money", ply:GetNWInt("TDM_Money",0) - price )
 		ply:EmitSound("items/itempickup.wav")
 
 		return true
@@ -426,6 +452,4 @@ net.Receive("tdm_buypreset",function(len,ply)
 			end
 		end
 	end
-
-	ply:ChatPrint("Preset: bought " .. bought .. "/" .. total .. " items.")
 end)

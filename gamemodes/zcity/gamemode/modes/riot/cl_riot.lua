@@ -3,18 +3,7 @@ MODE.name = "riot"
 local MODE = MODE
 
 net.Receive("riot_start", function()
-    if RiotSound then
-        RiotSound:Stop()
-        RiotSound = nil
-    end
-
-    sound.PlayFile("sound/zbattle/riot.wav", "noplay", function(station)
-        if IsValid(station) then
-            station:SetVolume(6) 
-            station:Play()
-            RiotSound = station
-        end
-    end)
+    zb.PlayRoundMusic("muzika/rounds/pogroms.ogg")
 
     zb.RemoveFade()
 end)

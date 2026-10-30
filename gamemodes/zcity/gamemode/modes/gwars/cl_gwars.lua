@@ -417,10 +417,21 @@ local function OpenGWARSBuyMenu()
 		for _, item in ipairs(category.items) do
 			if item.team and item.team != lply:Team() then continue end
 
-			local ItemPanel = vgui.Create("DPanel", CategoryPanel)
+			local ItemPanel = vgui.Create("DButton", CategoryPanel)
 			ItemPanel:SetSize(0, ScrH() * 0.1)
 			ItemPanel:Dock(TOP)
 			ItemPanel:DockMargin(0, 8, 0, 0)
+			ItemPanel:SetText("")
+			ItemPanel:SetCursor("hand")
+			ItemPanel.GWARS_Class = item.class
+
+			function ItemPanel:DoClick()
+				GWARS_LogBuy(self.GWARS_Class)
+
+				net.Start("gwars_buyitem")
+					net.WriteString(self.GWARS_Class)
+				net.SendToServer()
+			end
 			ItemPanel.Paint = function(self, w, h)
 				surface.SetDrawColor(0, 0, 0, 155)
 				surface.DrawRect(0, 0, w, h, 2.5)
@@ -429,6 +440,10 @@ local function OpenGWARSBuyMenu()
 				surface.SetDrawColor(accent.r, accent.g, accent.b, 55)
 				surface.SetMaterial(gradMat)
 				surface.DrawTexturedRect(0, 0, w / 1.5, h)
+				if self:IsHovered() then
+					surface.SetDrawColor(accent.r, accent.g, accent.b, 22)
+					surface.DrawRect(0, 0, w, h)
+				end
 			end
 
 			local iconPath
@@ -457,12 +472,14 @@ local function OpenGWARSBuyMenu()
 				icon:Dock(LEFT)
 				icon:DockMargin(5, 5, 5, 5)
 				icon:SetImage(iconPath)
+				icon:SetMouseInputEnabled(false)
 			end
 
 			local ItemButton = vgui.Create("DPanel", ItemPanel)
 			ItemButton:Dock(FILL)
 			ItemButton:DockMargin(0, 5, 0, 0)
 			ItemButton.Paint = function() end
+			ItemButton:SetMouseInputEnabled(false)
 
 			local name = vgui.Create("DLabel", ItemButton)
 			name:SetText(item.name)
@@ -470,6 +487,7 @@ local function OpenGWARSBuyMenu()
 			name:Dock(TOP)
 			name:SetFont("GWARS_BUYMENU")
 			name:SetSize(ScrW() * 0.5, ScrH() * 0.04)
+			name:SetMouseInputEnabled(false)
 
 			local price = vgui.Create("DLabel", ItemButton)
 			price:SetText("Price: $" .. item.price)
@@ -478,29 +496,7 @@ local function OpenGWARSBuyMenu()
 			price:SetTextColor(Color(155, 200, 155))
 			price:SetFont("GWARS_BUYDESC")
 			price:SetSize(ScrW() * 0.5, ScrH() * 0.02)
-
-			local BuyBtn = vgui.Create("DButton", ItemButton)
-			BuyBtn:DockMargin(10, 5, 10, 10)
-			BuyBtn:Dock(LEFT)
-			BuyBtn:SetText("Buy")
-			BuyBtn:SetTextColor(Color(200, 200, 200))
-			BuyBtn:SetFont("GWARS_BUYDESC")
-			BuyBtn:SetHeight(ScrH() * 0.025)
-			BuyBtn.Paint = function(self, w, h)
-				surface.SetDrawColor(0, 0, 0, 155)
-				surface.DrawRect(0, 0, w, h, 2.5)
-				surface.SetDrawColor(accent.r, accent.g, accent.b, self:IsHovered() and 230 or 128)
-				surface.DrawOutlinedRect(0, 0, w, h, 2.5)
-			end
-			BuyBtn.GWARS_Class = item.class
-
-			function BuyBtn:DoClick()
-				GWARS_LogBuy(self.GWARS_Class)
-
-				net.Start("gwars_buyitem")
-					net.WriteString(self.GWARS_Class)
-				net.SendToServer()
-			end
+			price:SetMouseInputEnabled(false)
 		end
 
 		local tab = Sheet:AddSheet(category.category, CategoryPanel)

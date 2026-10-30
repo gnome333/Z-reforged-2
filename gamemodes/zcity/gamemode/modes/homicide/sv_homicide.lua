@@ -331,10 +331,62 @@ MODE.Types.standard = {
 		zb.GiveRole(ply, "Police Officer", Color(15,15,255))
 	end
 }
+local wildWestWeapons = {
+	["weapon_revolver357"] = true,
+	["weapon_revolver2"] = true,
+	["weapon_winchester"] = true,
+	["weapon_doublebarrel"] = true,
+	["weapon_doublebarrel_short"] = true,
+}
+
+local wildWestAmmo = {
+	["ent_ammo_12/70gauge"] = true,
+	["ent_ammo_.357magnum"] = true,
+	["ent_ammo_.38special"] = true,
+}
+
+local function WildWestLootAllowed(class)
+	if string.StartWith(class, "ent_ammo_") then return wildWestAmmo[class] == true end
+	if string.StartWith(class, "ent_att_") or string.StartWith(class, "ent_armor_vest") or string.StartWith(class, "ent_new_armor_vest") then return false end
+	if wildWestWeapons[class] then return true end
+
+	local weapon = weapons.Get(class)
+	local primary = weapon and weapon.Primary
+	-- Leave melee weapons, tools and grenades alone; reject other firearms.
+	if primary and primary.Ammo and string.lower(primary.Ammo) ~= "none" and primary.Ammo ~= "" then return false end
+
+	return true
+end
+
+MODE.LootTableWildWest = table.Copy(MODE.LootTableStandard)
+MODE.LootTableWildWest[#MODE.LootTableWildWest + 1] = {9, {
+	{4, "weapon_revolver357"},
+	{4, "weapon_revolver2"},
+	{3, "weapon_winchester"},
+	{3, "weapon_doublebarrel"},
+	{3, "weapon_doublebarrel_short"},
+}}
+MODE.LootTableWildWest[#MODE.LootTableWildWest + 1] = {11, {
+	{1, "ent_ammo_12/70gauge"},
+	{1, "ent_ammo_.357magnum"},
+	{1, "ent_ammo_.38special"},
+}}
+
+-- Also cover map items, replacements and other entity spawn paths.
+hook.Add("OnEntityCreated", "HMCD_WildWestLootRestrictions", function(ent)
+	timer.Simple(0, function()
+		if not IsValid(ent) then return end
+		local round, roundType = CurrentRound()
+		if round ~= MODE or roundType ~= "wildwest" then return end
+		if not WildWestLootAllowed(ent:GetClass()) then ent:Remove() end
+	end)
+end)
+
 MODE.Types.wildwest = {
 	Chance = 0.05,
 	ChanceFunction = function() return (zb.GetWorldSize() < ZBATTLE_BIGMAP) and (zb.ModesChances["wildwest"] or zb.modes["hmcd"].Types.wildwest.Chance) or 0 end,
-	LootTable = MODE.LootTableStandard,
+	LootTable = MODE.LootTableWildWest,
+	IsLootAllowed = WildWestLootAllowed,
 	Messages = {
 		[3] = "The dead silence fills the empty city...",
 		[1] = "The town has fallen into the hands of crime.",
@@ -1551,7 +1603,20 @@ function MODE.SpawnPlayers(spawn_with_subroles)
                 professions_possible[#professions_possible + 1] = {profession_info.Chance, profession}
             end
 
-            for _, ply in RandomPairs(player.GetAll()) do
+            -- Weighted order without replacement: karma 120+ gets twice the
+            -- selection weight, including when filling the remaining slots.
+            local profession_candidates, profession_order = {}, {}
+            for _, ply in player.Iterator() do
+                if ply:Team() == TEAM_SPECTATOR or (ply.isTraitor and not ply.MainTraitor) then continue end
+                profession_candidates[#profession_candidates + 1] = {(ply.Karma or 100) >= 120 and 2 or 1, ply}
+            end
+            while #profession_candidates > 0 do
+                local index, ply = hg.WeightedRandomSelect(profession_candidates)
+                profession_order[#profession_order + 1] = ply
+                table.remove(profession_candidates, index)
+            end
+
+            for _, ply in ipairs(profession_order) do
                 if(ply:Team() != TEAM_SPECTATOR)then
                     if((math.random(100) <= (ply.Karma or 100)) and (math.random(1, 3) == 1 or (!ply.isTraitor and !ply.isGunner)))then
                         local profession_key, profession = hg.WeightedRandomSelect(professions_possible)
@@ -1568,7 +1633,7 @@ function MODE.SpawnPlayers(spawn_with_subroles)
             
 
             if(professions_count_to_satisfy > 0)then
-                for _, ply in RandomPairs(player.GetAll()) do
+                for _, ply in ipairs(profession_order) do
                     if(ply:Team() != TEAM_SPECTATOR and !ply.Profession)then
                         local profession_key, profession = hg.WeightedRandomSelect(professions_possible)
                         professions_possible[profession_key][1] = professions_possible[profession_key][1] / 2
@@ -1608,7 +1673,7 @@ function MODE.SpawnPlayers(spawn_with_subroles)
 
             local sub_role = nil
             if(spawn_with_subroles and MODE.RoleChooseRoundTypes[MODE.Type])then
-                if(current_ply.isTraitor)then
+                if(current_ply.isTraitor and current_ply.MainTraitor)then
                     local sub_role_id = MODE.Type == "soe" and (current_ply:GetInfo(MODE.ConVarName_SubRole_Traitor_SOE) or "traitor_default_soe") or (current_ply:GetInfo(MODE.ConVarName_SubRole_Traitor) or "traitor_default")
 					sub_role = sub_role_id
                 end
@@ -1635,7 +1700,7 @@ function MODE.SpawnPlayers(spawn_with_subroles)
                     end
                 end
             else
-                if(current_ply.isTraitor)then
+                if(current_ply.isTraitor and current_ply.MainTraitor)then
                     MODE.Types[MODE.Type].TraitorLoot(current_ply)
                 end
 
@@ -1652,7 +1717,7 @@ function MODE.SpawnPlayers(spawn_with_subroles)
             end
             
             if(MODE.Type == "soe")then
-                if(current_ply.isTraitor)then
+                if(current_ply.isTraitor and current_ply.MainTraitor)then
                     local walkie_talkie = current_ply:Give("weapon_walkie_talkie")
 					if walkie_talkie.Frequencies then
 						MODE.TraitorFrequency = MODE.TraitorFrequency or math.random(1, #walkie_talkie.Frequencies)
@@ -1667,6 +1732,16 @@ function MODE.SpawnPlayers(spawn_with_subroles)
                 inv["Weapons"] = inv["Weapons"] or {}
                 inv["Weapons"]["hg_flashlight"] = true
                 current_ply:SetNetVar("Inventory", inv)
+            end
+
+            if current_ply.isTraitor and not current_ply.MainTraitor then
+                current_ply.SubRole = nil
+                current_ply.Profession = nil
+                current_ply:SetPlayerClass()
+                current_ply:StripWeapons()
+                current_ply:RemoveAllAmmo()
+                current_ply:SetNetVar("Inventory", {})
+                current_ply:SetNetVar("Armor", {})
             end
 
             local hands = current_ply:Give("weapon_hands_sh")

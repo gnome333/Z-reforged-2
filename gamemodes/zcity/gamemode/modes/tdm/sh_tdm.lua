@@ -26,6 +26,16 @@ MODE.PrintName = "Team Deathmatch"
 
 MODE.BuyItems = {}
 
+-- Цены на прицелы/рукоятки (attachment'ы). Ключ - короткое имя (без "ent_att_")
+MODE.AttachmentPrices = {
+	["optic14"] = 150,
+	["optic3"] = 200,
+	["optic9"] = 150,
+	["grip1"] = 400,
+	["grip2"] = 550,
+	["grip_akdong"] = 300,
+}
+
 local priority = 1
 local function AddItemToBUY(ItemName, Type, ItemClass, Price, Category, Attachments, Amount, TeamBased)
     if not MODE.BuyItems[Category] then
@@ -65,14 +75,15 @@ AddItemToBUY( "Ruger AC-556", "Weapon", "weapon_ac556", 2400, "Carbines", {"holo
 AddItemToBUY( "AR-15", "Weapon", "weapon_ar15", 2200, "Carbines", {"holo1","holo2","supressor2","holo15","optic8","laser1","laser2","laser3","laser4"}, nil, 1 )
 
 AddItemToBUY( "AKM", "Weapon", "weapon_akm", 3200, "Assault", {"holo6","holo1","holo2","supressor1","optic7"}, nil, 0 )
-AddItemToBUY( "AK-74", "Weapon", "weapon_ak74", 2400, "Assault", {"holo6","holo1","holo2","supressor1","supressor8","optic7"}, nil, 0 )
+AddItemToBUY( "AK-74", "Weapon", "weapon_ak74", 2400, "Assault", {"holo6","holo1","holo2","supressor1","supressor8","optic7","grip_akdong"}, nil, 0 )
 AddItemToBUY( "AKS-74U", "Weapon", "weapon_ak74u", 2400, "Assault", {"holo6","holo1","holo2","supressor1","optic7"}, nil, 0 )
 AddItemToBUY( "AS Val", "Weapon", "weapon_asval", 4500, "Assault", {"holo6","holo1","holo2","optic7"}, nil, 0 )
-AddItemToBUY( "M4A1", "Weapon", "weapon_m4a1", 2700, "Assault", {"holo1","holo2","supressor2","holo15","optic8","laser1","laser2","laser3","laser4"}, nil, 1 )
-AddItemToBUY( "HK416", "Weapon", "weapon_hk416", 3000, "Assault", {"holo1","holo2","supressor2","holo15","optic8","laser1","laser2","laser3","laser4"}, nil, 1 )
+AddItemToBUY( "M4A1", "Weapon", "weapon_m4a1", 2700, "Assault", {"holo1","holo2","supressor2","holo15","optic8","laser1","laser2","laser3","laser4","optic14","optic3","optic9","grip1","grip2"}, nil, 1 )
+AddItemToBUY( "HK416", "Weapon", "weapon_hk416", 3000, "Assault", {"holo1","holo2","supressor2","holo15","optic8","laser1","laser2","laser3","laser4","optic14","optic3","optic9","grip1","grip2"}, nil, 1 )
 AddItemToBUY( "M16A2", "Weapon", "weapon_m16a2", 2500, "Assault", {"holo1","holo2","optic8"}, nil, 0 )
 
 AddItemToBUY( "MAC-11", "Weapon", "weapon_mac11", 1600, "Submachine", {"supressor4"}, nil, 0 )
+AddItemToBUY( "PP-19 Bizon", "Weapon", "weapon_bizon", 2100, "Submachine", {"supressor1","holo4","holo5","holo9"}, nil, 0 )
 AddItemToBUY( "MP-5", "Weapon", "weapon_mp5", 1500, "Submachine", {"supressor4"}, nil, 0 )
 AddItemToBUY( "Uzi", "Weapon", "weapon_uzi", 1300, "Submachine", {}, nil, 0 )
 AddItemToBUY( "Šcorpion vz. 61", "Weapon", "weapon_skorpion", 1200, "Submachine", {}, nil, 0 )
@@ -93,7 +104,7 @@ AddItemToBUY( "M60", "Weapon", "weapon_m60", 7000, "Heavy", {}, nil, 1 )
 AddItemToBUY( "PKM", "Weapon", "weapon_pkm", 7800, "Heavy", {"optic4"}, nil, 0 )
 AddItemToBUY( "RPK-74", "Weapon", "weapon_rpk", 3700, "Heavy", {"optic4", "holo6", "holo13", "holo14", "holo6fur"}, nil, 0 )
 
-AddItemToBUY( "SR-25", "Weapon", "weapon_sr25", 5500, "Marksman/Sniper", {"supressor7","optic6", "optic2", "grip2"} , nil, 1)
+AddItemToBUY( "SR-25", "Weapon", "weapon_sr25", 5500, "Marksman/Sniper", {"supressor7","optic6", "optic2", "grip2", "optic14", "optic3", "optic9", "grip1"} , nil, 1)
 AddItemToBUY( "Barrett M98B", "Weapon", "weapon_m98b", 4200, "Marksman/Sniper", {}, nil, 1 )
 AddItemToBUY( "SKS", "Weapon", "weapon_sks", 2900, "Marksman/Sniper", {"optic4"}, nil, 0 )
 AddItemToBUY( "SVD", "Weapon", "weapon_svd", 5200, "Marksman/Sniper", {"optic4"}, nil, 0 )

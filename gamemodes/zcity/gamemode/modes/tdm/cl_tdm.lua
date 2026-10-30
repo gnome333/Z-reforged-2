@@ -2,14 +2,27 @@ MODE.name = "tdm"
 
 local MODE = MODE
 
-local TDM_PresetFile = "zcity_tdm_presets.json"
+local TDM_PresetFileLegacy = "zcity_tdm_presets.json"
+local TDM_PresetFiles = {
+	[0] = "zcity_tdm_presets_t.json",
+	[1] = "zcity_tdm_presets_ct.json",
+}
 local TDM_MaxPresets = 10
 
 local TDM_BuyLog = {}
-local TDM_Presets
+local TDM_Presets = {}
 
-local function TDM_LoadPresets()
-	local data = util.JSONToTable(file.Read(TDM_PresetFile, "DATA") or "")
+local function TDM_DefaultPresets()
+	local data = {}
+
+	for i = 1, TDM_MaxPresets do
+		data[i] = {name = "Preset " .. i, items = {}}
+	end
+
+	return data
+end
+
+local function TDM_NormalizePresets(data)
 	if not istable(data) then data = {} end
 
 	for i = 1, TDM_MaxPresets do
@@ -23,11 +36,47 @@ local function TDM_LoadPresets()
 	return data
 end
 
-TDM_Presets = TDM_LoadPresets()
+local function TDM_LoadPresets()
+	-- Общие пресеты прошлой версии: используем как стартовое значение для обеих команд
+	local legacy = util.JSONToTable(file.Read(TDM_PresetFileLegacy, "DATA") or "")
 
-local function TDM_SavePresets()
-	file.Write(TDM_PresetFile, util.TableToJSON(TDM_Presets, true))
+	for team = 0, 1 do
+		local path = TDM_PresetFiles[team]
+		local raw = file.Read(path, "DATA")
+
+		if raw then
+			TDM_Presets[team] = TDM_NormalizePresets(util.JSONToTable(raw))
+		elseif istable(legacy) and #legacy > 0 then
+			TDM_Presets[team] = TDM_NormalizePresets(table.Copy(legacy))
+		else
+			TDM_Presets[team] = TDM_DefaultPresets()
+		end
+	end
 end
+
+local function TDM_GetPresets(team)
+	team = team == 1 and 1 or 0
+
+	if not TDM_Presets[team] then
+		TDM_Presets[team] = TDM_DefaultPresets()
+	end
+
+	return TDM_Presets[team]
+end
+
+local function TDM_SavePresets(team)
+	if team ~= nil then
+		team = team == 1 and 1 or 0
+		file.Write(TDM_PresetFiles[team], util.TableToJSON(TDM_GetPresets(team), true))
+		return
+	end
+
+	for t = 0, 1 do
+		file.Write(TDM_PresetFiles[t], util.TableToJSON(TDM_GetPresets(t), true))
+	end
+end
+
+TDM_LoadPresets()
 
 local function TDM_LogBuy(tItem)
 	if not istable(tItem) or not tItem[1] or not tItem[2] then return end
@@ -53,8 +102,8 @@ local function TDM_LogBuy(tItem)
 end
 
 net.Receive("tdm_start",function()
-    surface.PlaySound("csgo_round.wav")
 	zb.rtype = net.ReadString()
+	zb.PlayRoundMusic("muzika/rounds/tdm1.wav")
 	hg.DynaMusic:Start( "swat4" )
 	zb.RemoveFade()
 	table.Empty(TDM_BuyLog)
@@ -540,6 +589,11 @@ local function OpenBuyMenu()
 
 					Attach.Attachment = {k,n,AttachN}
 
+					local shortAtt = string.Replace(AttachN, "ent_att_", "")
+					local attPrice = (MODE.AttachmentPrices and MODE.AttachmentPrices[shortAtt]) or 50
+					local attLang = hg.attachmentslaunguage and hg.attachmentslaunguage[shortAtt] or shortAtt
+					Attach:SetTooltip(attLang .. "\n$" .. attPrice)
+
 					function Attach:DoClick()
 						TDM_LogBuy(self.Attachment)
 
@@ -603,6 +657,11 @@ local function OpenBuyMenu()
 	local PresetsPanel = vgui.Create("DScrollPanel", Sheet)
 	PresetsPanel.Paint = function() end
 
+	local function AttachPrice(attName)
+		local short = string.Replace(attName, "ent_att_", "")
+		return (MODE.AttachmentPrices and MODE.AttachmentPrices[short]) or 50
+	end
+
 	local function PresetPrice(preset)
 		local total = 0
 
@@ -610,7 +669,7 @@ local function OpenBuyMenu()
 			local item = MODE.BuyItems[tItem[1]] and MODE.BuyItems[tItem[1]][tItem[2]]
 			if not item then continue end
 
-			total = total + (tItem[3] and 50 or item.Price) * (tonumber(tItem[4]) or 1)
+			total = total + (tItem[3] and AttachPrice(tItem[3]) or item.Price) * (tonumber(tItem[4]) or 1)
 		end
 
 		return total
@@ -630,9 +689,13 @@ local function OpenBuyMenu()
 	local function RebuildPresets()
 		PresetsPanel:Clear()
 
+		local lp = LocalPlayer()
+		local myTeam = IsValid(lp) and (lp:Team() == 1 and 1 or 0) or 0
+		local myPresets = TDM_GetPresets(myTeam)
+
 		for i = 1, TDM_MaxPresets do
 			local id = i
-			local preset = TDM_Presets[id]
+			local preset = myPresets[id]
 
 			local SlotPanel = vgui.Create("DPanel", PresetsPanel)
 			SlotPanel:SetSize(0, ScrH() * 0.09)
@@ -690,7 +753,7 @@ local function OpenBuyMenu()
 				if #TDM_BuyLog == 0 then return end
 
 				preset.items = table.Copy(TDM_BuyLog)
-				TDM_SavePresets()
+				TDM_SavePresets(myTeam)
 				RebuildPresets()
 			end
 
@@ -706,7 +769,7 @@ local function OpenBuyMenu()
 			function RenameBtn:DoClick()
 				Derma_StringRequest("Rename preset", "Preset name:", preset.name, function(text)
 					preset.name = text
-					TDM_SavePresets()
+					TDM_SavePresets(myTeam)
 					RebuildPresets()
 				end)
 			end
@@ -723,7 +786,7 @@ local function OpenBuyMenu()
 			function ClearBtn:DoClick()
 				preset.items = {}
 				preset.name = "Preset " .. id
-				TDM_SavePresets()
+				TDM_SavePresets(myTeam)
 				RebuildPresets()
 			end
 		end
@@ -731,7 +794,7 @@ local function OpenBuyMenu()
 
 	RebuildPresets()
 
-	local tab = Sheet:AddSheet("Presets",PresetsPanel)
+	local tab = Sheet:AddSheet("Presets", PresetsPanel)
 	local rTab = tab["Tab"]
 	rTab.Paint = PaintPanel
 	rTab:SetFont("ZB_TDM_CATEGORY")
