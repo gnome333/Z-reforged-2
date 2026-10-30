@@ -32,6 +32,7 @@ function MODE:Intermission()
 	for i, ply in player.Iterator() do
 		ply:SetupTeam(ply:Team())
 		ply:SetNWInt("GWARS_Money", 1500)
+		ply.GWARS_PurchasedItems = {}
 	end
 
 	net.Start("gwars_start")
@@ -102,6 +103,11 @@ function MODE:GiveEquipment()
 				ply:SetPlayerClass("groove")
 				zb.GiveRole(ply, "Groove", Color(0,190,0))
 				ply:SetNetVar("CurPluv", "pluvgreen")
+			end
+
+			ply:SetNetVar("Accessories", "")
+			if ply.CurAppearance then
+				ply.CurAppearance.AAttachments = ""
 			end
 
 			local hands = ply:Give("weapon_hands_sh")
@@ -231,9 +237,15 @@ local function buyItem(ply, class, silent)
 	if not item then return false end
 	if item.team and item.team != ply:Team() then return false end
 
+	ply.GWARS_PurchasedItems = ply.GWARS_PurchasedItems or {}
+	if ply.GWARS_PurchasedItems[class] then
+		return false
+	end
+
 	local money = ply:GetNWInt("GWARS_Money", 0)
 	if money < item.price then notify("Not enough money.") return false end
 	ply:SetNWInt("GWARS_Money", money - item.price)
+	ply.GWARS_PurchasedItems[class] = true
 
 	if item.kind == "armor" then
 		hg.AddArmor(ply, class)
