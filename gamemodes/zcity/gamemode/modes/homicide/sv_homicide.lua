@@ -331,10 +331,62 @@ MODE.Types.standard = {
 		zb.GiveRole(ply, "Police Officer", Color(15,15,255))
 	end
 }
+local wildWestWeapons = {
+	["weapon_revolver357"] = true,
+	["weapon_revolver2"] = true,
+	["weapon_winchester"] = true,
+	["weapon_doublebarrel"] = true,
+	["weapon_doublebarrel_short"] = true,
+}
+
+local wildWestAmmo = {
+	["ent_ammo_12/70gauge"] = true,
+	["ent_ammo_.357magnum"] = true,
+	["ent_ammo_.38special"] = true,
+}
+
+local function WildWestLootAllowed(class)
+	if string.StartWith(class, "ent_ammo_") then return wildWestAmmo[class] == true end
+	if string.StartWith(class, "ent_att_") or string.StartWith(class, "ent_armor_vest") or string.StartWith(class, "ent_new_armor_vest") then return false end
+	if wildWestWeapons[class] then return true end
+
+	local weapon = weapons.Get(class)
+	local primary = weapon and weapon.Primary
+	-- Leave melee weapons, tools and grenades alone; reject other firearms.
+	if primary and primary.Ammo and string.lower(primary.Ammo) ~= "none" and primary.Ammo ~= "" then return false end
+
+	return true
+end
+
+MODE.LootTableWildWest = table.Copy(MODE.LootTableStandard)
+MODE.LootTableWildWest[#MODE.LootTableWildWest + 1] = {9, {
+	{4, "weapon_revolver357"},
+	{4, "weapon_revolver2"},
+	{3, "weapon_winchester"},
+	{3, "weapon_doublebarrel"},
+	{3, "weapon_doublebarrel_short"},
+}}
+MODE.LootTableWildWest[#MODE.LootTableWildWest + 1] = {11, {
+	{1, "ent_ammo_12/70gauge"},
+	{1, "ent_ammo_.357magnum"},
+	{1, "ent_ammo_.38special"},
+}}
+
+-- Also cover map items, replacements and other entity spawn paths.
+hook.Add("OnEntityCreated", "HMCD_WildWestLootRestrictions", function(ent)
+	timer.Simple(0, function()
+		if not IsValid(ent) then return end
+		local round, roundType = CurrentRound()
+		if round ~= MODE or roundType ~= "wildwest" then return end
+		if not WildWestLootAllowed(ent:GetClass()) then ent:Remove() end
+	end)
+end)
+
 MODE.Types.wildwest = {
 	Chance = 0.05,
 	ChanceFunction = function() return (zb.GetWorldSize() < ZBATTLE_BIGMAP) and (zb.ModesChances["wildwest"] or zb.modes["hmcd"].Types.wildwest.Chance) or 0 end,
-	LootTable = MODE.LootTableStandard,
+	LootTable = MODE.LootTableWildWest,
+	IsLootAllowed = WildWestLootAllowed,
 	Messages = {
 		[3] = "The dead silence fills the empty city...",
 		[1] = "The town has fallen into the hands of crime.",

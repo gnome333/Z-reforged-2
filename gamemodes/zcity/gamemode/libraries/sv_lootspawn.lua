@@ -351,6 +351,9 @@ function hg.GenerateLoot(ply,ent,func)
 
 		if string.find(entName,"ent_armor_") then Tab = "Armor" end
 
+		local lootMode = curRound.Types and curRound.Types[rtype] or curRound
+		if lootMode.IsLootAllowed and not lootMode.IsLootAllowed(entName) then return end
+
 		if func then
 			return func(entName, AmmoCount, Tab)
 		end
