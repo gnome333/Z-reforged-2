@@ -1,8 +1,8 @@
 local medItems = {
 	weapon_medkit_sh = {model = "models/w_models/weapons/w_eq_medkit.mdl", pos = Vector(-7, 7, -7), ang = Angle(-90, 90, 90), step = 4, max = 2},
 	weapon_bloodbag = {model = "models/zcity/other/bloodbag.mdl", pos = Vector(4, 6.7, -6.6), ang = Angle(-90, 90, 180), step = 3.5, max = 2},
-	weapon_bandage_sh = {model = "models/bandages.mdl", pos = Vector(6, 1, 1.5), ang = Angle(0, -80, 0), step = -2.5, max = 2},
-	weapon_bigbandage_sh = {model = "models/bandages.mdl", pos = Vector(-6, 1, 1.5), ang = Angle(0, 80, 0), step = -2.5, max = 2},
+	weapon_bandage_sh = {model = "models/dayz_bandage/bandage_dressing.mdl", pos = Vector(6, 1, 1.5), ang = Angle(0, 0, -90), step = -2.5, max = 2},
+	weapon_bigbandage_sh = {model = "models/dayz_bandage/bandage_dressing.mdl", pos = Vector(-6, 1, 1.5), ang = Angle(0, 0, -90), step = -2.5, max = 2},
 	weapon_painkillers = {model = "models/bloocobalt/l4d/items/w_eq_pills.mdl", pos = Vector(-1, 1, -7), ang = Angle(0, 90, 90), step = -2.5, max = 2},
 	weapon_betablock = {model = "models/bloocobalt/l4d/items/w_eq_pills.mdl", pos = Vector(-7, 1, -7), ang = Angle(0, 90, 90), step = -2, max = 2},
 	weapon_tourniquet = {model = "models/tourniquet/tourniquet.mdl", pos = Vector(-2, -3, 5), ang = Angle(0, -80, 0), step = 2.5, max = 2},
@@ -17,18 +17,22 @@ local pelvisBone = "ValveBiped.Bip01_Pelvis"
 
 local function itemScale(class, item)
 	if class ~= "weapon_bandage_sh" and class ~= "weapon_bigbandage_sh" then return 1 end
-	if not item or isbool(item) then return 1 end
+	local baseScale = class == "weapon_bigbandage_sh" and 1.3 or 1.2
+	if not item or isbool(item) then return baseScale end
 
 	local vals = item.modeValues
-	if not istable(vals) or not isnumber(vals[1]) then return 1 end
+	if not istable(vals) or not isnumber(vals[1]) then return baseScale end
 
 	local def = item.modeValuesdef
-	if not istable(def) then return 1 end
+	if not istable(def) then return baseScale end
 	def = def[1]
 	if istable(def) then def = def[1] end
-	if not isnumber(def) or def <= 0 then return 1 end
+	if not isnumber(def) or def <= 0 then return baseScale end
 
-	return math.Clamp(vals[1] / (def * 0.8), 0.5, 1)
+	if class == "weapon_bigbandage_sh" then
+		return math.Clamp(vals[1] / (def * 0.8) * baseScale, 0.5, baseScale)
+	end
+	return math.Clamp(vals[1] / (def * 0.8), 0.5, 1) * baseScale
 end
 
 --;; На поясе не рисуем то, что уже нельзя держать: удалённые сущности и израсходованные предметы
@@ -171,6 +175,10 @@ function hg.RenderMedBelt(ent, ply)
 
 		for i, mdl in ipairs(list) do
 			if not IsValid(mdl) then continue end
+			if mdl:GetModel() ~= cfg.model then
+				mdl:SetModel(cfg.model)
+				mdl.medBeltScale = nil
+			end
 
 			local scale = scl and scl[i] or 1
 			if mdl.medBeltScale ~= scale then

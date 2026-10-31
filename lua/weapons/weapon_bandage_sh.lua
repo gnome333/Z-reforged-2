@@ -17,10 +17,10 @@ SWEP.Secondary.Automatic = true
 SWEP.Secondary.Ammo = "none"
 SWEP.HoldType = "slam"
 SWEP.ViewModel = ""
-SWEP.WorldModel = "models/bandages.mdl"
+SWEP.WorldModel = "models/dayz_bandage/bandage_dressing.mdl"
 if CLIENT then
-	SWEP.WepSelectIcon = Material("vgui/wep_jack_hmcd_bandage")
-	SWEP.IconOverride = "vgui/wep_jack_hmcd_bandage.png"
+	SWEP.WepSelectIcon = Material("vgui/icons/ico_dzbint.png")
+	SWEP.IconOverride = "vgui/icons/ico_dzbint.png"
 	SWEP.BounceWeaponIcon = false
 end
 
@@ -35,8 +35,8 @@ SWEP.Slot = 3
 SWEP.SlotPos = 1
 
 SWEP.WorkWithFake = true
-SWEP.offsetVec = Vector(4, -3.5, 0)
-SWEP.offsetAng = Angle(90, 90, 0)
+SWEP.offsetVec = Vector(3,-1,0.3)
+SWEP.offsetAng = Angle(0, -200, 0)
 
 local hg_healanims = CreateConVar("hg_healanims", 0, FCVAR_REPLICATED + FCVAR_ARCHIVE, "Toggle heal/food animations", 0, 1)
 
@@ -125,9 +125,48 @@ function SWEP:BoneSet(lookup_name, vec, ang)
 	hg.bone.Set(owner, lookup_name, vec, ang, "bandage", 0.01)
 end
 
+local bandageGrip = {
+	-- Oppose the thumb across the roll instead of leaving it upright.
+	{"Finger0", Angle(-35, 27, -30)},
+	{"Finger01", Angle(0, 40, 0)},
+	{"Finger02", Angle(0, 35, 0)},
+	-- Slightly open the grip so the fingertips clear the bandage surface.
+	{"Finger1", Angle(0, -35, 0)},
+	{"Finger11", Angle(0, -32, 0)},
+	{"Finger12", Angle(0, -30, 0)},
+	{"Finger2", Angle(0, -29, 0)},
+	{"Finger21", Angle(0, -37, 0)},
+	{"Finger22", Angle(0, -25, 0)},
+	{"Finger3", Angle(0, -34, 0)},
+	{"Finger31", Angle(0, -37, 0)},
+	{"Finger32", Angle(0, -25, 0)},
+	{"Finger4", Angle(0, -39, 0)},
+	{"Finger41", Angle(0, -42, 0)},
+	{"Finger42", Angle(0, -25, 0)},
+}
+
+function SWEP:AnimateBandageGrip(owner)
+	if not CLIENT then return end
+	local class = self:GetClass()
+	if class ~= "weapon_bandage_sh" and class ~= "weapon_bigbandage_sh" then return end
+	local org = owner.organism
+	local leftHand = (org and org.rarmamputated) or
+		(owner.zmanipstart ~= nil and owner.zmanipseq == "interact" and not (org and org.larmamputated))
+	if org and (leftHand and org.larmamputated or not leftHand and org.rarmamputated) then return end
+	local prefix = leftHand and "ValveBiped.Bip01_L_" or "ValveBiped.Bip01_R_"
+	for _, finger in ipairs(bandageGrip) do
+		local ang = finger[2]
+		-- Mirror the thumb's spread/twist for the opposite hand.
+		if leftHand then ang = Angle(-ang.p, ang.y, -ang.r) end
+		self:BoneSet(prefix .. finger[1], vector_origin, ang)
+	end
+end
+
 local lang1, lang2 = Angle(0, -10, 0), Angle(0, 10, 0)
 function SWEP:Animation()
 	local owner = self:GetOwner()
+	if not IsValid(owner) or not owner:IsPlayer() then return end
+	self:AnimateBandageGrip(owner)
 	local aimvec = self:GetOwner():GetAimVector()
 	local hold = self:GetHolding()
 	if (owner.zmanipstart ~= nil and not owner.organism.larmamputated) then return end
@@ -141,7 +180,7 @@ function SWEP:Think()
 	self:SetHold(self.HoldType)
 
 	if self:GetClass() == "weapon_bandage_sh" then
-		self.ModelScale = math.Clamp(self.modeValues[1] / (self.modeValuesdef[1][1] * 0.8), 0.5, 1)
+		self.ModelScale = math.Clamp(self.modeValues[1] / (self.modeValuesdef[1][1] * 0.8), 0.5, 1) * 1.20
 	end
 
 	if not self:GetOwner():KeyDown(IN_ATTACK) and hg_healanims:GetBool() then
@@ -289,7 +328,7 @@ SWEP.modeNames = {
 }
 
 function SWEP:InitializeAdd()
-	self.ModelScale = 0.9
+	self.ModelScale = 3
 end
 
 SWEP.DeploySnd = "physics/body/body_medium_impact_soft5.wav"

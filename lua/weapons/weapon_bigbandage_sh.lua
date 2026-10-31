@@ -9,14 +9,14 @@ SWEP.modeValuesdef = {
 	[1] = {150, true},
 }
 
-SWEP.ModelScale = 1.1
-SWEP.offsetVec = Vector(3, -4.5, 0)
-SWEP.offsetAng = Angle(90, 90, 0)
+SWEP.ModelScale = 1.3
+SWEP.offsetVec = Vector(3, -1, 0.3)
+SWEP.offsetAng = Angle(0, 0, 0)
 SWEP.Category = "ZCity Medicine"
 
 if CLIENT then
-	SWEP.WepSelectIcon = Material("vgui/wep_jack_hmcd_bandage")
-	SWEP.IconOverride = "vgui/wep_jack_hmcd_bandage.png"
+	SWEP.WepSelectIcon = Material("vgui/icons/ico_dzbint.png")
+	SWEP.IconOverride = "vgui/icons/ico_dzbint.png"
 	SWEP.BounceWeaponIcon = false
 end
 
@@ -30,7 +30,7 @@ end
 function SWEP:Initialize()
 	self:SetHold(self.HoldType)
 
-	self.ModelScale = 1.1
+	self.ModelScale = 1.3
 	self.modeValues = {
 		[1] = 150,
 	}
@@ -44,7 +44,7 @@ function SWEP:Think()
 	end
 
 	self:SetHold(self.HoldType)
-	self.ModelScale = math.Clamp((self.modeValues[1] / (self.modeValuesdef[1][1] * 0.8)) * 1.1, 0.5, 1.1)
+	self.ModelScale = math.Clamp((self.modeValues[1] / (self.modeValuesdef[1][1] * 0.8)) * 1.3, 0.5, 1.3)
 end
 
 SWEP.isFirstDeploy = true
