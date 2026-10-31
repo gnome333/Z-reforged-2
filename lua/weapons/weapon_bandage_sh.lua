@@ -328,12 +328,12 @@ SWEP.modeNames = {
 }
 
 function SWEP:InitializeAdd()
-	self.ModelScale = 3
+	self.ModelScale = 1
 end
 
-SWEP.DeploySnd = "physics/body/body_medium_impact_soft5.wav"
+SWEP.DeploySnd = "dayz_bandage/bandage_loop_6.wav"
 SWEP.HolsterSnd = ""
-SWEP.FallSnd = "physics/body/body_medium_impact_soft5.wav"
+SWEP.FallSnd = "dayz_bandage/bandage_loop_6.wav"
 
 if CLIENT then
 	SWEP.HowToUseInstructions = "<font=ZCity_Tiny>"..string.upper( (input.LookupBinding("+use") or "BIND YOUR +USE KEY PLEASE. WRITE \"bind e +use\" IN CONSOLE FOR THE LOVE OF GOD") ).." to pickup</font>"
@@ -639,7 +639,7 @@ if SERVER then
 		end
 
 		if done then
-			owner:EmitSound("snd_jack_hmcd_bandage.wav", 60, math.random(95, 105))
+			owner:EmitSound("dayz_bandage/bandage_start_0.wav", 60, math.random(95, 105))
 
 			if self.poisoned2 then
 				org.poison4 = CurTime()
@@ -653,7 +653,7 @@ if SERVER then
 
 	function SWEP:Heal(ent, mode, bone)
 		if ent:IsNPC() then
-			self:NPCHeal(ent, 0.15, "snd_jack_hmcd_bandage.wav")
+			self:NPCHeal(ent, 0.15, "dayz_bandage/bandage_start_0.wav")
 		end
 
 		local org = ent.organism
@@ -917,7 +917,7 @@ if SERVER then
 
 			SetNetVar("TourniquetGuys",hg.TourniquetGuys)
 
-			self:GetOwner():EmitSound("snd_jack_hmcd_bandage.wav", 65, math.random(95, 105))
+			self:GetOwner():EmitSound("dayz_bandage/bandage_start_0.wav", 65, math.random(95, 105))
 			return true
 		end
 	end
@@ -1205,7 +1205,7 @@ function SWEP:NPCHeal(npc, mul, snd)
 			mul = 0.3
 		end
 		npc:SetHealth(math.Clamp(npc:Health() + (npc:GetMaxHealth() * 1 * mul), 0, npc:GetMaxHealth() * math.Clamp(2 * mul, 2, 100)))
-		npc:EmitSound(snd or "snd_jack_hmcd_bandage.wav", 75, math.random(95, 105))
+		npc:EmitSound(snd or "dayz_bandage/bandage_start_0.wav", 75, math.random(95, 105))
 
 		if SERVER then
 			self:Remove()
@@ -1216,7 +1216,7 @@ end
 function SWEP:OwnerChanged()
 	local owner = self:GetOwner()
 	if IsValid(owner) and owner:IsNPC() then
-		self:NPCHeal(owner, 0.15, "snd_jack_hmcd_bandage.wav")
+		self:NPCHeal(owner, 0.15, "dayz_bandage/bandage_start_0.wav")
 	end
 end
 
@@ -1242,6 +1242,7 @@ if SERVER then
 	local refillClasses = {
 		["weapon_bandage_sh"] = true,
 		["weapon_medkit_sh"] = true,
+		["weapon_bigbandage_sh"] = true,
 	}
 
 	local function isCarried(ent)
@@ -1321,7 +1322,7 @@ if SERVER then
 
 		if not changed then return end
 
-		ply:EmitSound("snd_jack_hmcd_bandage.wav", 60, math.random(95, 105))
+		ply:EmitSound("dayz_bandage/rags_bandage_start_0.wav", 60, math.random(95, 105))
 		wep:SetNetVar("modeValues", heldVals)
 		target:SetNetVar("modeValues", tgtVals)
 
