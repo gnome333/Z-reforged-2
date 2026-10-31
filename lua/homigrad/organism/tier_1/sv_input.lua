@@ -88,6 +88,33 @@ local RagdollForceBoneMul = {
 	[HITGROUP_HEAD] = 0.5
 }
 
+--\\ Отбрасывание от взрывов гранат
+--;; Ударная волна (урон DMG_BLAST): 1 - как раньше, 0 - не отбрасывает вовсе. По умолчанию 0.
+local cvGrenadeKnockback = CreateConVar("hg_grenade_knockback", "0", FCVAR_ARCHIVE, "Множитель отбрасывания ударной волной гранаты (1 - как раньше, 0 - не отбрасывает)", 0, 2)
+--;; Осколки: у гранаты их ~900, и каждый несёт DamageForce ~7000, из которого считается AddForceRag.
+--;; Даже несколько попаданий в упор складываются в огромный импульс, поэтому по умолчанию 0.
+local cvGrenadeShrapnel = CreateConVar("hg_grenade_shrapnel_knockback", "0", FCVAR_ARCHIVE, "Множитель отбрасывания осколками гранаты (1 - как раньше, 0 - осколки не отбрасывают)", 0, 2)
+
+function hg.GetGrenadeKnockbackMul(inflictor)
+	if not IsValid(inflictor) or not inflictor.ishggrenade then return 1 end
+	if inflictor.KnockbackMul then return inflictor.KnockbackMul end
+
+	return cvGrenadeKnockback:GetFloat()
+end
+
+--;; Множитель отбрасывания для конкретного урона (1 - не граната, можно не трогать)
+function hg.GetDamageKnockbackMul(dmgInfo)
+	local inflictor = dmgInfo:GetInflictor()
+	if not IsValid(inflictor) or not inflictor.ishggrenade then return 1 end
+
+	if dmgInfo:IsDamageType(DMG_BLAST) then
+		return inflictor.KnockbackMul or cvGrenadeKnockback:GetFloat()
+	end
+
+	return cvGrenadeShrapnel:GetFloat()
+end
+--//
+
 local bonetohitgroup = {
 	["ValveBiped.Bip01_Head1"] = HITGROUP_HEAD,
 	["ValveBiped.Bip01_L_UpperArm"] = HITGROUP_LEFTARM,
@@ -904,7 +931,9 @@ hook.Add("EntityTakeDamage", "homigrad-damage", function(ent, dmgInfo)
 	attacker.harm = 0
 
 	if dmgInfo:IsDamageType(DMG_BULLET + DMG_BUCKSHOT + DMG_BLAST + DMG_SLASH + DMG_CLUB + DMG_GENERIC) then
-		local force = dirCool * len
+		--;; граната (ударная волна и осколки) не должна сильно отбрасывать
+		local knockMul = hg.GetDamageKnockbackMul(dmgInfo)
+		local force = dirCool * len * knockMul
 		--print("HIT")
 		if ply then
 			--if ply.lastFake then ply.lastFake = ply.lastFake - len end
@@ -1308,7 +1337,10 @@ takeRagdollDamage = function(ent, dmgInfo)
 		local bonename = ent:GetBoneName(ent:TranslatePhysBoneToBone(bone))
 		if bonetohitgroup[bonename] ~= nil then hitgroup = bonetohitgroup[bonename] end
 		--if RagdollDamageBoneMul[hitgroup] then dmgInfo:ScaleDamage(RagdollDamageBoneMul[hitgroup]) end
-		if RagdollForceBoneMul[hitgroup] then dmgInfo:SetDamageForce(dmgInfo:GetDamageForce() * RagdollForceBoneMul[hitgroup]) end
+		local forceMul = RagdollForceBoneMul[hitgroup] or 1
+		--;; труп тоже не должно уносить далеко от гранаты
+		forceMul = forceMul * hg.GetDamageKnockbackMul(dmgInfo)
+		dmgInfo:SetDamageForce(dmgInfo:GetDamageForce() * forceMul)
 		
 		local org = ply.organism
 		if dmgInfo:GetInflictor():IsWeapon() and not dmgInfo:IsDamageType(DMG_CRUSH) then

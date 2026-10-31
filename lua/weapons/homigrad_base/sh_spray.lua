@@ -19,10 +19,26 @@ SWEP.SprayRand = {Angle(0, 0, 0), Angle(0, 0, 0)}
 SWEP.addSprayMul = 1
 
 SWEP.RecoilMul = 0.8
+SWEP.AimPunchMul = 1
+--;; Индивидуальный множитель горизонтальной отдачи для конкретного оружия
+SWEP.HorizontalRecoilMul = 1
 
 local cos, sin, math_max, math_min = math.cos, math.sin, math.max, math.min
 
 local hg_recoilmul = CreateConVar("hg_recoilmul", 1, {FCVAR_ARCHIVE, FCVAR_NOTIFY, FCVAR_REPLICATED}, "Multiply weapon physical recoil")
+--;; Горизонтальная отдача (увод ствола влево/вправо). 1 - включена, 0 - выключить
+local hg_horizontal_recoil = CreateConVar("hg_horizontal_recoil", 1, {FCVAR_ARCHIVE, FCVAR_NOTIFY, FCVAR_REPLICATED}, "Множитель горизонтальной отдачи оружия (0 - выключить)", 0, 3)
+
+function SWEP:ApplyShootAimPunch(recoil)
+	local strength = 2 * (self.AimPunchMul or 1)
+	if not CLIENT or strength <= 0 or recoil <= 0 then return end
+
+	-- Use the existing spring so the aim kick recovers smoothly between shots.
+	local kick = math.min(recoil, 2) * strength * (self:IsZoom() and 0.65 or 1)
+	local side = math.Rand(-1, 1)
+	ViewPunch2(Angle(-math.Rand(0.7, 1), side * 0.18, side * 0.12) * kick)
+end
+
 function SWEP:GetPrimaryMul()
 	local owner = self:GetOwner()
 	local mul = ((0.5) + math_max(self.Primary.Force / 110 - 1, 0)) * (owner.Crouching and owner:Crouching() and self.CrouchMul or 1) * (self.attachments and self.attachments.barrel and self.attachments.barrel[1] ~= "empty" and 0.75 or 1)
@@ -114,11 +130,20 @@ function SWEP:PrimarySpread()
 		//ViewPunch2(angleprikol)
 
 		local mul = mul * self.Primary.Force2 / 100 * (self:IsPistolHoldType() and 2 or 1) * (self.NumBullet and self.NumBullet * 3 or 1)
+		self:ApplyShootAimPunch(mul)
 		local yawKick = math.Rand(-0.35, 0.35) * math.min(sprayI / 8, 1)
 		ViewPunch2(Angle(-1 * math.Rand(1.2,1.8), yawKick, 0) * mul)
 		ViewPunch(Angle(-1 * math.Rand(1,1.6), 0, 0) * mul / -2)
 		timer.Simple(0.01, function() ViewPunch2(Angle(-1 * math.Rand(0.6,1.2), yawKick * 0.5, 0) * mul) end)
 		timer.Simple(0.02, function() ViewPunch2(Angle(1 * math.Rand(1,2.4),0,0) * mul) end)
+
+		--\\ Горизонтальная отдача: ствол слегка уводит влево/вправо (не путать с вертикальной)
+		local hrecMul = hg_horizontal_recoil:GetFloat() * (self.HorizontalRecoilMul or 1)
+		if hrecMul > 0 and ViewPunch3 then
+			local side = (math.random(2) == 1) and 1 or -1
+			local kick = side * math.Rand(0.15, 0.35) * math.Clamp(mul / 0.2, 0.5, 2) * hrecMul
+			ViewPunch3(Angle(0, kick, 0))
+		end
 
 		local eyeang = owner:EyeAngles()
 		local sprayAng = (spray * (self:IsResting() and 0.1 or 1) * 8 + angrand3 * self.addSprayMul) * (eyeang.z == 180 and -1 or 1)

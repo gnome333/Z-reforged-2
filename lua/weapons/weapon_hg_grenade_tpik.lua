@@ -101,10 +101,7 @@ SWEP.AnimList = {
 				end
 				self:Remove()
 			end
-			self:PlayAnim("idle")
-			self:SetShowSpoon(true)
-			self:SetShowGrenade(true)
-			self:SetShowPin(true)
+			self:TakeOutNextGrenade()
 		end)
 	end, 0.65 },
 	["attack2"] = { "lowthrow", 0.8, false, false, function(self)
@@ -127,10 +124,7 @@ SWEP.AnimList = {
 				self:Remove()
 			end
 
-			self:PlayAnim("idle")
-			self:SetShowSpoon(true)
-			self:SetShowGrenade(true)
-			self:SetShowPin(true)
+			self:TakeOutNextGrenade()
 		end)
 	end, 0.6 },
 	["pullbackhigh"] = {"pullbackhigh", 1.5, false, false, function(self) 
@@ -159,6 +153,28 @@ SWEP.AnimList = {
 
 SWEP.HoldPos = Vector(2,0.2,-1.5)
 SWEP.HoldAng = Angle(0,0,0)
+
+--;; Достаём следующую гранату из запаса.
+--;; Раньше здесь проигрывалась поза "idle" — у большинства гранат это статичный "draw" (поза в руке),
+--;; поэтому вторая граната появлялась мгновенно, без анимации доставания. Теперь играем ту же
+--;; анимацию, что и при взятии оружия ("deploy" → "draw"/"base_draw" в зависимости от модели).
+function SWEP:TakeOutNextGrenade()
+	if self.count < 1 then return end
+
+	self.ReadyToThrow = false
+	self.IsLowThrow = false
+	self.ReadyToTrap = false
+	self.TrappingRN = false
+	self.InThrowing = false
+	self.SpoonTime = false
+	self.Spoon = true
+
+	self:SetShowSpoon(true)
+	self:SetShowGrenade(true)
+	self:SetShowPin(true)
+
+	self:PlayAnim("deploy")
+end
 
 SWEP.ViewBobCamBase = "ValveBiped.Bip01_L_UpperArm"
 SWEP.ViewBobCamBone = "ValveBiped.Bip01_R_Hand"

@@ -1,4 +1,4 @@
-﻿if SERVER then AddCSLuaFile() end
+if SERVER then AddCSLuaFile() end
 SWEP.Base = "weapon_hg_grenade_tpik"
 SWEP.PrintName = "Combine Frag Grenade"
 SWEP.Instructions = 
@@ -74,10 +74,7 @@ SWEP.AnimList = {
 				end
 				self:Remove()
 			end
-			self:PlayAnim("idle")
-			self:SetShowSpoon(true)
-			self:SetShowGrenade(true)
-			self:SetShowPin(true)
+			self:TakeOutNextGrenade()
 		end)
 	end, 0.65 },
 	["attack2"] = { "throw", 0.6, false, false, function(self)
@@ -100,10 +97,7 @@ SWEP.AnimList = {
 				self:Remove()
 			end
 
-			self:PlayAnim("idle")
-			self:SetShowSpoon(true)
-			self:SetShowGrenade(true)
-			self:SetShowPin(true)
+			self:TakeOutNextGrenade()
 		end)
 	end, 0.6 },
 	["pullbackhigh"] = {"drawbackhigh", 0.4, false, false, function(self) 

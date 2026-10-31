@@ -30,7 +30,8 @@ if SERVER then
 	local function Remove(self, slot)
 		local id
 		for i = 1, #slot do
-			if slot[i] == wep then
+			--;; здесь был необъявленный 'wep' (nil): удалённое оружие навсегда оставалось в слоте
+			if slot[i] == self then
 				id = i
 				break
 			end

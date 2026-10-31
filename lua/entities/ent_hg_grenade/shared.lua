@@ -15,6 +15,9 @@ ENT.Fragmentation = 300 * 3 --300 не страшно
 ENT.BlastDis = 8 --meters
 ENT.Penetration = 8
 ENT.ishggrenade = true
+--;; Насколько сильно взрыв отбрасывает игроков (ударная волна).
+--;; nil = convar hg_grenade_knockback (по умолчанию 0 - не отбрасывает). Осколки - convar hg_grenade_shrapnel_knockback (по умолчанию 0).
+-- ENT.KnockbackMul = 1
 ENT.spoon = "models/weapons/arc9/darsu_eft/skobas/rgd5_skoba.mdl"
 ENT.Sound = {"m67/m67_detonate_01.wav", "m67/m67_detonate_02.wav", "m67/m67_detonate_03.wav"}
 ENT.SoundFar = {"m67/m67_detonate_far_dist_01.wav", "m67/m67_detonate_far_dist_02.wav", "m67/m67_detonate_far_dist_03.wav"}

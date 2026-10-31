@@ -390,6 +390,8 @@ function ENT:Explode()
 	--;; Расскажу вам тайну но у нас трассировка делалась просто ужасно
 	local dis = self.BlastDis / 0.01905
 	local disorientation_dis = 6 / 0.01905  
+	--;; игроков взрыв не должен сильно отбрасывать (convar hg_grenade_knockback, 1 - как раньше)
+	local knockMul = hg.GetGrenadeKnockbackMul and hg.GetGrenadeKnockbackMul(self) or 1
 	local entsCount = 0
 	for i, enta in ipairs(ents.FindInSphere(selfPos, disorientation_dis)) do
 		local tracePos = enta:IsPlayer() and (enta:GetPos() + enta:OBBCenter()) or enta:GetPos()
@@ -420,14 +422,14 @@ function ENT:Explode()
 
 
 		if enta:IsPlayer() then
-			hg.AddForceRag(enta, 0, forceadd * 0.5, 0.5)
-			hg.AddForceRag(enta, 1, forceadd * 0.5, 0.5)
+			hg.AddForceRag(enta, 0, forceadd * 0.5 * knockMul, 0.5)
+			hg.AddForceRag(enta, 1, forceadd * 0.5 * knockMul, 0.5)
 
 			hg.LightStunPlayer(enta)
 		end
 
 		if not IsValid(phys) then continue end
-		phys:ApplyForceCenter(forceadd)
+		phys:ApplyForceCenter(enta:IsPlayer() and forceadd * knockMul or forceadd)
 	end
 
 	if entsCount > 10 and not self.LegacyInDoorSound then

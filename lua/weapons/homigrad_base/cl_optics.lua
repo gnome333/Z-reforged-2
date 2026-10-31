@@ -21,7 +21,8 @@ end)
 function IsAimingNoScope(ply)
 	local wep = ply:GetActiveWeapon()
 
-	return IsValid(wep) and ishgweapon(wep) and hg.KeyDown(ply, IN_ATTACK2) and wep:CanUse()
+	-- Во время перезарядки прицел остаётся активным, хотя CanUse() уже false из-за reload
+	return IsValid(wep) and ishgweapon(wep) and hg.KeyDown(ply, IN_ATTACK2) and (wep:CanUse() or wep.reload ~= nil)
 end
 
 function IsAiming(ply)
