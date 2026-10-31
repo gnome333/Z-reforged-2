@@ -311,7 +311,13 @@ local CurTime = CurTime
 function SWEP:IsZoom()
 	local owner = self:GetOwner()
 
-	if not self:CanUse() then
+	-- Перезарядка не выбивает из прицела: CanUse() возвращает false из-за self.reload,
+	-- поэтому во время перезарядки проверяем только реальные блокировки.
+	if self.reload then
+		if self.deploy or (IsValid(owner) and owner.organism and owner.organism.otrub) then
+			return false
+		end
+	elseif not self:CanUse() then
 		return false
 	end
 

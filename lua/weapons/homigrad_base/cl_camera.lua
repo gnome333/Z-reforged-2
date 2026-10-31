@@ -238,7 +238,9 @@ function SWEP:Camera(eyePos, eyeAng, view, vellen, ply)
 
 	local posIdle = eyePos
 	local angIdle = eyeAng
-	local zoom = self:IsZoom() and (IsValid(ply.FakeRagdoll) or ((self.lerpaddcloseanim * self.closeanimdis) < 3)) and (self:GetNetVar("shootgunReload", 0) < CurTime())// and (posIdle:IsEqualTol(posZoom,20))))
+	-- Держим прицел, пока игрок перезаряжается (в т.ч. передёргивание затвора/помпы)
+	local reloading = self.reload or self:KeyDown(IN_RELOAD)
+	local zoom = self:IsZoom() and (IsValid(ply.FakeRagdoll) or ((self.lerpaddcloseanim * self.closeanimdis) < 3)) and (reloading or self:GetNetVar("shootgunReload", 0) < CurTime())// and (posIdle:IsEqualTol(posZoom,20))))
 	
 	--if hg_aiminganim:GetBool() then
 		self.k = Lerp(self.Ergonomics * FrameTime() * 2, self.k or 0, zoom and 1 or 0)

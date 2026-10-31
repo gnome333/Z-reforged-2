@@ -31,18 +31,31 @@ local function itemScale(class, item)
 	return math.Clamp(vals[1] / (def * 0.8), 0.5, 1)
 end
 
+--;; На поясе не рисуем то, что уже нельзя держать: удалённые сущности и израсходованные предметы
+--;; (медицина с modeValues[1] <= 0 остаётся в инвентаре и раньше «всплывала» снова на поясе).
+local function itemIsUsable(item)
+	if isentity(item) and not IsValid(item) then return false end
+
+	local vals = istable(item) and item.modeValues or nil
+	if istable(vals) and isnumber(vals[1]) and vals[1] <= 0 then return false end
+
+	return true
+end
+
 function hg.RenderMedBelt(ent, ply)
 	if not IsValid(ent) or not IsValid(ply) then return end
 	if not ent.shouldTransmit or ent.NotSeen then return end
 
 	local scales = {}
+	local act
 
 	if ply.GetWeapons and ply:Alive() then
-		local act = ply.GetActiveWeapon and ply:GetActiveWeapon()
+		act = ply.GetActiveWeapon and ply:GetActiveWeapon()
 
 		for _, wep in ipairs(ply:GetWeapons()) do
 			if not IsValid(wep) then continue end
 			if wep == act then continue end
+			if not itemIsUsable(wep) then continue end
 
 			local class = wep:GetClass()
 			local cfg = medItems[class]
@@ -68,7 +81,13 @@ function hg.RenderMedBelt(ent, ply)
 		end
 
 		if inv and inv.Weapons then
+			--;; Предмет в руках с пояса не рисуем: инвентарь всё ещё хранит его, но держать его на поясе нельзя
+			local actClass = IsValid(act) and act:GetClass() or nil
+
 			for class, item in pairs(inv.Weapons) do
+				if class == actClass then continue end
+				if not itemIsUsable(item) then continue end
+
 				local cfg = medItems[class]
 				if not cfg then continue end
 

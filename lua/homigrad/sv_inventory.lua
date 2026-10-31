@@ -167,6 +167,23 @@ local VirtualItems = {
         ply:SetNetVar("Inventory", inv)
     end)
 
+    --;; Оружие/предмет удалили (израсходовали медицину, сломали и т.п.) — чистим запись в инвентаре,
+    --;; иначе предмет «висит» в inv.Weapons и снова рисуется на поясе (см. cl_medbelt.lua)
+    hook.Add("WeaponEquip", "homigrad-inventory-remove", function(wep, ply)
+        local className = wep:GetClass()
+
+        wep:CallOnRemove("homigrad-inventory", function()
+            if not IsValid(ply) then return end
+
+            local inv = ply.inventory
+            if not inv or not inv.Weapons then return end
+            if inv.Weapons[className] ~= wep then return end
+
+            inv.Weapons[className] = nil
+            ply:SetNetVar("Inventory", inv)
+        end)
+    end)
+
     hook.Add("PlayerAmmoChanged", "homigrad-inventory", function(ply, ammoID, oldCount, newCount)
         if !ply.inventory then return end
 

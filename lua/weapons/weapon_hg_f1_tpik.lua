@@ -1,4 +1,4 @@
-﻿if SERVER then AddCSLuaFile() end
+if SERVER then AddCSLuaFile() end
 SWEP.Base = "weapon_hg_grenade_tpik"
 SWEP.PrintName = "F1"
 SWEP.Instructions = 
@@ -75,10 +75,7 @@ SWEP.AnimList = {
 				end
 				self:Remove()
 			end
-			self:PlayAnim("idle")
-			self:SetShowSpoon(true)
-			self:SetShowGrenade(true)
-			self:SetShowPin(true)
+			self:TakeOutNextGrenade()
 		end)
 	end, 0.65 },
 	["attack2"] = { "lowthrow", 0.8, false, false, function(self)
@@ -101,10 +98,7 @@ SWEP.AnimList = {
 				self:Remove()
 			end
 
-			self:PlayAnim("idle")
-			self:SetShowSpoon(true)
-			self:SetShowGrenade(true)
-			self:SetShowPin(true)
+			self:TakeOutNextGrenade()
 		end)
 	end, 0.6 },
 	["pullbackhigh"] = {"pullbackhigh", 1.5, false, false, function(self) 
